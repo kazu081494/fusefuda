@@ -45,6 +45,9 @@ body{
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--table)}
 #app{max-width:560px;margin:0 auto;padding-block:14px 40px;display:flex;flex-direction:column;gap:14px}
 #app.fit{height:100%;min-height:560px;padding-block:8px 10px;gap:7px}
+/* 広い画面での拡大：#app を丸ごと拡大し、高さは拡大ぶん割り戻す */
+body.zoomed #app{zoom:var(--z)}
+body.zoomed #app.fit{min-height:0}
 button{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 h1,h2,h3{margin:0;text-wrap:balance}
@@ -1485,6 +1488,14 @@ function cardHTML(i,o={}){
 }
 const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力+${burnVal(d,s)}</b>${note?`<small>${note}</small>`:''}</span></div>`;
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
+/* 広い画面（パソコンのブラウザなど）では、画面の高さに合わせて全体を拡大する（1〜1.6倍）。スマホはそのまま */
+function fitZoom(){
+  const w=innerWidth,h=innerHeight;
+  const z=w<700?1:Math.max(1,Math.min(1.6,h/760,w/620));
+  document.documentElement.style.setProperty('--z',z);
+  document.body.classList.toggle('zoomed',z>1);
+}
+addEventListener('resize',fitZoom);fitZoom();
 function render(){
   $app.className=(screen==='game'?'fit ':'')+`back-${settings.back||'shoji'} moon-${settings.moon||'full'}`;
   if(screen.startsWith('story-'))$app.innerHTML=storyScreenHTML();
