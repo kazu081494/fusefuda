@@ -249,10 +249,10 @@ const EFFECTS=[
   ['oiuchi','追い討ち','A',2,2,'押せたら、さらに2押す','押せたら、押す量に2を足す'],
   ['kantsu','貫通','A',3,3,'防御を無視して押す','相手が防御していても、数字の3をそのまま押す'],
   ['sutemi','捨て身','A',6,4,'押せなかったら、自分が2押される','数字6の攻撃を気力4で出せる。ただし1も押せなかったら、自分が2押される'],
-  ['rengeki','連撃','A',2,2,'相手が攻撃も防御もしていなければ、2倍押す','相手が「見送った」か「罠を張った」ターンなら、押す量が2倍になる'],
+  ['rengeki','連撃','A',2,2,'相手が攻撃も防御もしていなければ、2倍押す','相手が「見送った」「燃やした」「罠を張った」ターンなら、押す量が2倍になる'],
   ['teisatsu','偵察','A',1,1,'相手の手札を1枚のぞく','開けたとき、相手の手札を1枚ランダムに見る。出されるまで表のまま見える'],
   ['yokoku','予告','A',2,1,'次のターン、自分の攻撃の数字+2','開けたとき予告する。次のターン、自分の攻撃カードの数字が2増える（相手にも見える）'],
-  ['hangeki','反撃','D',3,3,'防ぎきったら、余ったぶん押し返す','相手の攻撃の数字より大きければ、その差だけ相手を押し返す'],
+  ['hangeki','反撃','D',3,3,'防ぎきったら、さらに2押し返す','相手の攻撃を防ぎきって押し返すとき、押し返す量に2を足す'],
   ['ukenagashi','受け流し','D',2,1,'押される量をさらに半分にする','防御の2を引いたあと、押される量をさらに半分（切り捨て）にする'],
   ['meisou','瞑想','D',1,0,'気力を3得る','気力0で出せる防御1。開けたとき、気力を3得る（上限10）'],
   ['kakuran','撹乱','D',1,1,'相手の手札を1枚捨てさせる（相手は1枚引く）','開けたとき、相手は手札を1枚ランダムに捨てて、1枚引く'],
@@ -261,7 +261,7 @@ const EFFECTS=[
   ['otoshiana','落とし穴','T',null,1,'相手が攻撃したら、押される量を3減らす','張った次のターンから効く。相手が攻撃してきたら、押される量を3減らして捨てる'],
   ['kaeshi','返し罠','T',null,3,'相手が4以上で攻撃したら、跳ね返す','張った次のターンから効く。相手が数字4以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
   ['dorobou','気力泥棒','T',null,1,'相手が攻撃したら、気力を3奪う','張った次のターンから効く。相手が攻撃してきたら、相手の気力を3まで奪って自分のものにする'],
-  ['machibuse','待ち伏せ','T',null,2,'相手が攻撃しなかったら、3押す','張った次のターンから効く。相手が防御・溜める・罠を張るのどれかをしたら、相手を3押す'],
+  ['machibuse','待ち伏せ','T',null,2,'相手が攻撃しなかったら、3押す','張った次のターンから効く。相手が攻撃以外（防御・燃やす・見送る・罠を張る）をしたら、相手を3押す'],
   ['ashikase','足かせ','T',null,2,'相手が攻撃したら、次のターン攻撃させない','張った次のターンから効く。相手が攻撃してきたら、次のターン相手は攻撃カードを出せない'],
 ];
 const CARDS={};const POOL=[];
@@ -280,7 +280,14 @@ const ABILITIES={
   baigeki:{name:'倍撃',when:'伏せる前',phase:'before',text:'このターン、自分が押す量が2倍になる'},
   kaihou:{name:'気力解放',when:'伏せる前',phase:'before',text:'気力を5得る（上限10）。増えたぶんは開けるまで相手に見えない'},
   surikae:{name:'すり替え',when:'開けた後',phase:'after',text:'開けた自分のカードを、手札の1枚と差し替える（気力は払い直す）'},
-  funbari:{name:'踏ん張り',when:'開けた後',phase:'after',text:'このターン、自分が押される量を0にする'},
+  funbari:{name:'踏ん張り',when:'伏せる前',phase:'before',text:'このターン、自分が押される量を0にする'},
+};
+
+/* CPUの性格（相手の欄に出る。クセを読むための手がかり） */
+const STYLES={
+  kyoki:{name:'強気',desc:'気力があれば大きく攻める。守りは薄い'},
+  shincho:{name:'慎重',desc:'あなたの気力が多いと守りに入る'},
+  tame:{name:'溜め屋',desc:'燃やして溜めてから、大きく出る'},
 };
 
 /* ---------- 保存（ブラウザ内だけ） ---------- */
@@ -316,8 +323,8 @@ const label=d=>d.type==='T'?`${d.name}（罠）`:d.eff?`${d.name}（${TY[d.type]
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
 /* 燃やすと得る気力：数字ぶん（最大5）。数字の無い罠は1 */
 const burnVal=d=>d.num==null?1:Math.min(BURN_MAX,d.num);
-/* このターン使える気力（気力解放の隠れた5と、あなたが燃やす札を選んでいれば、そのぶん足す） */
-const availE=s=>{const e=clampE(s.energy+(s.hiddenE||0));return s===(G&&G.p)&&G.pBurn?clampE(e+burnVal(def(G.pBurn))):e};
+/* このターン使える気力（気力解放の隠れた5を足す。相手には見えない） */
+const availE=s=>clampE(s.energy+(s.hiddenE||0));
 
 /* ---------- 解決（純関数：状態は変えない） ----------
    P,C は両者の状態、pd,cd は出したカードの定義（見送ったなら null）
@@ -333,14 +340,16 @@ function outcome(P,C,pd,cd){
     else if(nc>np){toP=nc;why=`攻撃どうし：${nc}が${np}に勝って、${nc}押す`}
     else why=`攻撃どうし：同じ${np}で相打ち`;
   }else if(kp==='A'&&kc==='D'){
-    const d=pd.eff==='kantsu'?0:nc;toC=Math.max(0,np-d);
-    why=pd.eff==='kantsu'?'貫通：防御を無視':`攻撃${np} − 防御${nc}`;
-    if(cd.eff==='hangeki'&&nc>np){toP+=nc-np;notes.push(`反撃：${nc-np}押し返した`)}
+    if(pd.eff==='kantsu'){toC=np;why='貫通：防御を無視'}
+    else if(nc>=np){toP=nc;why=`防御${nc}が攻撃${np}を防ぎきって、${nc}押し返す`}
+    else{toC=np-nc;why=`攻撃${np} − 防御${nc}`}
+    if(cd.eff==='hangeki'&&toP>0){toP+=2;notes.push('反撃：さらに2押し返した')}
     if(cd.eff==='fuuji'&&toC===0){fx.banP=true;notes.push('封じ手：次のターン、あなたは攻撃できない')}
   }else if(kc==='A'&&kp==='D'){
-    const d=cd.eff==='kantsu'?0:np;toP=Math.max(0,nc-d);
-    why=cd.eff==='kantsu'?'相手の貫通：防御を無視':`攻撃${nc} − 防御${np}`;
-    if(pd.eff==='hangeki'&&np>nc){toC+=np-nc;notes.push(`反撃：${np-nc}押し返した`)}
+    if(cd.eff==='kantsu'){toP=nc;why='相手の貫通：防御を無視'}
+    else if(np>=nc){toC=np;why=`防御${np}が攻撃${nc}を防ぎきって、${np}押し返す`}
+    else{toP=nc-np;why=`攻撃${nc} − 防御${np}`}
+    if(pd.eff==='hangeki'&&toC>0){toC+=2;notes.push('反撃：さらに2押し返した')}
     if(pd.eff==='fuuji'&&toP===0){fx.banC=true;notes.push('封じ手：次のターン、相手は攻撃できない')}
   }else if(kp==='A'){toC=np;why='相手は防いでいない：そのまま押す'}
   else if(kc==='A'){toP=nc;why='あなたは防いでいない：そのまま押される'}
@@ -385,7 +394,7 @@ let screen='menu';let G=null;let builderPreset=null;
 function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
 function newSide(counts,ability){
   const d=[];for(const [id,c] of Object.entries(counts))for(let k=0;k<c;k++)d.push(mk(id));
-  const s={deck:shuffle(d),hand:[],discard:[],ability,abilityUsed:false,energy:ENERGY_START-ENERGY_GAIN+1,hiddenE:0,trap:null,
+  const s={deck:shuffle(d),hand:[],discard:[],ability,abilityUsed:false,energy:ENERGY_START-ENERGY_GAIN+1,hiddenE:0,burnGain:0,trap:null,
     noAtk:false,noAtkNext:false,yokoku:false,yokokuNext:false,bai:false,seeAll:false,funbari:false,history:[]};
   drawN(s,HAND_START);return s;
 }
@@ -404,9 +413,9 @@ function clearTimers(){if(!G)return;clearInterval(G.tId);clearTimeout(G.cpuT);cl
 function startGame(ability){
   clearTimers();
   const pre=rnd(PRESETS);
-  G={p:newSide(deck,ability),c:newSide(pre.cards,rnd(Object.keys(ABILITIES))),cpuDeck:pre.name,
+  G={p:newSide(deck,ability),c:newSide(pre.cards,rnd(Object.keys(ABILITIES))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
     gauge:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),
-    pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,pBurn:null,burnMode:false,burnMsgs:[]};
+    pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,pBurn:null,pBurned:null,cBurned:null,burnMode:false,burnMsgs:[]};
   screen='game';startTurn();
 }
 function startTurn(){
@@ -419,7 +428,7 @@ function startTurn(){
     s.bai=false;s.seeAll=false;s.funbari=false;s.hiddenE=0;
     if(s.trap)s.trap.active=true;
   }
-  Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,pBurn:null,burnMode:false,burnMsgs:[]});
+  Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,pBurn:null,pBurned:null,cBurned:null,burnMode:false,burnMsgs:[]});
   if(!G.p.hand.length&&!G.p.deck.length&&!G.c.hand.length&&!G.c.deck.length)return finishByGauge('両者の札が尽きたので、目盛りの位置で決着');
   if(G.p.noAtk)G.notices.push({t:'このターン、あなたは攻撃できない'});
   if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
@@ -440,7 +449,7 @@ function tick(){
   if(bar)bar.style.width=(left/settings.timer*100)+'%';
   if(num)num.textContent=Math.ceil(left)+'秒';
   if(box)box.classList.toggle('low',left<=10);
-  if(left<=0){clearInterval(G.tId);const s=G.sel&&!blockReason(G.p,G.sel)?G.sel:null;log(s?'時間切れ：選んでいた札で確定':'時間切れ：見送った');commit(s)}
+  if(left<=0){clearInterval(G.tId);if(G.pBurn){log('時間切れ：選んでいた札を燃やした');commit(null,G.pBurn);return}const s=G.sel&&!blockReason(G.p,G.sel)?G.sel:null;log(s?'時間切れ：選んでいた札で確定':'時間切れ：見送った');commit(s)}
 }
 function useAbility(){
   const P=G.p;if(G.phase!=='select'||P.abilityUsed)return;
@@ -448,23 +457,26 @@ function useAbility(){
   P.abilityUsed=true;G.pUsedNow=true;
   if(a==='tousi'){P.seeAll=true;log('透視：相手の手札を見た')}
   if(a==='baigeki'){P.bai=true;log('倍撃：このターン押す量が2倍')}
+  if(a==='funbari'){P.funbari=true;log('踏ん張り：このターン押されない（相手には中身は見えない）')}
   if(a==='kaihou'){P.hiddenE=5;log('気力解放：気力を5得た（開けるまで相手には見えない）')}
   render();
 }
-/* あなたの手を確定（null＝溜める） */
-function commit(pi){
+/* あなたの手を確定（pi＝出す札、bi＝燃やす札。どちらも null なら見送る） */
+function commit(pi,bi=null){
   if(G.phase!=='select')return;
   if(pi&&blockReason(G.p,pi))return;
   clearTimers();
   const P=G.p,C=G.c;
-  // 気力解放の隠れた気力を、ここで本当の気力に足す（開けるまで相手に見えない）
+  const ch=cpuChoose();   // 相手はあなたの手を知らずに決める（同時）。隠れた気力もまだ見えない
+  // 気力解放の隠れた気力を、ここで本当の気力に足す
   for(const s of [P,C])if(s.hiddenE){s.energy=clampE(s.energy+s.hiddenE);s.hiddenE=0}
-  const ch=cpuChoose();   // 相手はあなたの燃やす札を知らずに決める（同時）
   G.burnMsgs=[];
-  const burn=(s,b,who)=>{const v=burnVal(def(b));removeFrom(s.hand,b);s.discard.push(b);s.energy=clampE(s.energy+v);G.burnMsgs.push(`${who}は「${label(def(b))}」を燃やして気力+${v}`)};
-  if(G.pBurn){burn(P,G.pBurn,'あなた');G.pBurn=null}
-  if(ch.burn)burn(C,ch.burn,'相手');
-  G.burnMode=false;
+  // 燃やす：そのターンは何も出さない。気力は開けた後に増え、次のターンから使える
+  const burn=(s,b,who)=>{const v=burnVal(def(b));removeFrom(s.hand,b);s.discard.push(b);s.burnGain=v;G.burnMsgs.push(`${who}は「${label(def(b))}」を燃やした（気力+${v}）`)};
+  G.pBurned=pi?null:bi;G.cBurned=ch.burn;
+  if(G.pBurned)burn(P,G.pBurned,'あなた');
+  if(G.cBurned)burn(C,G.cBurned,'相手');
+  G.pBurn=null;G.burnMode=false;
   G.pPlay=pi;if(pi){removeFrom(P.hand,pi);P.energy-=def(pi).cost}
   const ci=ch.play;G.cPlay=ci;if(ci){removeFrom(C.hand,ci);C.energy-=def(ci).cost}
   G.burnMsgs.forEach(m=>log(m));
@@ -479,8 +491,7 @@ function swapOptions(s,cur){
 }
 function playerAfterOptions(){
   const P=G.p;if(P.abilityUsed)return[];const o=[];
-  if(P.ability==='surikae'&&G.res.net<=0&&swapOptions(P,G.pPlay).length)o.push('surikae');
-  if(P.ability==='funbari'&&G.res.toP>0)o.push('funbari');
+  if(P.ability==='surikae'&&!G.pBurned&&G.res.net<=0&&swapOptions(P,G.pPlay).length)o.push('surikae');
   return o;
 }
 function doSwap(x){
@@ -494,8 +505,8 @@ function doSwap(x){
 }
 function cpuAfter(){
   const C=G.c,P=G.p;if(C.abilityUsed)return;
-  const cd=()=>G.cPlay?def(G.cPlay):null,pd=G.pPlay?def(G.pPlay):null;
-  if(C.ability==='surikae'&&G.res.net>=0){
+  const pd=G.pPlay?def(G.pPlay):null;
+  if(C.ability==='surikae'&&!G.cBurned&&G.res.net>=0){
     let best=null,bestNet=G.res.net;
     for(const x of swapOptions(C,G.cPlay)){
       const saveE=C.energy;C.energy=C.energy+(G.cPlay?def(G.cPlay).cost:0)-def(x).cost;
@@ -507,10 +518,6 @@ function cpuAfter(){
       removeFrom(C.hand,best);C.energy-=def(best).cost;G.cPlay=best;C.abilityUsed=true;
       G.res=outcome(P,C,pd,def(best));G.notices.push({t:'相手が能力を使った',alert:true});log('相手が能力を使った');
     }
-  }
-  if(C.ability==='funbari'&&G.res.toC>=3&&(G.gauge+G.res.net>=GOAL||G.res.toC>=4||Math.random()<0.4)){
-    C.funbari=true;C.abilityUsed=true;G.res=outcome(P,C,pd,cd());
-    G.notices.push({t:'相手が能力を使った',alert:true});log('相手が能力を使った');
   }
 }
 function openEff(who,inst,msgs){
@@ -537,6 +544,7 @@ function resolve(){
   if(r.fx.trapC&&C.trap){C.discard.push(C.trap.inst);C.trap=null}
   if(r.fx.stealFromP){const k=Math.min(P.energy,r.fx.stealFromP);P.energy-=k;C.energy=clampE(C.energy+k)}
   if(r.fx.stealFromC){const k=Math.min(C.energy,r.fx.stealFromC);C.energy-=k;P.energy=clampE(P.energy+k)}
+  for(const s of [P,C])if(s.burnGain){s.energy=clampE(s.energy+s.burnGain);s.burnGain=0}
   if(r.fx.banP)P.noAtkNext=true;
   if(r.fx.banC)C.noAtkNext=true;
   openEff('p',G.pPlay,msgs);openEff('c',G.cPlay,msgs);
@@ -550,7 +558,8 @@ function resolve(){
   drawN(P,1);drawN(C,1);
   for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
   G.extra=msgs;
-  log(`${pd?label(pd):'見送った'} 対 ${cd?(cd.type==='T'?'罠を張った':label(cd)):'見送った'}：${r.net>0?`${r.net}押した`:r.net<0?`${-r.net}押された`:'動かない'}`);
+  const act=(d,b,opp)=>b?`「${label(def(b))}」を燃やした`:!d?'見送った':opp&&d.type==='T'?'罠を張った':label(d);
+  log(`${act(pd,G.pBurned,false)} 対 ${act(cd,G.cBurned,true)}：${r.net>0?`${r.net}押した`:r.net<0?`${-r.net}押された`:'動かない'}`);
   [...r.notes,...msgs].forEach(m=>log(m));
   if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:'目盛りを端まで押し切った'};
   G.phase='result';
@@ -574,7 +583,7 @@ function cpuOppModel(){
     const opts=[...playable(P).map(i=>def(i)),null];
     return opts.map(d=>({d,w:1/opts.length}));
   }
-  const E=P.energy+(P.hand.length>1?2:0),recent=P.history.slice(-6);
+  const E=P.energy,recent=P.history.slice(-6);
   const cnt=k=>1+recent.filter(x=>x===k).length*0.8;
   const hi=Math.min(E,5),list=[];
   if(!P.noAtk&&hi>=1){
@@ -586,28 +595,30 @@ function cpuOppModel(){
   const s=list.reduce((a,b)=>a+b.w,0);list.forEach(o=>o.w/=s);
   return list;
 }
-/* 相手の手：{burn: 燃やす札 or null, play: 出す札 or null} */
+/* 性格ごとのクセ。k は A・D・T（出す型）か B（燃やす） */
+function styleBias(k,d){
+  const C=G.c,P=G.p,st=G.style,threat=P.energy>=4;
+  if(st==='kyoki'){if(k==='A')return 0.6+0.25*d.num;if(k==='D')return -0.6;if(k==='B')return C.energy<=2?0.3:-0.6}
+  if(st==='shincho'){if(k==='D')return threat?1.0+0.15*d.num:-0.2;if(k==='A')return threat?-0.5:0.2;if(k==='B')return threat?-0.6:0.4}
+  if(st==='tame'){if(k==='B')return C.energy<6?1.2:-1.0;if(k==='A')return d.num>=4?0.9:-0.3;if(k==='D')return -0.2}
+  return 0;
+}
+/* 相手の手：{play: 出す札, burn: 燃やす札}（どちらか一方。両方 null なら見送る） */
 function cpuChoose(){
-  const C=G.c,P=G.p,model=cpuOppModel();
+  const C=G.c,P=G.p,model=cpuOppModel(),E=availE(C);
   const danger=G.gauge>=GOAL-3,chance=G.gauge<=-(GOAL-4);
-  const combos=[];
-  for(const b of [null,...C.hand]){
-    const saveE=C.energy;
-    if(b)C.energy=clampE(C.energy+burnVal(def(b)));
-    const plays=[...C.hand.filter(i=>{if(i===b)return false;const d=def(i);return d.cost<=C.energy&&!(d.type==='A'&&C.noAtk)&&!(d.type==='T'&&C.trap)}),null];
-    for(const o of plays){
-      const d=o?def(o):null;let ev=0;
-      const e2=C.energy;if(d)C.energy-=d.cost;
-      for(const m of model){const r=outcome(P,C,m.d,d);ev+=m.w*(-r.net)*(danger&&r.toP<r.toC?1.4:1)*(chance?1.2:1)}
-      C.energy=e2;
-      if(d){ev-=0.22*d.cost;if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.trap?2:-0.5}
-      else ev+=0.15;
-      if(b)ev-=1.0+0.1*def(b).cost+(C.hand.length<=2?0.8:0);
-      combos.push({burn:b,play:o,ev});
-    }
-    C.energy=saveE;
+  const evOf=d=>{let ev=0;for(const m of model){const r=outcome(P,C,m.d,d);ev+=m.w*(-r.net)*(danger&&r.toP<r.toC?1.4:1)*(chance?1.2:1)}return ev};
+  const base=evOf(null),combos=[{play:null,burn:null,ev:base}];
+  for(const o of C.hand){
+    const d=def(o);
+    const gain=clampE(E+ENERGY_GAIN+burnVal(d))-clampE(E+ENERGY_GAIN);
+    combos.push({play:null,burn:o,ev:base+0.45*gain-0.6-0.08*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)});
+    if(d.cost>E||(d.type==='A'&&C.noAtk)||(d.type==='T'&&C.trap))continue;
+    let ev=evOf(d)-0.22*d.cost;
+    if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.trap?2:-0.5;
+    combos.push({play:o,burn:null,ev:ev+styleBias(d.type,d)});
   }
-  const temp=G.pUsedNow?1.0:0.55;
+  const temp=G.pUsedNow?1.6:1.1;
   const mx=Math.max(...combos.map(c=>c.ev)),ex=combos.map(c=>Math.exp((c.ev-mx)/temp)),tot=ex.reduce((a,b)=>a+b,0);
   let u=Math.random()*tot;for(let i=0;i<combos.length;i++){u-=ex[i];if(u<=0)return combos[i]}
   return combos[combos.length-1];
@@ -618,11 +629,13 @@ function cpuMaybeBefore(){
   if(C.ability==='tousi')use=G.turn>=2&&Math.random()<0.3;
   if(C.ability==='baigeki')use=C.energy>=4&&!C.noAtk&&((G.gauge<=-(GOAL-5))||(G.gauge>=GOAL-3)||Math.random()<0.15);
   if(C.ability==='kaihou')use=G.turn>=2&&C.energy<=2&&Math.random()<0.5;
+  if(C.ability==='funbari')use=(G.gauge>=GOAL-3&&Math.random()<0.6)||(G.p.energy>=6&&Math.random()<0.25);
   if(!use)return;
   C.abilityUsed=true;
   if(C.ability==='tousi')C.seeAll=true;
   if(C.ability==='baigeki')C.bai=true;
   if(C.ability==='kaihou')C.hiddenE=5;
+  if(C.ability==='funbari')C.funbari=true;
   G.notices.push({t:'相手が能力を使った',alert:true});log('相手が能力を使った');render();
 }
 
@@ -638,7 +651,7 @@ function cardHTML(i,o={}){
   return `<button class="card t-${d.type}${o.small?' small':''}${o.sel?' sel':''}${o.off?' off':''}${o.cls?' '+o.cls:''}"data-act="${o.act||'detail'}" data-uid="${i.uid}" aria-label="${label(d)}、気力${d.cost}${d.eff?'：'+d.short:''}">
     ${faceHTML(d)}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:''}</button>`;
 }
-const bigHTML=(d,cls='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}</div>`;
+const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
 function render(){
   $app.className=screen==='game'?'fit':'';
   if(screen==='menu')$app.innerHTML=menuHTML();
@@ -665,7 +678,7 @@ function menuHTML(){
   const st=deckStats(deck);
   return `<div class="title"><h1>伏せ札</h1>
     <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
-    <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>はそのぶん減らす。<b class="t">罠</b>は伏せて待つ。気力が足りなければ、手札を燃やす。</p></div>
+    <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>はそのぶん減らす。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と、気力が溜まる。</p></div>
     <button class="btn wide" data-act="go-ability" ${st.ok?'':'disabled'}>対戦する</button>
     ${deckSummary()}
     <div class="panel">
@@ -682,17 +695,19 @@ function abilityHTML(){
 }
 function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
-  <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.5）</h2><ol>
+  <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.6）</h2><ol>
     <li>2人が同時に手札から1枚を伏せ（または何も出さずに「見送る」）、一斉に開ける。</li>
     <li><b>気力</b>：毎ターン1溜まる（上限10）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
-    <li><b>燃やす</b>：伏せるとき、手札をもう1枚燃やせる（1ターンに1枚）。その札の数字ぶん（最大5、罠は1）気力が増え、そのターンから使える。燃やした札は表向きで捨て札になり、開けるときに相手にも見える。</li>
-    <li><b>攻撃</b>は右上の数字ぶん、目盛りを相手側へ押す。相手が<b>防御</b>していたら、防御の数字ぶん減る。</li>
+    <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字ぶん（最大5、罠は1）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
+    <li><b>攻撃</b>は右上の数字ぶん、目盛りを相手側へ押す。相手が<b>防御</b>していたら、防御の数字ぶん減る。防御が攻撃以上なら防ぎきって、<b>防御の数字ぶん押し返す</b>。</li>
+    <li>読み合いの目安：攻撃は「燃やす・見送る」に強く、防御は攻撃に強く、燃やすは防御に強い（相手の気力は無駄になり、自分は溜まる）。気力の量は見えているので、そこから相手の手を読む。</li>
     <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで動かない。</li>
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
     <li>相手の陣の端（8マス）まで押し切ったら勝ち。20手で決着がつかなければ、目盛りが寄っている側の勝ち。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
     <li>デッキは20枚、同じカードは3枚まで。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li>能力は1試合に1回。中身は秘密で、使ったことだけ相手に知らされる。</li>
+    <li>相手（CPU）には性格（強気・慎重・溜め屋）があり、相手の欄に出ている。クセを読んで裏をかく。</li>
     <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカード（無ければ見送る）で確定する。</li>
   </ol></div>`;
 }
@@ -723,6 +738,7 @@ function builderHTML(){
 }
 function sideChips(s,isP){
   const a=ABILITIES[s.ability];const c=[];
+  if(!isP)c.push(`<span class="chip warn" title="${STYLES[G.style].desc}">性格：${STYLES[G.style].name}</span>`);
   c.push(isP?`<span class="chip ${s.abilityUsed?'':'on'}">能力：${a.name}${s.abilityUsed?'（済）':''}</span>`
             :`<span class="chip ${s.abilityUsed?'':'warn'}">能力：${s.abilityUsed?'使用済み':'？'}</span>`);
   if(s.trap){
@@ -732,6 +748,7 @@ function sideChips(s,isP){
   c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}">山${s.deck.length}・捨${s.discard.length}</button>`);
   if(isP&&s.bai)c.push('<span class="chip warn">倍撃中</span>');
   if(isP&&s.seeAll)c.push('<span class="chip warn">透視中</span>');
+  if(isP&&s.funbari)c.push('<span class="chip warn">踏ん張り中</span>');
   return `<div class="chips">${c.join('')}</div>`;
 }
 const energyHTML=s=>{
@@ -750,11 +767,11 @@ function gameHTML(){
   let oppSlot,meSlot;
   if(revealed){
     const cd=G.cPlay?def(G.cPlay):null,pd=G.pPlay?def(G.pPlay):null;
-    oppSlot=!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?'<div class="big back t-T reveal"><span>罠を張った</span></div>':bigHTML(cd,'reveal');
-    meSlot=!pd?'<div class="big empty reveal">見送った</div>':bigHTML(pd,'reveal');
+    oppSlot=G.cBurned?bigHTML(def(G.cBurned),'reveal','燃やした'):!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?'<div class="big back t-T reveal"><span>罠を張った</span></div>':bigHTML(cd,'reveal');
+    meSlot=G.pBurned?bigHTML(def(G.pBurned),'reveal','燃やした'):!pd?'<div class="big empty reveal">見送った</div>':bigHTML(pd,'reveal');
   }else{
     oppSlot=`<div class="big empty">${ph==='select'?'相手が選んでいる':''}</div>`;
-    meSlot=G.sel?bigHTML(def(G.sel),'dim'):'<div class="big empty">手札から1枚選ぶ<br>（見送っても良い）</div>';
+    meSlot=G.pBurn?bigHTML(def(G.pBurn),'dim','燃やす'):G.sel?bigHTML(def(G.sel),'dim'):'<div class="big empty">出す札か<br>燃やす札を選ぶ</div>';
   }
 
   let center='';
@@ -765,9 +782,9 @@ function gameHTML(){
     if(lines.length)center+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
   }
   center+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}">${n.t}</div>`).join('');
-  if(ph==='select'&&G.burnMode)center+=`<div class="notice">燃やす札をタップ。その札の数字ぶん（最大${BURN_MAX}）気力が増える。何を燃やしたかは、開けるときに相手にも見える</div>`;
-  else if(ph==='select'&&G.pBurn)center+=`<p class="hintline">「${label(def(G.pBurn))}」を燃やす（気力+${burnVal(def(G.pBurn))}）。もう一度タップで取り消し</p>`;
-  if(!revealed&&G.detail){const d=def(G.detail);center+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d)}</span></div>`}
+  if(ph==='select'&&G.burnMode)center+=`<div class="notice">燃やす札をタップ。燃やすとこのターンは何も出さず、数字ぶん（最大${BURN_MAX}、罠は1）気力が増える。何を燃やしたかは開けるときに相手に見える</div>`;
+  else if(ph==='select'&&G.pBurn)center+=`<p class="hintline">「${label(def(G.pBurn))}」を燃やす（気力+${burnVal(def(G.pBurn))}）。もう一度タップで確定</p>`;
+  if(!revealed&&G.detail){const d=def(G.detail);center+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d)}（次のターンから使える）</span></div>`}
   if(ph==='select'&&G.sel)center+='<p class="hintline">もう一度タップで伏せる</p>';
 
   const hand=P.hand.map(x=>{
@@ -779,14 +796,13 @@ function gameHTML(){
   const ab=ABILITIES[P.ability];let actions='';
   if(ph==='select')actions=`<div class="acts">
       ${ab.phase==='before'&&!P.abilityUsed?`<button class="btn sub" data-act="ability">${ab.name}</button>`:''}
-      <button class="btn sub${G.burnMode?' on':''}" data-act="burn">${G.burnMode?'やめる':'燃やす'}</button>
+      <button class="btn sub${G.burnMode||G.pBurn?' on':''}" data-act="burn">${G.burnMode||G.pBurn?'やめる':'燃やす'}</button>
       <button class="btn ghost" data-act="pass">見送る</button>
-      <button class="btn" data-act="commit" ${G.sel&&!blockReason(P,G.sel)?'':'disabled'}>伏せる</button></div>`;
+      <button class="btn" data-act="commit" ${G.pBurn||(G.sel&&!blockReason(P,G.sel))?'':'disabled'}>伏せる</button></div>`;
   else if(ph==='after'){
     const o=playerAfterOptions();
     actions=`<div class="row">
       ${o.includes('surikae')?'<button class="btn" data-act="after-surikae">すり替える</button>':''}
-      ${o.includes('funbari')?'<button class="btn" data-act="after-funbari">踏ん張る</button>':''}
       <button class="btn ghost" data-act="after-skip">使わずに進む</button></div>`;
   }
   else if(ph==='swap')actions=`<div class="row"><span class="prompt" style="flex:1">差し替えるカードを選ぶ</span><button class="btn ghost" data-act="swap-cancel">やめる</button></div>`;
@@ -825,7 +841,8 @@ function overHTML(){
     <dl class="dl"><dt>手数</dt><dd>${G.turn}手</dd>
       <dt>あなたの能力</dt><dd>${ABILITIES[G.p.ability].name}${G.p.abilityUsed?'（使った）':'（使わなかった）'}</dd>
       <dt>相手の能力</dt><dd>${ABILITIES[G.c.ability].name}${G.c.abilityUsed?'（使った）':'（使わなかった）'}</dd>
-      <dt>相手のデッキ</dt><dd>${G.cpuDeck}</dd></dl>
+      <dt>相手のデッキ</dt><dd>${G.cpuDeck}</dd>
+      <dt>相手の性格</dt><dd>${STYLES[G.style].name}（${STYLES[G.style].desc}）</dd></dl>
     <div class="row"><button class="btn" data-act="go-ability">もう一戦</button><button class="btn ghost" data-act="go-menu">メニュー</button></div>
   </div></div>`;
 }
@@ -864,25 +881,23 @@ document.addEventListener('click',e=>{
       const x=G.p.hand.find(i=>String(i.uid)===el.dataset.uid);if(!x)return;
       G.detail=x;
       if(G.phase==='select'){
-        const fix=()=>{if(G.sel&&blockReason(G.p,G.sel))G.sel=null};
-        if(G.burnMode){G.burnMode=false;G.pBurn=G.pBurn===x?null:x;if(G.sel===x)G.sel=null;fix();render();return}
-        if(G.pBurn===x){G.pBurn=null;fix();render();return}
+        if(G.burnMode){G.burnMode=false;G.pBurn=x;G.sel=null;render();return}
+        if(G.pBurn===x){commit(null,x);return}
         if(blockReason(G.p,x)){render();return}
         if(G.sel===x){commit(x);return}
-        G.sel=x;
+        G.sel=x;G.pBurn=null;
       }
       else if(G.phase==='swap'){doSwap(x);return}
       render();break;
     }
     case 'detail':{const x=G&&G.c.hand.find(i=>String(i.uid)===el.dataset.uid);if(x){G.detail=x;render()}break}
     case 'mytrap':if(G.p.trap){G.detail=G.p.trap.inst;render()}break;
-    case 'commit':if(G.sel)commit(G.sel);break;
+    case 'commit':if(G.pBurn)commit(null,G.pBurn);else if(G.sel)commit(G.sel);break;
     case 'pass':commit(null);break;
-    case 'burn':if(G&&G.phase==='select'){G.burnMode=!G.burnMode;render()}break;
+    case 'burn':if(G&&G.phase==='select'){if(G.pBurn){G.pBurn=null;G.burnMode=false}else G.burnMode=!G.burnMode;render()}break;
     case 'ability':useAbility();break;
     case 'after-surikae':G.phase='swap';render();break;
     case 'swap-cancel':G.phase='after';render();break;
-    case 'after-funbari':G.p.funbari=true;G.p.abilityUsed=true;log('踏ん張り：押されなかった');G.res=outcome(G.p,G.c,G.pPlay?def(G.pPlay):null,G.cPlay?def(G.cPlay):null);cpuAfter();resolve();break;
     case 'after-skip':cpuAfter();resolve();break;
     case 'next':if(G&&G.phase==='result'&&!G.over)startTurn();break;
     case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';render()}break;

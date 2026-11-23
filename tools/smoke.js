@@ -23,7 +23,7 @@ const {chromium}=require('playwright');
       if(ph==='select'){
         if(Math.random()<0.15&&await p.$('[data-act=ability]'))await p.click('[data-act=ability]');
         const hs=await p.$$('[data-act=hand]:not(.off)');
-        if(Math.random()<0.3){await p.click('[data-act=burn]');const all=await p.$$('[data-act=hand]');if(all.length)await all[Math.floor(Math.random()*all.length)].click();}
+        if(Math.random()<0.3){await p.click('[data-act=burn]');const all=await p.$$('[data-act=hand]');if(all.length){await all[Math.floor(Math.random()*all.length)].click();if(Math.random()<0.6){await p.click('[data-act=commit]');continue}}}
         const hs2=await p.$$('[data-act=hand]:not(.off)');
         if(!hs2.length||Math.random()<0.1){await p.click('[data-act=pass]');continue}
         const idx=Math.floor(Math.random()*hs2.length);
@@ -31,7 +31,7 @@ const {chromium}=require('playwright');
         const again=(await p.$$('.card.sel'))[0];
         if(again)await again.click();
       }else if(ph==='after'){
-        const o=(await p.$('[data-act=after-surikae]'))||(await p.$('[data-act=after-funbari]'));
+        const o=await p.$('[data-act=after-surikae]');
         await ((o&&Math.random()<0.6)?o:await p.$('[data-act=after-skip]')).click();
       }else if(ph==='swap'){
         const hs=await p.$$('[data-act=hand]:not(.off)');
