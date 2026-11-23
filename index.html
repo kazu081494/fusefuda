@@ -329,6 +329,32 @@ details.opp-info .dl{margin-top:8px}
 .pro-text h1{font-family:var(--font-display);font-weight:800;font-size:clamp(40px,13vw,60px);letter-spacing:.12em;color:#fff;margin-top:14px;opacity:0;animation:proline 1.6s ease forwards;text-shadow:0 0 20px rgba(226,178,71,.6)}
 @keyframes proline{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .pro-skip{position:absolute;bottom:max(20px,env(safe-area-inset-bottom,0px));font-size:12px;color:var(--muted)}
+.story-btn{background:linear-gradient(135deg,#e2b247,#c9892a)}
+.story{position:fixed;inset:0;z-index:30;background:linear-gradient(#05070b,#0c111b 60%,#121924);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px))}
+.story[data-act]{cursor:pointer}
+.story .pro-text p.small{font-family:var(--font-body);font-size:13px;color:var(--muted)}
+.moon.clouded{filter:brightness(.45);box-shadow:none}
+.story-round{display:flex;flex-direction:column;gap:14px;padding-block:20px}
+.lanterns{display:flex;justify-content:center;gap:10px;align-items:center}
+.lanterns i{width:16px;height:22px;border-radius:6px 6px 8px 8px;background:#2a3746;border:1px solid var(--line)}
+.lanterns i.done{background:radial-gradient(circle at 50% 40%,#fff3c4,#e2b247 60%,#a8771f);box-shadow:0 0 10px rgba(226,178,71,.7)}
+.lanterns i.now{border-color:var(--accent);box-shadow:0 0 0 2px rgba(226,178,71,.4)}
+.lanterns i.boss{width:22px;height:30px}
+.lanterns i.boss.now{border-color:#8fb6ff;box-shadow:0 0 12px rgba(143,182,255,.6)}
+.sr-line{font-family:var(--font-display);font-size:16px;text-align:center}
+.sr-foe{display:grid;grid-template-columns:90px minmax(0,1fr);gap:14px;align-items:center;background:linear-gradient(#0c111b,#16202e);border-radius:14px;padding:14px;border:1px solid var(--line)}
+.sr-foe img,.sr-foe svg{width:90px;height:140px;object-fit:contain;fill:#05070b;filter:drop-shadow(0 0 1.5px rgba(226,234,255,.95)) drop-shadow(0 0 8px rgba(170,195,255,.35))}
+.sr-foe.boss{border-color:#8fb6ff;box-shadow:0 0 18px rgba(143,182,255,.25)}
+.sr-foe div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.sr-yomi{font-size:11px;letter-spacing:.2em;color:var(--muted)}
+.sr-foe b{font-family:var(--font-display);font-weight:800;font-size:26px;line-height:1.2}
+.sr-foe q{font-family:var(--font-display);font-size:15px}
+.sr-foe q::before{content:"「"}.sr-foe q::after{content:"」"}
+.rewards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.reward{appearance:none;border:1px solid var(--line);background:var(--table-2);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:6px;cursor:pointer;color:var(--fg);text-align:left}
+.reward:hover,.reward:focus-visible{border-color:var(--accent)}
+.reward .card{cursor:pointer}
+.reward>span{font-size:11.5px;line-height:1.45;color:var(--muted)}
 .trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
 .trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
 .trapfire.theirs{box-shadow:0 0 0 2px var(--lose)}
@@ -558,6 +584,7 @@ for(const t of TYPES){
   for(const e of EFFECTS){if(e[2]!==t)continue;const d={id:e[0],eff:e[0],name:e[1],type:e[2],num:e[3],cost:e[4],short:e[5],text:e[6]};CARDS[d.id]=d;POOL.push(d);}
 }
 const PRESETS=[
+  {key:'boss',name:'月影の主',hidden:true,desc:'',cards:{A30:2,A24:2,D30:2,D24:2,iai:2,kuzushi:2,hangeki:2,kamae:2,kaeshi:2,kagemusha:2}},
   {key:'soku',name:'速攻',desc:'重い攻撃で一気に押す。居合で大振りを返し、崩しで守りを割る',cards:{A30:1,A24:2,A18:2,A13:2,oiuchi:2,kantsu:1,kuzushi:2,iai:2,D8:2,meisou:2,senkou:2}},
   {key:'mamori',name:'守りの城',desc:'受け止めて跳ね返す。構えで空振りの損を消し、残心で反撃につなぐ',cards:{D30:1,D24:1,D18:2,hangeki:2,ukenagashi:2,fuuji:1,zanshin:2,kamae:2,tessen:2,A18:2,A13:1,kaeshi:2}},
   {key:'wana',name:'罠師',desc:'罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:2,kaeshi:1,dorobou:2,machibuse:2,ashikase:1,naruko:2,kagemusha:2,kitsunebi:2,A18:2,A13:2,meisou:2}},
@@ -588,6 +615,7 @@ const OUGI={
 };
 
 /* 今宵の相手：名前と台詞のある侍。性格・型・奥義・デッキがひとまとまりになっている */
+const BOSS={name:'月影の主',yomi:'つきかげのぬし',style:'shincho',kata:'yanagi',ougi:'issen',deck:'boss',intro:'よくぞここまで。月が見ている',win:'まだ月は満ちぬ',lose:'……新しき名を、欄干に刻め'};
 const CHARS=[
   {name:'赤鬼の権三',yomi:'あかおにのごんぞう',style:'kyoki',kata:'gou',ougi:'gougeki',deck:'soku',intro:'力こそすべて。受けてみよ',win:'軽い、軽いわ',lose:'……見事。次は負けぬ'},
   {name:'柳の小夜',yomi:'やなぎのさよ',style:'shincho',kata:'yanagi',ougi:'uke',deck:'mamori',intro:'押せば引く。それだけのこと',win:'力みすぎよ',lose:'流しきれなかった……'},
@@ -833,6 +861,85 @@ function applyTut(){
 }
 const tutCpu=()=>{const t=tutStep(),C=G.c;const find=id=>id&&C.hand.find(i=>i.id===id)||null;return t&&t.cpu?{play:find(t.cpu.play),burn:find(t.cpu.burn)}:{play:null,burn:null}};
 
+/* ---------- 物語：勝ち抜き ----------
+   一夜に5人の侍を抜き、最後に月影の主と戦う。負けたらその夜は終わり。勝つたびに褒美の札を1枚デッキに足せる */
+const KEY_STORY='fusefuda.story.v1';
+const STORY_N=5;// 月影の主の前に戦う人数
+const KAN=['一','二','三','四','五','六'];
+let story=store.get(KEY_STORY,null);
+let storyRec=Object.assign({best:0,clears:0,runs:0},store.get('fusefuda.storyrec.v1',{}));
+const saveStory=()=>store.set(KEY_STORY,story);
+const saveStoryRec=()=>store.set('fusefuda.storyrec.v1',storyRec);
+const storyFoe=i=>i>=STORY_N?BOSS:CHARS.find(c=>c.name===story.order[i]);
+function storyBegin(kata,ougi){
+  const order=shuffle(CHARS.map(c=>c.name)).slice(0,STORY_N);
+  story={active:true,round:0,order,kata,ougi,extra:{},rewards:null};storyRec.runs++;saveStoryRec();saveStory();
+  screen='story-intro';render();
+}
+function storyFight(){
+  const i=story.round,boss=i>=STORY_N;
+  clearSave();bgmStart();
+  startGame(story.kata,story.ougi,{story:true,char:storyFoe(i),extra:story.extra,diff:boss?1:Math.min(.85,i*.2),cBonus:boss?15:i*3});
+}
+/* 試合が終わったら物語を進める（勝ち抜いた人数を記録） */
+function storyAfterMatch(){
+  if(!G||!G.story||!story||!story.active||G.storyDone)return;G.storyDone=true;
+  if(G.over.winner==='p'){
+    storyRec.best=Math.max(storyRec.best,story.round+1);
+    if(story.round>=STORY_N){storyRec.clears++;story.active=false;story.result='clear'}
+    else{story.round++;story.rewards=rewardChoices()}
+  }else{story.active=false;story.result='lose'}
+  saveStoryRec();saveStory();
+}
+function rewardChoices(){
+  const pool=POOL.filter(d=>d.eff||d.num>=18),out=[];
+  while(out.length<3){const d=rnd(pool);if(!out.includes(d.id))out.push(d.id)}
+  return out;
+}
+const STORY_INTRO=['今宵、あなたは月見橋に立つ。','五人の侍を抜けば、欄干に名が刻まれるという。','そして、その先に――月影の主が待つ。'];
+function lanterns(){
+  return `<div class="lanterns" aria-label="${story.round}人目まで進んだ">${[...Array(STORY_N+1)].map((_,i)=>`<i class="${i<story.round?'done':i===story.round&&story.active?'now':''}${i===STORY_N?' boss':''}" title="${i===STORY_N?'月影の主':KAN[i]+'人目'}"></i>`).join('')}</div>`;
+}
+function storyScreenHTML(){
+  if(screen==='story-intro')return `<div class="story" data-act="story-next">
+    <div class="pro-sky" aria-hidden="true"><i class="moon"></i></div>
+    <div class="pro-text">${STORY_INTRO.map((l,i)=>`<p style="animation-delay:${.3+i*1}s">${l}</p>`).join('')}</div>
+    <p class="pro-skip">タップで進む</p></div>`;
+  if(screen==='story-round'){
+    const i=story.round,foe=storyFoe(i),boss=i>=STORY_N;
+    return `<div class="story-round">
+      ${lanterns()}
+      <p class="sr-line">${boss?'灯籠の火が、青く揺れた。最後の相手――':`${KAN[i]}人目の相手が、橋の向こうから歩いてくる。`}</p>
+      <div class="sr-foe${boss?' boss':''}">
+        ${ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100" aria-hidden="true"><use href="#samurai"/></svg>'}
+        <div><span class="sr-yomi">${foe.yomi}</span><b>${foe.name}</b><q>${foe.intro}</q>
+        <p class="small muted">${KATA[foe.kata].name}の型・性格：${STYLES[foe.style].name}・奥義は秘密</p></div>
+      </div>
+      ${Object.keys(story.extra).length?`<p class="small muted">褒美の札：${Object.entries(story.extra).map(([id,c])=>label(CARDS[id])+(c>1?`×${c}`:'')).join('、')}</p>`:''}
+      <button class="btn wide" data-act="story-fight">挑む</button>
+      <button class="btn ghost wide" data-act="story-quit">今宵はここまでにする</button>
+    </div>`;
+  }
+  if(screen==='story-reward')return `<div class="story-round">
+      ${lanterns()}
+      <p class="sr-line">勝った。褒美に、札を1枚選んでデッキに足せる（今宵のあいだだけ）。</p>
+      <div class="rewards">${story.rewards.map(id=>`<button class="reward" data-act="story-pick" data-id="${id}"><div class="card t-${CARDS[id].type}" aria-hidden="true">${faceHTML(CARDS[id])}</div><span>${CARDS[id].eff?CARDS[id].text:'効果なし'}</span></button>`).join('')}</div>
+      <button class="btn ghost wide" data-act="story-pick" data-id="">いらない</button>
+    </div>`;
+  if(screen==='story-end'){
+    const clear=story&&story.result==='clear',n=clear?STORY_N+1:(story?story.round:0);
+    const lines=clear?['月影の主が、静かに刀を納めた。','「……新しき名を、欄干に刻め」','その夜、月見橋の欄干に、あなたの名が刻まれた。']:['月が、雲に隠れた。','今宵の勝ち抜きは、ここまで。'];
+    return `<div class="story" ${''}>
+      <div class="pro-sky" aria-hidden="true"><i class="moon${clear?'':' clouded'}"></i></div>
+      <div class="pro-text">${lines.map((l,i)=>`<p style="animation-delay:${.3+i*1}s">${l}</p>`).join('')}
+        <h1 style="animation-delay:${.6+lines.length}s">${clear?'月下の覇者':`${n}人抜き`}</h1>
+        <p class="small" style="animation-delay:${1+lines.length}s">最高 ${storyRec.best>STORY_N?'月下の覇者':storyRec.best+'人抜き'}・覇者 ${storyRec.clears}回</p></div>
+      <div class="row" style="position:relative;z-index:1;margin-top:20px;width:min(100%,360px)"><button class="btn" data-act="story-again">もう一夜</button><button class="btn ghost" data-act="go-menu">メニュー</button></div>
+    </div>`;
+  }
+  return '';
+}
+
 /* ---------- 戦績と段位（この端末の中だけ） ----------
    勝ち数で段位が上がり、見た目（札の裏・舞台の月）が解放される。強さは変わらない */
 const KEY_REC='fusefuda.record.v1';
@@ -877,14 +984,17 @@ function resumeGame(){
   G.phase='select';G.revealAt=0;render();startTimer();
   if(!G.cPre)G.cpuT=setTimeout(cpuMaybeBefore,900+Math.random()*3500);
 }
-function startGame(kata,ougi){
+/* opts.char：相手を決める（物語）。opts.extra：デッキに足す札。opts.diff：相手の強さ（0〜1）。opts.cBonus：相手の気力の上乗せ */
+function startGame(kata,ougi,opts={}){
   clearTimers();
   // 今宵の相手：名前のある侍を1人選ぶ（前の試合と同じ人は避ける）
-  let ch=rnd(CHARS);if(G&&G.char&&CHARS.length>1)while(ch.name===G.char.name)ch=rnd(CHARS);
+  let ch=opts.char||rnd(CHARS);if(!opts.char&&G&&G.char&&CHARS.length>1)while(ch.name===G.char.name)ch=rnd(CHARS);
   const pre=PRESETS.find(p=>p.key===ch.deck)||rnd(PRESETS);
-  G={char:ch,introAt:Date.now(),p:newSide(deck,kata,ougi),c:newSide(pre.cards,ch.kata,ch.ougi),cpuDeck:pre.name,style:ch.style,
+  const myDeck={...deck};for(const [id,c] of Object.entries(opts.extra||{}))myDeck[id]=(myDeck[id]||0)+c;
+  G={char:ch,introAt:Date.now(),story:!!opts.story,diff:opts.diff||0,p:newSide(myDeck,kata,ougi),c:newSide(pre.cards,ch.kata,ch.ougi),cpuDeck:pre.name,style:ch.style,
     gauge:0,prevGauge:0,revealAt:0,finaleUntil:0,st:{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0},combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
+  if(opts.cBonus)G.c.energy+=opts.cBonus;
   screen='game';startTurn();
 }
 function startTurn(){
@@ -1240,7 +1350,7 @@ function resolve(){
   [...r.notes,...msgs].forEach(m=>log(m));
   if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:G.gauge>0?'相手を橋のたもとまで押し込んだ':'橋のたもとまで押し込まれた'};
   G.phase='result';
-  if(G.over){clearSave();recordResult();startFinale()}else saveGame();
+  if(G.over){clearSave();recordResult();storyAfterMatch();startFinale()}else saveGame();
   if(!G.over){
     const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
     // 結果を見る時間：短めを基本に、説明が多いほど少し長く。メニューの「結果のあと進む速さ」で倍率を変える
@@ -1259,7 +1369,7 @@ function startFinale(){
 function finishByGauge(reason){
   clearTimers();
   G.over={winner:G.gauge>0?'p':G.gauge<0?'c':null,reason};
-  G.phase='result';clearSave();recordResult();startFinale();G.revealAt=Date.now()-2000;render();
+  G.phase='result';clearSave();recordResult();storyAfterMatch();startFinale();G.revealAt=Date.now()-2000;render();
   const ac=audio();if(ac){const t=ac.currentTime+.9;SFX.taiko(ac,t);SFX.taiko(ac,t+.35,.8);SFX.taiko(ac,t+.6,1.1)}
 }
 
@@ -1317,7 +1427,7 @@ function cpuChoose(peek){
     if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:-0.5;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;
     combos.push({play:o,burn:null,ev:ev+styleBias(d.type,d)});
   }
-  const temp=peek!==undefined?0.5:G.pUsedNow?1.6:1.1;
+  const temp=(peek!==undefined?0.5:G.pUsedNow?1.6:1.1)*(1-(G.diff||0)*.55);
   const mx=Math.max(...combos.map(c=>c.ev)),ex=combos.map(c=>Math.exp((c.ev-mx)/temp)),tot=ex.reduce((a,b)=>a+b,0);
   let u=Math.random()*tot;for(let i=0;i<combos.length;i++){u-=ex[i];if(u<=0)return combos[i]}
   return combos[combos.length-1];
@@ -1368,7 +1478,8 @@ const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${c
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
 function render(){
   $app.className=(screen==='game'?'fit ':'')+`back-${settings.back||'shoji'} moon-${settings.moon||'full'}`;
-  if(screen==='prologue')$app.innerHTML=prologueHTML();
+  if(screen.startsWith('story-'))$app.innerHTML=storyScreenHTML();
+  else if(screen==='prologue')$app.innerHTML=prologueHTML();
   else if(screen==='menu')$app.innerHTML=menuHTML();
   else if(screen==='school')$app.innerHTML=schoolHTML();
   else if(screen==='builder')$app.innerHTML=builderHTML();
@@ -1381,6 +1492,7 @@ function recordPanel(){
   const chip=(x,kind)=>unlocked(x)?`<button class="chip${settings[kind]===x.key?' on':''}" data-act="look" data-kind="${kind}" data-key="${x.key}">${x.name}</button>`:`<span class="chip locked">${x.name}（${RANKS[x.rank][1]}で解放）</span>`;
   return `<div class="panel">
     <div class="label">段位と戦績</div>
+    <p class="small muted">物語：最高 ${storyRec.best>STORY_N?'月下の覇者':storyRec.best+'人抜き'}・月下の覇者 ${storyRec.clears}回</p>
     <div class="rank"><b>${RANKS[i][1]}</b><span class="muted small">${next?`${next[1]}まで あと${next[0]-rec.w}勝`:'最高位'}</span></div>
     <p class="small muted">${rec.w}勝 ${rec.l}敗${rec.d?` ${rec.d}分`:''}・連勝 ${rec.streak}（最高 ${rec.best}）</p>
     <div class="label">札の裏</div><div class="chips">${BACKS.map(x=>chip(x,'back')).join('')}</div>
@@ -1405,6 +1517,7 @@ function menuHTML(){
   return `<div class="title"><div class="lamp" aria-hidden="true">${ART_IMG.has('T')?'<img src="art/cards/T.png" alt="">':'<svg viewBox="0 0 100 100"><use href="#sil-T"/></svg>'}</div><h1>月花乱舞</h1><p class="reading">げっからんぶ</p>
     <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
     <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>は防ぎきれば跳ね返す。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と気力が、<b>見送る</b>と札が溜まる。</p></div>
+    <button class="btn wide story-btn" data-act="${story&&story.active?'story-continue':'story-new'}" ${st.ok?'':'disabled'}>${story&&story.active?`物語の続き<small class="resume-sub">${story.round>=STORY_N?'月影の主':KAN[story.round]+'人目'}・${KATA[story.kata].name}の型と${OUGI[story.ougi].name}</small>`:'物語：月下の勝ち抜き<small class="resume-sub">五人を抜き、月影の主に挑む</small>'}</button>
     ${sv?`<button class="btn wide" data-act="resume">続きから<small class="resume-sub">${sv.turn}手目・${KATA[sv.p.kata].name}の型と${OUGI[sv.p.ougi].name}・${sv.gauge>0?`勝ちまで あと${GOAL-sv.gauge}歩`:sv.gauge<0?`負けまで あと${GOAL+sv.gauge}歩`:'互角'}</small></button>`:''}
     <button class="btn wide${sv?' ghost':''}" data-act="go-school" ${st.ok?'':'disabled'}>${sv?'新しく対戦する（続きは消える）':'対戦する'}</button>
     ${recordPanel()}
@@ -1426,16 +1539,17 @@ function menuHTML(){
     <button class="btn ghost" data-act="go-rules">ルールを読む</button>`;
 }
 let pick={kata:settings.kata in KATA?settings.kata:null,ougi:settings.ougi in OUGI?settings.ougi:null};
+let pickFor='duel';
 function schoolHTML(){
   const opt=(kind,k,o)=>`<button class="abil${pick[kind]===k?' picked':''}" data-act="pick-${kind}" data-k="${k}" aria-pressed="${pick[kind]===k}"><b>${o.name}</b><span class="t">${o.text}</span></button>`;
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
-    <h2 style="font-size:20px">型と奥義を選ぶ</h2>
+    <h2 style="font-size:20px">型と奥義を選ぶ</h2>${pickFor==='story'?'<p class="small" style="color:var(--accent)">物語：今宵のあいだ、この型と奥義で戦い抜く</p>':''}
     <p class="small muted"><b>型</b>はいつも効く小さな特性で、相手にも見えている。<b>奥義</b>は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。型と奥義は自由に組み合わせられる。相手（CPU）も1つずつ選んでいる。</p>
     <h3 class="pickh">型（相手に見える）</h3>
     ${Object.entries(KATA).map(([k,o])=>opt('kata',k,o)).join('')}
     <h3 class="pickh">奥義（相手には秘密）</h3>
     ${Object.entries(OUGI).map(([k,o])=>opt('ougi',k,o)).join('')}
-    <div class="startbar"><button class="btn wide" data-act="start-game" ${pick.kata&&pick.ougi?'':'disabled'}>${pick.kata&&pick.ougi?`${KATA[pick.kata].name}の型・${OUGI[pick.ougi].name}で対戦する`:'型と奥義を1つずつ選ぶ'}</button></div>`;
+    <div class="startbar"><button class="btn wide" data-act="${pickFor==='story'?'story-start':'start-game'}" ${pick.kata&&pick.ougi?'':'disabled'}>${pick.kata&&pick.ougi?`${KATA[pick.kata].name}の型・${OUGI[pick.ougi].name}で${pickFor==='story'?'今宵に挑む':'対戦'}する`:'型と奥義を1つずつ選ぶ'}</button></div>`;
 }
 function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
@@ -1482,7 +1596,7 @@ function builderHTML(){
     <p class="small" style="color:${st.ok?'var(--win)':'var(--lose)'}">${st.ok?'このデッキで対戦できます（自動で保存）':st.errs.join('／')}</p>
   </div>
   <div class="panel"><div class="label">見本のデッキから始める</div>
-    <div class="chips">${PRESETS.map(p=>`<button class="chip" data-act="preset" data-key="${p.key}">${p.name}</button>`).join('')}<button class="chip" data-act="clear">全部外す</button></div>
+    <div class="chips">${PRESETS.filter(p=>!p.hidden).map(p=>`<button class="chip" data-act="preset" data-key="${p.key}">${p.name}</button>`).join('')}<button class="chip" data-act="clear">全部外す</button></div>
     <p class="small muted">${builderPreset?builderPreset.desc:'見本を選ぶと、いまのデッキと入れ替わります'}</p>
   </div>
   ${groups}`;
@@ -1679,7 +1793,8 @@ function overHTML(){
         <dt>性格</dt><dd>${STYLES[G.style].name}（${STYLES[G.style].desc}）</dd>
         <dt>あなた</dt><dd>${KATA[G.p.kata].name}の型・奥義「${OUGI[G.p.ougi].name}」</dd>
       </dl></details>
-    <div class="row"><button class="btn" data-act="go-school">もう一戦</button><button class="btn ghost" data-act="go-menu">メニュー</button></div>
+    ${G.story?`<div class="row">${w==='p'?(story&&story.active?`<button class="btn" data-act="story-reward">褒美を選ぶ（${KAN[story.round-1]}人抜き）</button>`:`<button class="btn" data-act="story-endscreen">結末へ</button>`):`<button class="btn" data-act="story-endscreen">今宵の終わり</button>`}</div>`
+      :`<div class="row"><button class="btn" data-act="go-school">もう一戦</button><button class="btn ghost" data-act="go-menu">メニュー</button></div>`}
   </div></div>`;
 }
 function modalHTML(){
@@ -1723,10 +1838,20 @@ document.addEventListener('click',e=>{
     case 'tutorial':bgmStart();startTutorial();window.scrollTo(0,0);break;
     case 'resume':bgmStart();resumeGame();window.scrollTo(0,0);break;
     case 'go-menu':bgmStop();clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
-    case 'go-school':bgmStop();clearTimers();screen='school';G=null;render();window.scrollTo(0,0);break;
+    case 'go-school':pickFor='duel';bgmStop();clearTimers();screen='school';G=null;render();window.scrollTo(0,0);break;
     case 'go-builder':screen='builder';builderPreset=null;render();window.scrollTo(0,0);break;
     case 'go-rules':screen='rules';render();break;
     case 'pick-kata':case 'pick-ougi':{const kind=act.slice(5);pick[kind]=el.dataset.k;settings[kind]=el.dataset.k;store.set(KEY_SET,settings);render();break}
+    case 'story-new':pickFor='story';screen='school';G=null;render();window.scrollTo(0,0);break;
+    case 'story-start':if(pick.kata&&pick.ougi){pickFor='duel';storyBegin(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
+    case 'story-next':screen='story-round';render();break;
+    case 'story-continue':{const sv=readSave();if(sv&&sv.story){bgmStart();resumeGame()}else{screen=story.rewards?'story-reward':'story-round';render()}window.scrollTo(0,0);break}
+    case 'story-fight':storyFight();window.scrollTo(0,0);break;
+    case 'story-reward':bgmStop();clearTimers();screen='story-reward';render();window.scrollTo(0,0);break;
+    case 'story-pick':{const id=el.dataset.id;if(id&&CARDS[id])story.extra[id]=(story.extra[id]||0)+1;story.rewards=null;saveStory();screen='story-round';render();window.scrollTo(0,0);break}
+    case 'story-endscreen':bgmStop();clearTimers();screen='story-end';render();window.scrollTo(0,0);break;
+    case 'story-quit':story.active=false;story.result='lose';saveStory();screen='story-end';render();break;
+    case 'story-again':pickFor='story';screen='school';G=null;render();window.scrollTo(0,0);break;
     case 'start-game':if(pick.kata&&pick.ougi){clearSave();bgmStart();startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
     case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
     case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
@@ -1753,7 +1878,7 @@ document.addEventListener('click',e=>{
     case 'burn':if(G&&G.phase==='select'){if(G.pBurn){G.pBurn=null;G.burnMode=false}else G.burnMode=!G.burnMode;render()}break;
     case 'ougi':useOugi();break;
     case 'next':if(G&&G.phase==='result'&&!G.over){if(G.tut!=null)G.tut++;startTurn()}break;
-    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();recordResult();render()}break;
+    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();recordResult();storyAfterMatch();render()}break;
     case 'discard':G.modal=el.dataset.who;render();break;
     case 'open-log':G.modal='log';render();break;
     case 'sound':{
