@@ -373,7 +373,14 @@ details.opp-info .dl{margin-top:8px}
 .detail b{display:block;font-size:12.5px}
 .hintline{font-size:11.5px;color:var(--muted)}
 
-.hand{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 24px) / 5);gap:6px;overflow-x:auto;padding:9px 0 9px;scrollbar-width:thin}
+.hand{display:grid;grid-template-columns:repeat(var(--n,5),minmax(0,1fr));gap:6px;padding:9px 0 9px}
+/* 手札が多いときは札を細くして、横一列に収める（スクロールしない）。7枚以上は効果の文を隠す（タップで説明が出る） */
+.hand.many{gap:4px}
+.hand.many .card{padding:20px 3px 5px}
+.hand.many .card .cname{font-size:10.5px}
+.hand.many .card .cnum{font-size:16px}
+.hand.lots .card .ctext{display:none}
+.hand.lots .card .cname{font-size:9.5px}
 .actions{display:flex;flex-direction:column;gap:6px;flex:none}
 .acts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
 .acts .btn{padding:8px 4px;font-size:14px}
@@ -609,7 +616,7 @@ const OUGI={
   fudou:{name:'不動',text:'このターン、押し込まれない'},
   issen:{name:'一閃',text:'このターン、押し込めたら、さらに15歩押し込む'},
   shingan:{name:'心眼',text:'相手の今の手札を全部見る。見た札は、相手が出すか捨てるまで見えたまま'},
-  tensei:{name:'転生',text:'手札の素の攻撃と防御を入れ替える（攻撃3は防御3に、防御3は攻撃3に）。効果のある札はそのまま'},
+  tensei:{name:'転生',text:'手札の攻撃をすべて防御に、防御をすべて攻撃に変える。効果のある札も、数字の近い素の札になる（反撃（防御13）は攻撃13に）'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
   genwaku:{name:'幻惑',text:'このターン、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
 };
@@ -1040,7 +1047,9 @@ const actKind=ch=>ch.play&&def(ch.play).type==='A'?'攻撃してくる':'攻撃�
 /* 使った瞬間に効く奥義。返り値は使った本人向けの説明 */
 function ougiNow(me,op){
   if(me.ougi==='tensei'){
-    let n=0;for(const i of me.hand){const d=def(i);if(!d.eff&&(d.type==='A'||d.type==='D')){i.id=(d.type==='A'?'D':'A')+d.num;n++}}
+    // 効果のある札は、数字のいちばん近い素の札に（同じ近さなら小さいほう）
+    const near=n=>PLAIN.reduce((b,[m])=>Math.abs(m-n)<Math.abs(b-n)?m:b,PLAIN[0][0]);
+    let n=0;for(const i of me.hand){const d=def(i);if(d.type==='A'||d.type==='D'){i.id=(d.type==='A'?'D':'A')+near(d.num);n++}}
     return `転生：手札の${n}枚の攻撃と防御が入れ替わった`;
   }
   if(me.ougi==='shikabane'){
@@ -1747,7 +1756,7 @@ function gameHTML(){
     <section class="info" aria-live="polite">${info}</section>
     <section class="side" aria-label="あなた">
       <div class="side-head"><div class="who-line"><h2>あなた</h2>${energyHTML(P)}</div>${sideChips(P,true)}</div>
-      <div class="hand">${hand}</div>
+      <div class="hand${P.hand.length>=6?' many':''}${P.hand.length>=7?' lots':''}" style="--n:${Math.max(5,P.hand.length)}">${hand}</div>
       <div class="actions">${actions}</div>
     </section>
     ${G.over&&!finale?overHTML():''}${G.modal?modalHTML():''}`;
