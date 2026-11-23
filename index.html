@@ -538,6 +538,8 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   <symbol id="art-naruko" viewBox="0 0 100 100"><path d="M0 18 Q50 34 100 18 L100 22 Q50 38 0 22Z"/><rect x="14" y="28" width="15" height="30" rx="2"/><rect x="17" y="58" width="2.5" height="12"/><rect x="23" y="58" width="2.5" height="12"/><rect x="42" y="32" width="15" height="30" rx="2"/><rect x="45" y="62" width="2.5" height="12"/><rect x="51" y="62" width="2.5" height="12"/><rect x="70" y="28" width="15" height="30" rx="2"/><rect x="73" y="58" width="2.5" height="12"/><rect x="79" y="58" width="2.5" height="12"/></symbol>
   <symbol id="art-kagemusha" viewBox="0 0 100 100"><use href="#samurai" x="0" y="6" width="56" height="94" opacity=".45"/><use href="#samurai" x="34" y="0" width="60" height="100"/></symbol>
   <symbol id="art-kitsunebi" viewBox="0 0 100 100"><use href="#fx-flame" x="4" y="40" width="40" height="40"/><use href="#fx-flame" x="40" y="10" width="54" height="54"/><use href="#fx-flame" x="50" y="64" width="30" height="30"/></symbol>
+  <symbol id="art-hiuchi" viewBox="0 0 100 100"><path d="M14 92 L22 62 L46 52 L66 60 L72 84 L52 96 Z"/><path d="M56 40 Q70 30 88 34 L90 42 Q74 40 62 48 Z"/><path d="M48 46 L40 22 L46 44 Z M52 44 L58 16 L55 44 Z M46 48 L26 32 L44 49 Z M58 46 L78 18 L60 47 Z"/><circle cx="34" cy="16" r="2.5"/><circle cx="70" cy="10" r="2"/><path d="M28 74 Q40 66 54 72" stroke="var(--lamp-2)" stroke-width="2" fill="none" opacity=".5"/></symbol>
+  <symbol id="art-okuribi" viewBox="0 0 100 100"><path d="M18 74 L82 74 L72 88 L28 88 Z"/><rect x="46" y="88" width="8" height="8"/><rect x="34" y="95" width="32" height="4" rx="2"/><use href="#fx-flame" x="26" y="16" width="48" height="60"/><path d="M50 14 Q44 6 50 0 Q52 8 56 4 Q56 12 50 14 Z" opacity=".6"/></symbol>
 </defs></svg>
 <div id="app"></div>
 
@@ -579,6 +581,8 @@ const EFFECTS=[
   ['kamae','構え','D',13,15,'相手が攻撃しなければ、気力が戻る','相手が攻撃してこなかったら、払った気力が戻る'],
   ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を20得る','開けたとき、自分から5歩下がって気力を20得る（上限50）。不動や幻惑でも打ち消せない'],
   ['tessen','鉄扇','D',18,15,'効果なし（数字のわりに安い）','効果は無いが、防御18を気力15で出せる'],
+  ['hiuchi','火打石','D',4,0,'燃やすと気力+10、札を1枚引く','燃やすと気力が10増え、さらに札を1枚引く（燃やしても手札が減らない）。出せばふつうの防御4'],
+  ['okuribi','送り火','D',8,10,'燃やすと、相手の気力を5減らす','燃やすと気力が10増え、さらに相手の気力を5減らす。出せばふつうの防御8'],
   ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','張った次のターンから効く。相手が攻撃してきたら、押される量を15減らして捨てる'],
   ['kaeshi','返し罠','T',null,15,'相手が18以上で攻撃したら、跳ね返す','張った次のターンから効く。相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
   ['dorobou','気力泥棒','T',null,5,'相手が攻撃したら、気力を15奪う','張った次のターンから効く。相手が攻撃してきたら、相手の気力を15まで奪って自分のものにする'],
@@ -598,9 +602,9 @@ for(const t of TYPES){
 const PRESETS=[
   {key:'boss',name:'月影の主',hidden:true,desc:'',cards:{A30:2,A24:2,D30:2,D24:2,iai:2,kuzushi:2,hangeki:2,kamae:2,kaeshi:2,kagemusha:2}},
   {key:'soku',name:'速攻',desc:'重い攻撃で一気に押す。居合で大振りを返し、崩しで守りを割る',cards:{A30:1,A24:2,A18:2,A13:2,oiuchi:2,kantsu:1,kuzushi:2,iai:2,D8:2,meisou:2,senkou:2}},
-  {key:'mamori',name:'守りの城',desc:'受け止めて跳ね返す。構えで空振りの損を消し、残心で反撃につなぐ',cards:{D30:1,D24:1,D18:2,hangeki:2,ukenagashi:2,fuuji:1,zanshin:2,kamae:2,tessen:2,A18:2,A13:1,kaeshi:2}},
+  {key:'mamori',name:'守りの城',desc:'受け止めて跳ね返す。構えで空振りの損を消し、残心で反撃につなぐ',cards:{D30:1,D24:1,D18:2,hangeki:2,ukenagashi:2,okuribi:1,zanshin:2,kamae:2,tessen:2,A18:2,A13:1,kaeshi:2}},
   {key:'wana',name:'罠師',desc:'罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:2,kaeshi:1,dorobou:2,machibuse:2,ashikase:1,naruko:2,kagemusha:2,kitsunebi:2,A18:2,A13:2,meisou:2}},
-  {key:'kin',name:'均衡',desc:'攻守と罠を少しずつ。陽動と火消しで読みを外す',cards:{A24:2,A13:2,D18:2,D8:1,hikeshi:2,youdou:2,yokoku:1,teisatsu:1,hangeki:1,kakuran:1,mikiri:1,meisou:1,hikiashi:1,otoshiana:1,machibuse:1}},
+  {key:'kin',name:'均衡',desc:'攻守と罠を少しずつ。陽動と火消しで読みを外す',cards:{A24:2,A13:2,D18:2,D8:1,hikeshi:2,youdou:2,yokoku:1,hiuchi:1,hangeki:1,kakuran:1,mikiri:1,meisou:1,hikiashi:1,otoshiana:1,machibuse:1}},
 ];
 /* 流派：型（いつも効く。中身は相手に秘密だが、戦い方ににじみ出る）と奥義（1試合に1回、伏せる前に使う） */
 /* 型：いつも効く小さな特性。相手にも見えている（戦い方の色） */
@@ -678,7 +682,7 @@ const def=i=>CARDS[i.id];
 const label=d=>d.type==='T'?`${d.name}（罠）`:d.eff?`${d.name}（${TY[d.type].name}${d.num}）`:`${TY[d.type].name}${d.num}`;
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
 /* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
-const burnVal=(d,s)=>(d.eff==='senkou'?15:d.num==null?5:Math.min(BURN_MAX,Math.ceil(d.num/5)*5))+(s&&s.kata==='homura'?5:0);
+const burnVal=(d,s)=>(d.eff==='senkou'?15:d.eff==='hiuchi'?10:d.num==null?5:Math.min(BURN_MAX,Math.ceil(d.num/5)*5))+(s&&s.kata==='homura'?5:0);
 /* 罠を置ける数：影の型なら2 */
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
@@ -1343,6 +1347,12 @@ function resolve(){
   if(r.fx.narukoP){P.energy=clampE(P.energy+C.burnGain);C.burnGain=0;G.cGain=0}
   if(r.fx.narukoC){C.energy=clampE(C.energy+P.burnGain);P.burnGain=0;G.pGain=0}
   for(const s of [P,C])if(s.burnGain){s.energy=clampE(s.energy+s.burnGain);s.burnGain=0}
+  // 燃やしたときの効果：火打石は1枚引く、送り火は相手の気力を5減らす
+  for(const [me,op,b,who] of [[P,C,G.pBurned,'あなた'],[C,P,G.cBurned,'相手']]){
+    if(!b)continue;const e=def(b).eff;
+    if(e==='hiuchi'&&drawN(me,1))msgs.push(`火打石：${who}は札を1枚引いた`);
+    if(e==='okuribi'){const k=Math.min(op.energy,5);op.energy-=k;msgs.push(`送り火：${who==='あなた'?'相手':'あなた'}の気力を${k}減らした`)}
+  }
   if(r.fx.refundP&&G.pPlay)P.energy=clampE(P.energy+costOf(G.pPlay));
   if(r.fx.refundC&&G.cPlay)C.energy=clampE(C.energy+costOf(G.cPlay));
   if(r.fx.drainP)P.energy=Math.max(0,P.energy-r.fx.drainP);
@@ -1462,7 +1472,7 @@ function cpuChoose(peek){
   for(const o of C.hand){
     const d=def(o);
     const gain=clampE(E+ENERGY_GAIN+burnVal(d,C))-clampE(E+ENERGY_GAIN);
-    combos.push({play:null,burn:o,ev:evOf(null,d)+0.09*gain-0.6-0.016*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)});
+    combos.push({play:null,burn:o,ev:evOf(null,d)+0.09*gain-0.6-0.016*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)+(d.eff==='hiuchi'?0.8:d.eff==='okuribi'?0.5:0)});
     if(blockReason(C,o))continue;
     let ev=evOf(d)-0.044*costOf(o);
     if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:-0.5;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;
@@ -1498,7 +1508,7 @@ function cpuMaybeBefore(){
 
 /* ---------- 描画 ---------- */
 const $app=document.getElementById('app');
-const ARTS=new Set(["oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
+const ARTS=new Set(["hiuchi","okuribi","oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
 /* 札の影：効果の札はその札の絵、素の札は型の絵（刀・唐傘・狐） */
 /* 画像生成AIで作った絵が届いた札の ID（art/cards/<ID>.png。作り方は art/PROMPTS.md）。ここに無い札は下の影絵のまま */
 const ART_IMG=new Set(["teisatsu","kaeshi","samurai","D","T"]);

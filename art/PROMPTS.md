@@ -125,6 +125,8 @@ color, colorful, gray, gradient, shading, ground shadow, text, letters, watermar
 | `kamae` | 構え | 構える侍 | `a samurai holding a katana in a guard stance (chudan no kamae), side view` |
 | `hikiashi` | 退き足 | 足跡 | `two bare footprints walking backward, with a straw sandal (waraji)` |
 | `tessen` | 鉄扇 | 開いた扇 | `an open Japanese iron war fan (tessen), ribs as thin white lines` |
+| `hiuchi` | 火打石 | 火打石と火打金、散る火花 | `a flint stone and a steel striker (hiuchigane) making sparks` |
+| `okuribi` | 送り火 | 台の上で燃える送り火 | `a small ceremonial bonfire (okuribi) burning in a shallow dish on a stand, smoke rising` |
 
 ## 罠の札
 
