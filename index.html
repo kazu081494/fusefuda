@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>伏せ札 試作</title>
+<title>月花乱舞 試作</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
@@ -79,6 +79,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .title .lamp svg{position:absolute;inset:22px;fill:var(--table);opacity:.9}
 .title h1{font-family:var(--font-display);font-weight:400;font-size:clamp(44px,13vw,64px);line-height:1;letter-spacing:.04em}
 .title .sub{color:var(--muted)}
+.title .yomi{font-size:12px;letter-spacing:.3em;color:var(--muted);margin-top:-2px}
 .tri{font-size:13px;color:var(--muted)}
 .tri b{font-weight:700}
 .tri .a{color:var(--atk)}.tri .d{color:var(--def)}.tri .t{color:#9fd0a4}
@@ -715,7 +716,7 @@ function deckSummary(){
 }
 function menuHTML(){
   const st=deckStats(deck);
-  return `<div class="title"><div class="lamp" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sil-T"/></svg></div><h1>伏せ札</h1>
+  return `<div class="title"><div class="lamp" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sil-T"/></svg></div><h1>月花乱舞</h1><p class="yomi">げっからんぶ</p>
     <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
     <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>は防ぎきれば跳ね返す。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と、気力が溜まる。</p></div>
     <button class="btn wide" data-act="go-school" ${st.ok?'':'disabled'}>対戦する</button>
