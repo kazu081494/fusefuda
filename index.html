@@ -270,6 +270,34 @@ img.sil{object-fit:contain;height:auto}
 @keyframes yomiin{0%{transform:scale(2.6);opacity:0}100%{transform:none;opacity:1}}
 .play.shake{animation:shake .45s .5s}
 @keyframes shake{20%{transform:translate(-5px,2px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(2px,0)}}
+.stage.finale .calls{animation:callsout .25s 1s ease-in forwards}
+@keyframes callsout{to{opacity:0;transform:scale(.9)}}
+.stage.finale::after{content:"";position:absolute;inset:0;background:#fff;z-index:4;opacity:0;pointer-events:none;animation:flash .7s .95s ease-out both}
+@keyframes flash{0%{opacity:0}12%{opacity:.9}100%{opacity:0}}
+.kessen{position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;pointer-events:none;font-family:var(--font-display);font-weight:800;font-size:clamp(42px,15vw,68px);letter-spacing:.12em;color:#fff;text-shadow:0 0 10px #000,0 0 28px rgba(226,178,71,.85),0 3px 0 #000;animation:kessen .75s 1.1s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes kessen{0%{opacity:0;transform:scale(2.6) rotate(-5deg)}100%{opacity:1;transform:none}}
+.stage .samurai.opp.down{transform-origin:30% 100%;transform:rotate(-80deg) translateX(-12%);opacity:.6}
+.stage .samurai.me.down{transform-origin:30% 100%;transform:scaleX(-1) rotate(-80deg) translateX(-12%);opacity:.6}
+.stage.finale .samurai.opp.down{animation:fallO .8s 1s both}
+.stage.finale .samurai.me.down{animation:fallM .8s 1s both}
+@keyframes fallO{from{transform:none;opacity:1}to{transform:rotate(-80deg) translateX(-12%);opacity:.6}}
+@keyframes fallM{from{transform:scaleX(-1);opacity:1}to{transform:scaleX(-1) rotate(-80deg) translateX(-12%);opacity:.6}}
+.modal.result-modal{animation:resultin .45s cubic-bezier(.2,1.2,.4,1) both}
+@keyframes resultin{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+.result-head{display:flex;flex-direction:column;gap:2px}
+.result-head h2{font-size:34px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tile{background:var(--table);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column}
+.tile b{font-family:var(--font-display);font-weight:800;font-size:24px;line-height:1.2;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--muted)}
+.tile.hi b{color:var(--accent)}
+.rankbar{display:flex;flex-direction:column;gap:4px}
+.rankbar .bar{height:8px;border-radius:99px;background:var(--table-3);overflow:hidden}
+.rankbar .bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.rankbar .lbl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+.rankbar .lbl b{color:var(--accent);font-size:14px}
+details.opp-info summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
+details.opp-info .dl{margin-top:8px}
 .trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
 .trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
 .trapfire.theirs{box-shadow:0 0 0 2px var(--lose)}
@@ -365,7 +393,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
-  .reveal,.notice.alert,.auto,.energy .gain,.trapfire,.yomi,.play.shake,.petal,.duel,.samurai,.calls{animation:none!important}
+  .reveal,.notice.alert,.auto,.energy .gain,.trapfire,.yomi,.play.shake,.kessen,.stage.finale::after,.stage.finale .calls,.stage.finale .samurai,.modal.result-modal,.petal,.duel,.samurai,.calls{animation:none!important}
   .fx{display:none}
   .card,.timer i{transition:none}
 }
@@ -754,7 +782,7 @@ function startGame(kata,ougi){
   clearTimers();
   const pre=rnd(PRESETS);
   G={p:newSide(deck,kata,ougi),c:newSide(pre.cards,rnd(Object.keys(KATA)),rnd(Object.keys(OUGI))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
-    gauge:0,prevGauge:0,revealAt:0,combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
+    gauge:0,prevGauge:0,revealAt:0,finaleUntil:0,st:{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0},combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   screen='game';startTurn();
 }
@@ -1008,6 +1036,11 @@ function resolve(){
   if(yw&&yw.who==='p'){G.combo=(G.combo||0)+1;G.cCombo=0}else if(yw&&yw.who==='c'){G.cCombo=(G.cCombo||0)+1;G.combo=0}
   // 連のごほうび：COMBO_EVERY 連ごとに気力 +COMBO_GAIN（あなたも相手も）
   G.comboGain=null;
+  // リザルト用の数字
+  const st=G.st||(G.st={yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0});
+  if(yw&&yw.who==='p')st.yomiP++;if(yw&&yw.who==='c')st.yomiC++;
+  st.bestCombo=Math.max(st.bestCombo,G.combo||0);
+  if(r.net>0)st.maxPush=Math.max(st.maxPush,r.net);if(r.net<0)st.maxPushed=Math.max(st.maxPushed,-r.net);
   if(yw&&yw.who==='p'&&G.combo%COMBO_EVERY===0){P.energy=clampE(P.energy+COMBO_GAIN);G.comboGain='p';msgs.push(`${G.combo}連：あなたは気力を${COMBO_GAIN}得た`)}
   if(yw&&yw.who==='c'&&G.cCombo%COMBO_EVERY===0){C.energy=clampE(C.energy+COMBO_GAIN);G.comboGain='c';msgs.push(`相手の${G.cCombo}連：相手は気力を${COMBO_GAIN}得た`)}
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
@@ -1020,7 +1053,7 @@ function resolve(){
   [...r.notes,...msgs].forEach(m=>log(m));
   if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:G.gauge>0?'相手を橋のたもとまで押し込んだ':'橋のたもとまで押し込まれた'};
   G.phase='result';
-  if(G.over){clearSave();recordResult()}else saveGame();
+  if(G.over){clearSave();recordResult();startFinale()}else saveGame();
   if(!G.over){
     const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
     G.autoMs=Math.min(7600,3200+n*900+(alert?900:0));
@@ -1028,10 +1061,17 @@ function resolve(){
   }
   render();playRevealSounds();
 }
+/* 勝負ありの演出：とどめの演出のあと、白く光って負けた侍が倒れ、「勝負あり」。少し待ってリザルトを出す */
+const FINALE_MS=2900;
+function startFinale(){
+  G.finaleUntil=Date.now()+FINALE_MS;
+  setTimeout(()=>{if(G&&G.over)render()},FINALE_MS+50);
+}
 function finishByGauge(reason){
   clearTimers();
   G.over={winner:G.gauge>0?'p':G.gauge<0?'c':null,reason};
-  G.phase='result';clearSave();recordResult();render();
+  G.phase='result';clearSave();recordResult();startFinale();G.revealAt=Date.now()-2000;render();
+  const ac=audio();if(ac){const t=ac.currentTime+.9;SFX.taiko(ac,t);SFX.taiko(ac,t+.35,.8);SFX.taiko(ac,t+.6,1.1)}
 }
 
 /* ---------- CPU ---------- */
@@ -1314,7 +1354,8 @@ function gameHTML(){
     if(r.fx.firedC.length)fx+=`<svg class="fx flame fox opp" viewBox="0 0 100 100"><use href="#fx-flame"/></svg>`;
   }
   const n0=revealed&&G.res?G.res.net:0;
-  const sam=(side,atk,hit)=>`<div class="samurai ${side}${atk?' lunge':''}${hit?' hit':''}">${ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100"><use href="#samurai"/></svg>'}</div>`;
+  const loser=G.over&&G.over.winner?(G.over.winner==='p'?'opp':'me'):null,finale=!!G.over&&Date.now()<(G.finaleUntil||0);
+  const sam=(side,atk,hit)=>`<div class="samurai ${side}${atk?' lunge':''}${hit&&loser!==side?' hit':''}${loser===side?' down':''}">${ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100"><use href="#samurai"/></svg>'}</div>`;
   const t=Date.now()/1000;
   const petals=[8,22,37,55,68,81,93].map((x,i)=>{const d=7+(i%3)*2.5;return `<i class="petal" style="left:${x}%;animation-duration:${d}s;animation-delay:-${((t+i*1.9)%d).toFixed(2)}s"></i>`}).join('');
   const duel=`<div class="duel" aria-hidden="true">${sam('opp',ca==='atk',n0>0)}${sam('me',pa==='atk',n0<0)}${fx}</div>`;
@@ -1371,8 +1412,9 @@ function gameHTML(){
       <div class="gauge-labels"><span>相手の岸</span><span>${gTxt}</span><span>自分の岸</span></div>
       <div class="cells">${cells.join('')}</div>
     </section>
-    <section class="battle stage${play?' play':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" style="${stageStyle}" aria-label="場">
+    <section class="battle stage${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
+      ${finale?`<div class="kessen" aria-hidden="true">${G.over.winner?'勝負あり':'引き分け'}</div>`:''}
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
@@ -1383,21 +1425,36 @@ function gameHTML(){
       <div class="hand">${hand}</div>
       <div class="actions">${actions}</div>
     </section>
-    ${G.over?overHTML():''}${G.modal?modalHTML():''}`;
+    ${G.over&&!finale?overHTML():''}${G.modal?modalHTML():''}`;
 }
 function overHTML(){
-  const w=G.over.winner;
-  return `<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="ovt">
-    <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w?'勝負あり':'引き分け'}</h2>
-    ${w?`<p class="result ${w==='p'?'win':'lose'}">あなたの${w==='p'?'勝ち':'負け'}</p>`:''}
-    <p class="muted small">${G.over.reason}</p>
-    <p class="rankline">${rankName(rec.w)}・${rec.w}勝${rec.l}敗${rec.streak>=2?`・${rec.streak}連勝中`:''}</p>
+  const w=G.over.winner,st=G.st||{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0};
+  const ri=rankIdx(rec.w),cur=RANKS[ri],next=RANKS[ri+1];
+  const pct=next?Math.round((rec.w-cur[0])/(next[0]-cur[0])*100):100;
+  return `<div class="modal-bg"><div class="modal result-modal" role="dialog" aria-modal="true" aria-labelledby="ovt">
+    <div class="result-head">
+      <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w==='p'?'勝ち':w==='c'?'負け':'引き分け'}</h2>
+      <p class="muted small">${G.over.reason}・${G.turn}手</p>
+    </div>
+    <div class="tiles">
+      <div class="tile${st.yomiP>st.yomiC?' hi':''}"><b>${st.yomiP}<small style="font-size:14px"> 回</small></b><span>読み勝ち（読まれた ${st.yomiC}回）</span></div>
+      <div class="tile${st.bestCombo>=3?' hi':''}"><b>${st.bestCombo}<small style="font-size:14px"> 連</small></b><span>いちばん長く続けて読み勝った</span></div>
+      <div class="tile"><b>${st.maxPush}<small style="font-size:14px"> 歩</small></b><span>1手でいちばん押し込んだ</span></div>
+      <div class="tile"><b>${G.p.ougiUsed?OUGI[G.p.ougi].name:'—'}</b><span>${G.p.ougiUsed?'使った奥義':'奥義は使わなかった'}</span></div>
+    </div>
     ${G.rankUp?`<div class="rankup"><b>${G.rankUp.name}に昇段！</b>${G.rankUp.unlock.length?`<span>${G.rankUp.unlock.join('・')}を解放した</span>`:''}</div>`:''}
-    <dl class="dl"><dt>手数</dt><dd>${G.turn}手</dd>
-      <dt>あなた</dt><dd>${KATA[G.p.kata].name}の型・奥義「${OUGI[G.p.ougi].name}」（${G.p.ougiUsed?'使った':'使わなかった'}）</dd>
-      <dt>相手</dt><dd>${KATA[G.c.kata].name}の型・奥義「${OUGI[G.c.ougi].name}」（${G.c.ougiUsed?'使った':'使わなかった'}）<br><span class="muted small">${OUGI[G.c.ougi].text}</span></dd>
-      <dt>相手のデッキ</dt><dd>${G.cpuDeck}</dd>
-      <dt>相手の性格</dt><dd>${STYLES[G.style].name}（${STYLES[G.style].desc}）</dd></dl>
+    <div class="rankbar">
+      <div class="lbl"><b>${cur[1]}</b><span>${next?`${next[1]}まで あと${next[0]-rec.w}勝`:'最高位'}</span></div>
+      <div class="bar" role="img" aria-label="次の段位まで${pct}%"><i style="width:${pct}%"></i></div>
+      <div class="lbl"><span>${rec.w}勝 ${rec.l}敗${rec.streak>=2?`・${rec.streak}連勝中`:''}</span></div>
+    </div>
+    <details class="opp-info"><summary>相手の手の内を見る</summary>
+      <dl class="dl">
+        <dt>相手</dt><dd>${KATA[G.c.kata].name}の型・奥義「${OUGI[G.c.ougi].name}」（${G.c.ougiUsed?'使った':'使わなかった'}）<br><span class="muted small">${OUGI[G.c.ougi].text}</span></dd>
+        <dt>デッキ</dt><dd>${G.cpuDeck}</dd>
+        <dt>性格</dt><dd>${STYLES[G.style].name}（${STYLES[G.style].desc}）</dd>
+        <dt>あなた</dt><dd>${KATA[G.p.kata].name}の型・奥義「${OUGI[G.p.ougi].name}」</dd>
+      </dl></details>
     <div class="row"><button class="btn" data-act="go-school">もう一戦</button><button class="btn ghost" data-act="go-menu">メニュー</button></div>
   </div></div>`;
 }
