@@ -618,7 +618,7 @@ function cleanDeck(obj){
   return out;
 }
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
-let settings=Object.assign({vol:.6,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
+let settings=Object.assign({vol:.6,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:true,bgm:true},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
@@ -1009,7 +1009,7 @@ function yomiOf(pa,ca,base){
   return p?{who:'p',word:p}:c?{who:'c',word:c}:null;
 }
 /* ---------- 効果音（その場で作る。音のファイルは使わない） ----------
-   最初は音なし。「音」ボタンを押すと鳴る（ブラウザは押す前に音を出させてくれない） */
+   最初から効果音と曲が鳴る設定。ただしブラウザは画面に触れるまで音を出させてくれないので、最初のタップから鳴る */
 let AC=null,sndState='';
 function audio(){
   if(!settings.sound)return null;
