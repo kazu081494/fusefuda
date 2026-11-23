@@ -560,7 +560,7 @@ function blockReason(s,i){
   if(d.type==='T'&&s.traps.length>=trapMax(s))return '罠は満杯';
   return '';
 }
-function log(m){G.log.push(`${G.turn}合目　${m}`)}
+function log(m){G.log.push(`${G.turn}手目　${m}`)}
 function clearTimers(){if(!G)return;clearInterval(G.tId);clearTimeout(G.cpuT);clearTimeout(G.autoT);G.tId=null;G.autoT=null}
 
 function startGame(school){
@@ -573,7 +573,7 @@ function startGame(school){
 }
 function startTurn(){
   clearTimers();
-  if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}合で決着がつかなかったので、橋の上の位置で決着`);
+  if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}手で決着がつかなかったので、橋の上の位置で決着`);
   G.turn++;
   for(const s of [G.p,G.c]){
     s.energy=clampE(s.energy+ENERGY_GAIN);
@@ -831,7 +831,7 @@ function rulesHTML(){
     <li>読み合いの目安：攻撃は「燃やす・見送る」に強く、防御は攻撃に強く、燃やすは防御に強い（相手の気力は無駄になり、自分は溜まる）。気力の量は見えているので、そこから相手の手を読む。</li>
     <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで睨み合い。防御どうしも睨み合い。</li>
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで（影の流派は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
-    <li>相手を相手の岸（橋のたもと、8歩先）まで押し込んだら<b>勝負あり</b>。20合で決着がつかなければ、押し込んでいる側の勝ち。</li>
+    <li>相手を相手の岸（橋のたもと、8歩先）まで押し込んだら<b>勝負あり</b>。20手で決着がつかなければ、押し込んでいる側の勝ち。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
     <li>デッキは20枚、同じカードは3枚まで。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li><b>流派</b>：試合の前に1つ選ぶ。<b>型</b>はいつも効く小さな特性、<b>奥義</b>は1試合に1回、伏せる前に使う大技。相手の流派は秘密だが、型の効果は結果に出る（「相手の型：さらに1押す」など）ので、そこから推理できる。奥義は「使った」ことだけ知らされる。</li>
@@ -976,7 +976,7 @@ function gameHTML(){
   else if(ph==='result'&&!G.over)actions=`<button class="btn wide sub" data-act="next">すぐ次へ<i class="auto" style="animation-duration:${G.autoMs}ms"></i></button>`;
   else actions=`<button class="btn wide sub" disabled>　</button>`;
 
-  return `<div class="topbar"><span class="turn">${G.turn}合目</span>
+  return `<div class="topbar"><span class="turn">${G.turn}手目</span>
       ${ph==='select'&&settings.timer?`<div class="timer" id="tbox"><i id="tbar" style="width:100%"></i></div><span class="tnum" id="tnum">${settings.timer}秒</span>`:'<div class="spacer"></div>'}
       <button class="btn ghost tiny" data-act="open-log">記録</button>
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
@@ -1008,7 +1008,7 @@ function overHTML(){
     <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w?'勝負あり':'引き分け'}</h2>
     ${w?`<p class="result ${w==='p'?'win':'lose'}">あなたの${w==='p'?'勝ち':'負け'}</p>`:''}
     <p class="muted small">${G.over.reason}</p>
-    <dl class="dl"><dt>合数</dt><dd>${G.turn}合</dd>
+    <dl class="dl"><dt>手数</dt><dd>${G.turn}手</dd>
       <dt>あなたの流派</dt><dd>${ps.name}（奥義「${ps.ougi}」${G.p.ougiUsed?'使った':'使わなかった'}）</dd>
       <dt>相手の流派</dt><dd>${cs.name}（奥義「${cs.ougi}」${G.c.ougiUsed?'使った':'使わなかった'}）<br><span class="muted small">型：${cs.kata}</span></dd>
       <dt>相手のデッキ</dt><dd>${G.cpuDeck}</dd>
