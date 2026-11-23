@@ -417,7 +417,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 <script>
 'use strict';
 /* ---------- 定数 ---------- */
-const GOAL=40,ENERGY_START=1,ENERGY_GAIN=1,BURN_MAX=5,ENERGY_MAX=10,DECK_SIZE=20,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
+const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=20,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
 const TY={A:{name:'攻撃'},D:{name:'防御'},T:{name:'罠'}};
 const TYPES=['A','D','T'];
@@ -425,38 +425,38 @@ const TYPES=['A','D','T'];
 /* ---------- カード ----------
    [id, 名前, 型, 数字, 気力, 札に刷る文, 詳しい説明]  罠の数字は null */
 const EFFECTS=[
-  ['oiuchi','追い討ち','A',8,2,'押せたら、さらに10押す','押せたら、押す量に10を足す'],
-  ['kantsu','貫通','A',13,3,'防御を無視して押す','相手が防御していても、数字の13をそのまま押す'],
-  ['sutemi','捨て身','A',27,4,'押せなかったら、自分が10押される','数字27の攻撃を気力4で出せる。ただし1も押せなかったら、自分が10押される'],
-  ['rengeki','連撃','A',8,2,'相手が攻撃も防御もしていなければ、2倍押す','相手が「見送った」「燃やした」「罠を張った」ターンなら、押す量が2倍になる'],
-  ['teisatsu','偵察','A',4,1,'相手の手札を1枚のぞく','開けたとき、相手の手札を1枚ランダムに見る。出されるまで表のまま見える'],
-  ['yokoku','予告','A',8,1,'次のターン、自分の攻撃の数字+10','開けたとき予告する。次のターン、自分の攻撃カードの数字が10増える（相手にも見える）'],
-  ['iai','居合','A',8,2,'相手が攻撃なら、数字に関係なく勝つ','攻撃どうしになったら、数字の大小に関係なく勝って8押し込む（相手も居合なら普通に比べる）'],
-  ['kuzushi','崩し','A',13,3,'相手の防御の数字を半分にする','相手が防御していたら、防御の数字を半分（切り捨て）にしてから比べる'],
-  ['hikeshi','火消し','A',8,2,'相手が燃やしていたら、気力を消して+10','相手が燃やしていたら、増えるはずの気力を消して、さらに10歩押し込む'],
-  ['youdou','陽動','A',4,1,'防がれても跳ね返されない。次の攻撃+10','防がれても跳ね返されない。防がれたら、次のターン自分の攻撃の数字+10'],
-  ['senkou','線香花火','A',4,0,'燃やすと気力+3、相手を5押す','燃やすと気力が3増え、さらに相手を5歩押し込む。出せばふつうの攻撃4'],
-  ['hangeki','反撃','D',13,3,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
-  ['ukenagashi','受け流し','D',8,1,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
-  ['meisou','瞑想','D',4,0,'気力を3得る','気力0で出せる防御1。開けたとき、気力を3得る（上限10）'],
-  ['kakuran','撹乱','D',4,1,'相手の手札を1枚捨てさせる（相手は1枚引く）','開けたとき、相手は手札を1枚ランダムに捨てて、1枚引く'],
-  ['fuuji','封じ手','D',8,2,'防ぎきったら、次のターン相手は攻撃できない','相手の攻撃を1も通さなかったら、次のターン相手は攻撃カードを出せない'],
-  ['mikiri','見切り','D',4,2,'相手の罠を1枚外す','開けたとき、相手が張っている罠を発動させずに捨てさせる'],
-  ['zanshin','残心','D',8,2,'防ぎきったら、次の攻撃+10','相手の攻撃を防ぎきったら、次のターン自分の攻撃の数字+10'],
-  ['kamae','構え','D',13,3,'相手が攻撃しなければ、気力が戻る','相手が攻撃してこなかったら、払った気力が戻る'],
-  ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を4得る','開けたとき、自分から5歩下がって気力を4得る（上限10）。不動や幻惑でも打ち消せない'],
-  ['tessen','鉄扇','D',18,3,'効果なし（数字のわりに安い）','効果は無いが、防御18を気力3で出せる'],
-  ['otoshiana','落とし穴','T',null,1,'相手が攻撃したら、押される量を15減らす','張った次のターンから効く。相手が攻撃してきたら、押される量を15減らして捨てる'],
-  ['kaeshi','返し罠','T',null,3,'相手が18以上で攻撃したら、跳ね返す','張った次のターンから効く。相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
-  ['dorobou','気力泥棒','T',null,1,'相手が攻撃したら、気力を3奪う','張った次のターンから効く。相手が攻撃してきたら、相手の気力を3まで奪って自分のものにする'],
-  ['machibuse','待ち伏せ','T',null,2,'相手が攻撃しなかったら、15押す','張った次のターンから効く。相手が攻撃以外（防御・燃やす・見送る・罠を張る）をしたら、相手を15押す'],
-  ['ashikase','足かせ','T',null,2,'相手が攻撃したら、次のターン攻撃させない','張った次のターンから効く。相手が攻撃してきたら、次のターン相手は攻撃カードを出せない'],
-  ['naruko','鳴子','T',null,1,'相手が燃やしたら、その気力をもらう','張った次のターンから効く。相手が燃やしたら、相手が増やすはずの気力を自分がもらう'],
-  ['kagemusha','影武者','T',null,2,'相手が攻撃したら、押し込まれない','張った次のターンから効く。相手が攻撃してきたら、押し込まれる歩数を0にする'],
-  ['kitsunebi','狐火','T',null,2,'相手が防御したら、気力-2して5押す','張った次のターンから効く。相手が防御したら、相手の気力を2減らして、5歩押し込む'],
+  ['oiuchi','追い討ち','A',8,10,'押せたら、さらに10押す','押せたら、押す量に10を足す'],
+  ['kantsu','貫通','A',13,15,'防御を無視して押す','相手が防御していても、数字の13をそのまま押す'],
+  ['sutemi','捨て身','A',27,20,'押せなかったら、自分が10押される','数字27の攻撃を気力20で出せる。ただし1も押せなかったら、自分が10押される'],
+  ['rengeki','連撃','A',8,10,'相手が攻撃も防御もしていなければ、2倍押す','相手が「見送った」「燃やした」「罠を張った」ターンなら、押す量が2倍になる'],
+  ['teisatsu','偵察','A',4,5,'相手の手札を1枚のぞく','開けたとき、相手の手札を1枚ランダムに見る。出されるまで表のまま見える'],
+  ['yokoku','予告','A',8,5,'次のターン、自分の攻撃の数字+10','開けたとき予告する。次のターン、自分の攻撃カードの数字が10増える（相手にも見える）'],
+  ['iai','居合','A',8,10,'相手が攻撃なら、数字に関係なく勝つ','攻撃どうしになったら、数字の大小に関係なく勝って8押し込む（相手も居合なら普通に比べる）'],
+  ['kuzushi','崩し','A',13,15,'相手の防御の数字を半分にする','相手が防御していたら、防御の数字を半分（切り捨て）にしてから比べる'],
+  ['hikeshi','火消し','A',8,10,'相手が燃やしていたら、気力を消して+10','相手が燃やしていたら、増えるはずの気力を消して、さらに10歩押し込む'],
+  ['youdou','陽動','A',4,5,'防がれても跳ね返されない。次の攻撃+10','防がれても跳ね返されない。防がれたら、次のターン自分の攻撃の数字+10'],
+  ['senkou','線香花火','A',4,0,'燃やすと気力+15、相手を5押す','燃やすと気力が15増え、さらに相手を5歩押し込む。出せばふつうの攻撃4'],
+  ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
+  ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
+  ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る（上限50）'],
+  ['kakuran','撹乱','D',4,5,'相手の手札を1枚捨てさせる（相手は1枚引く）','開けたとき、相手は手札を1枚ランダムに捨てて、1枚引く'],
+  ['fuuji','封じ手','D',8,10,'防ぎきったら、次のターン相手は攻撃できない','相手の攻撃を1も通さなかったら、次のターン相手は攻撃カードを出せない'],
+  ['mikiri','見切り','D',4,10,'相手の罠を1枚外す','開けたとき、相手が張っている罠を発動させずに捨てさせる'],
+  ['zanshin','残心','D',8,10,'防ぎきったら、次の攻撃+10','相手の攻撃を防ぎきったら、次のターン自分の攻撃の数字+10'],
+  ['kamae','構え','D',13,15,'相手が攻撃しなければ、気力が戻る','相手が攻撃してこなかったら、払った気力が戻る'],
+  ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を20得る','開けたとき、自分から5歩下がって気力を20得る（上限50）。不動や幻惑でも打ち消せない'],
+  ['tessen','鉄扇','D',18,15,'効果なし（数字のわりに安い）','効果は無いが、防御18を気力15で出せる'],
+  ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','張った次のターンから効く。相手が攻撃してきたら、押される量を15減らして捨てる'],
+  ['kaeshi','返し罠','T',null,15,'相手が18以上で攻撃したら、跳ね返す','張った次のターンから効く。相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
+  ['dorobou','気力泥棒','T',null,5,'相手が攻撃したら、気力を15奪う','張った次のターンから効く。相手が攻撃してきたら、相手の気力を15まで奪って自分のものにする'],
+  ['machibuse','待ち伏せ','T',null,10,'相手が攻撃しなかったら、15押す','張った次のターンから効く。相手が攻撃以外（防御・燃やす・見送る・罠を張る）をしたら、相手を15押す'],
+  ['ashikase','足かせ','T',null,10,'相手が攻撃したら、次のターン攻撃させない','張った次のターンから効く。相手が攻撃してきたら、次のターン相手は攻撃カードを出せない'],
+  ['naruko','鳴子','T',null,5,'相手が燃やしたら、その気力をもらう','張った次のターンから効く。相手が燃やしたら、相手が増やすはずの気力を自分がもらう'],
+  ['kagemusha','影武者','T',null,10,'相手が攻撃したら、押し込まれない','張った次のターンから効く。相手が攻撃してきたら、押し込まれる歩数を0にする'],
+  ['kitsunebi','狐火','T',null,10,'相手が防御したら、気力-10して5押す','張った次のターンから効く。相手が防御したら、相手の気力を10減らして、5歩押し込む'],
 ];
 /* 素の札の数字と気力 */
-const PLAIN=[[4,1],[8,2],[13,3],[18,4],[24,5],[30,7]];
+const PLAIN=[[4,5],[8,10],[13,15],[18,20],[24,25],[30,35]];
 const CARDS={};const POOL=[];
 for(const t of TYPES){
   if(t!=='T')for(const [n,c] of PLAIN){const d={id:t+n,type:t,num:n,cost:c,name:'',eff:null,short:'',text:''};CARDS[d.id]=d;POOL.push(d);}
@@ -473,7 +473,7 @@ const PRESETS=[
 const KATA={
   gou:{name:'剛',text:'攻撃で押し込めたら、さらに5歩押し込む'},
   yanagi:{name:'柳',text:'防ぎきって跳ね返すとき、さらに5歩押し込む'},
-  homura:{name:'炎',text:'燃やすと、気力が1多く増える'},
+  homura:{name:'炎',text:'燃やすと、気力が5多く増える'},
   kage:{name:'影',text:'罠を2枚まで張れる'},
   me:{name:'眼',text:'相手の手札の内訳（攻撃・防御・罠が何枚ずつか）が見える'},
 };
@@ -530,8 +530,8 @@ const mk=id=>({uid:++UID,id});
 const def=i=>CARDS[i.id];
 const label=d=>d.type==='T'?`${d.name}（罠）`:d.eff?`${d.name}（${TY[d.type].name}${d.num}）`:`${TY[d.type].name}${d.num}`;
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
-/* 燃やすと得る気力：数字の5分の1（切り上げ・最大5）。数字の無い罠は1、線香花火は3。炎の型なら+1 */
-const burnVal=(d,s)=>(d.eff==='senkou'?3:d.num==null?1:Math.min(BURN_MAX,Math.ceil(d.num/5)))+(s&&s.kata==='homura'?1:0);
+/* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
+const burnVal=(d,s)=>(d.eff==='senkou'?15:d.num==null?5:Math.min(BURN_MAX,Math.ceil(d.num/5)*5))+(s&&s.kata==='homura'?5:0);
 /* 罠を置ける数：影の型なら2 */
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
@@ -617,12 +617,12 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
       const id=def(t.inst).eff;let fired=false;
       if(id==='otoshiana'&&victimK==='A'){fired=true;if(isP)toP=Math.max(0,toP-15);else toC=Math.max(0,toC-15);notes.push(`${on}の落とし穴：押される量を15減らした`)}
       if(id==='kaeshi'&&victimK==='A'&&victimN>=18){fired=true;if(isP){toP=0;toC+=victimN}else{toC=0;toP+=victimN}notes.push(`${on}の返し罠：攻撃を跳ね返して${victimN}押した`)}
-      if(id==='dorobou'&&victimK==='A'){fired=true;if(isP)fx.stealFromC=3;else fx.stealFromP=3;notes.push(`${on}の気力泥棒：${vn}の気力を奪う`)}
+      if(id==='dorobou'&&victimK==='A'){fired=true;if(isP)fx.stealFromC=15;else fx.stealFromP=15;notes.push(`${on}の気力泥棒：${vn}の気力を奪う`)}
       if(id==='machibuse'&&victimK!=='A'){fired=true;if(isP)toC+=15;else toP+=15;notes.push(`${on}の待ち伏せ：${vn}を15押した`)}
       if(id==='ashikase'&&victimK==='A'){fired=true;if(isP)fx.banC=true;else fx.banP=true;notes.push(`${on}の足かせ：次のターン、${vn}は攻撃できない`)}
       if(id==='naruko'&&victimBurn){fired=true;if(isP)fx.narukoP=true;else fx.narukoC=true;notes.push(`${on}の鳴子：${vn}の燃やした気力を${on}がもらう`)}
       if(id==='kagemusha'&&victimK==='A'){fired=true;if(isP)toP=0;else toC=0;notes.push(`${on}の影武者：身代わりになって、押し込まれない`)}
-      if(id==='kitsunebi'&&victimK==='D'){fired=true;if(isP){fx.drainC=2;toC+=5}else{fx.drainP=2;toP+=5}notes.push(`${on}の狐火：${vn}の気力を2減らして、5押した`)}
+      if(id==='kitsunebi'&&victimK==='D'){fired=true;if(isP){fx.drainC=10;toC+=5}else{fx.drainP=10;toP+=5}notes.push(`${on}の狐火：${vn}の気力を10減らして、5押した`)}
       if(fired)(isP?fx.firedP:fx.firedC).push({uid:t.inst.uid,name:def(t.inst).name});
     }
   };
@@ -653,7 +653,7 @@ let screen='menu';let G=null;let builderPreset=null;
 function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
 function newSide(counts,kata,ougi){
   const d=[];for(const [id,c] of Object.entries(counts))for(let k=0;k<c;k++)d.push(mk(id));
-  const s={deck:shuffle(d),hand:[],discard:[],kata,ougi,ougiUsed:false,ougiNow:false,energy:ENERGY_START-ENERGY_GAIN+1,burnGain:0,traps:[],
+  const s={deck:shuffle(d),hand:[],discard:[],kata,ougi,ougiUsed:false,ougiNow:false,energy:ENERGY_START-ENERGY_GAIN,burnGain:0,traps:[],
     noAtk:false,noAtkNext:false,yokoku:false,yokokuNext:false,history:[]};
   drawN(s,HAND_START);return s;
 }
@@ -776,8 +776,8 @@ function openEff(who,inst,msgs){
       else msgs.push(`偵察：相手に「${label(def(x))}」を見られた`)}break;
     case 'kakuran':if(op.hand.length){const x=rnd(op.hand);removeFrom(op.hand,x);op.discard.push(x);drawN(op,1);
       msgs.push(`撹乱：${on}は「${label(def(x))}」を捨てて1枚引いた`)}break;
-    case 'meisou':me.energy=clampE(me.energy+3);msgs.push(`瞑想：${mn}は気力を3得た`);break;
-    case 'hikiashi':me.energy=clampE(me.energy+4);msgs.push(`退き足：${mn}は気力を4得た`);break;
+    case 'meisou':me.energy=clampE(me.energy+15);msgs.push(`瞑想：${mn}は気力を15得た`);break;
+    case 'hikiashi':me.energy=clampE(me.energy+20);msgs.push(`退き足：${mn}は気力を20得た`);break;
     case 'yokoku':me.yokokuNext=true;msgs.push(`予告：次のターン、${mn}の攻撃の数字+10`);break;
     case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;op.discard.push(t);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else msgs.push('見切り：外す罠がなかった');break;
   }
@@ -842,22 +842,22 @@ function cpuOppModel(){
   const P=G.p;
   const E=P.energy,recent=P.history.slice(-6);
   const cnt=k=>1+recent.filter(x=>x===k).length*0.8;
-  const hi=Math.min(E,7),list=[];
-  if(!P.noAtk&&hi>=1){
+  const hi=E,list=[];
+  if(!P.noAtk&&hi>=5){
     list.push({d:{type:'A',num:numFor(hi),cost:hi,eff:null},w:cnt('A')*0.6});
-    if(hi>=3)list.push({d:{type:'A',num:numFor(hi-2),cost:hi-2,eff:null},w:cnt('A')*0.4});
+    if(hi>=15)list.push({d:{type:'A',num:numFor(hi-10),cost:hi-10,eff:null},w:cnt('A')*0.4});
   }
-  if(E>=1)list.push({d:{type:'D',num:numFor(Math.min(E,5)),cost:Math.min(E,5),eff:null},w:cnt('D')});
+  if(E>=5)list.push({d:{type:'D',num:numFor(Math.min(E,25)),cost:Math.min(E,25),eff:null},w:cnt('D')});
   list.push({d:null,w:cnt('P')*0.8});
   const s=list.reduce((a,b)=>a+b.w,0);list.forEach(o=>o.w/=s);
   return list;
 }
 /* 性格ごとのクセ。k は A・D・T（出す型）か B（燃やす） */
 function styleBias(k,d){
-  const C=G.c,P=G.p,st=G.style,threat=P.energy>=4;
-  if(st==='kyoki'){if(k==='A')return 0.6+0.05*d.num;if(k==='D')return -0.6;if(k==='B')return C.energy<=2?0.3:-0.6}
+  const C=G.c,P=G.p,st=G.style,threat=P.energy>=20;
+  if(st==='kyoki'){if(k==='A')return 0.6+0.05*d.num;if(k==='D')return -0.6;if(k==='B')return C.energy<=10?0.3:-0.6}
   if(st==='shincho'){if(k==='D')return threat?1.0+0.15*d.num:-0.2;if(k==='A')return threat?-0.5:0.2;if(k==='B')return threat?-0.6:0.4}
-  if(st==='tame'){if(k==='B')return C.energy<6?1.2:-1.0;if(k==='A')return d.num>=18?0.9:-0.3;if(k==='D')return -0.2}
+  if(st==='tame'){if(k==='B')return C.energy<30?1.2:-1.0;if(k==='A')return d.num>=18?0.9:-0.3;if(k==='D')return -0.2}
   return 0;
 }
 /* 心眼：見たあなたの札は覚えておき、手を読むのに使う（見えていない札のぶんは、いつもの読みで補う） */
@@ -875,7 +875,7 @@ function seenModel(){
 function cpuChoose(peek){
   const C=G.c,P=G.p,E=C.energy;
   const model=peek===undefined?seenModel()
-    :peek&&peek.type==='A'?[{d:{type:'A',num:numFor(Math.min(P.energy,7)),cost:0,eff:null},w:1}]
+    :peek&&peek.type==='A'?[{d:{type:'A',num:numFor(P.energy),cost:0,eff:null},w:1}]
     :(()=>{const l=cpuOppModel().filter(m=>!m.d||m.d.type!=='A'),t=l.reduce((a,b)=>a+b.w,0);return l.map(m=>({d:m.d,w:m.w/t}))})();
   const danger=G.gauge>=GOAL-15,chance=G.gauge<=-(GOAL-20);
   const evOf=(d,bd=null)=>{let ev=0;for(const m of model){const r=outcome(P,C,m.d,d,null,bd);ev+=m.w*(-r.net/5)*(danger&&r.toP<r.toC?1.4:1)*(chance?1.2:1)}return ev};
@@ -883,9 +883,9 @@ function cpuChoose(peek){
   for(const o of C.hand){
     const d=def(o);
     const gain=clampE(E+ENERGY_GAIN+burnVal(d,C))-clampE(E+ENERGY_GAIN);
-    combos.push({play:null,burn:o,ev:evOf(null,d)+0.45*gain-0.6-0.08*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)});
+    combos.push({play:null,burn:o,ev:evOf(null,d)+0.09*gain-0.6-0.016*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)});
     if(blockReason(C,o))continue;
-    let ev=evOf(d)-0.22*costOf(o);
+    let ev=evOf(d)-0.044*costOf(o);
     if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:-0.5;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;
     combos.push({play:o,burn:null,ev:ev+styleBias(d.type,d)});
   }
@@ -901,17 +901,17 @@ function cpuMaybeBefore(){
   const can=t=>C.hand.some(i=>def(i).type===t&&!blockReason(C,i));
   let use=false;
   const o=C.ougi;
-  if(o==='gougeki')use=can('A')&&C.energy>=3&&(late||Math.random()<0.2);
-  if(o==='uke')use=can('D')&&P.energy>=4&&(late||Math.random()<0.3);
+  if(o==='gougeki')use=can('A')&&C.energy>=15&&(late||Math.random()<0.2);
+  if(o==='uke')use=can('D')&&P.energy>=20&&(late||Math.random()<0.3);
   if(o==='gouka')use=C.hand.some(i=>(def(i).num||0)>=18)&&(late||Math.random()<0.2);
   if(o==='kagenui')use=P.traps.length>0&&Math.random()<0.5;
   if(o==='sakiyomi')use=G.turn>=3&&(late||Math.random()<0.2);
-  if(o==='fudou')use=(G.gauge>=GOAL-15&&Math.random()<0.6)||(P.energy>=6&&Math.random()<0.25);
-  if(o==='issen')use=can('A')&&C.energy>=4&&(G.gauge<=-(GOAL-25)||Math.random()<0.15);
+  if(o==='fudou')use=(G.gauge>=GOAL-15&&Math.random()<0.6)||(P.energy>=30&&Math.random()<0.25);
+  if(o==='issen')use=can('A')&&C.energy>=20&&(G.gauge<=-(GOAL-25)||Math.random()<0.15);
   if(o==='shingan')use=G.turn>=2&&Math.random()<0.25;
   if(o==='tensei'){const a=C.hand.filter(i=>def(i).type==='A'&&!def(i).eff).length,d=C.hand.filter(i=>def(i).type==='D'&&!def(i).eff).length;use=(a===0&&d>=2||d===0&&a>=2)&&Math.random()<0.6}
   if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
-  if(o==='genwaku')use=P.energy>=4&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
+  if(o==='genwaku')use=P.energy>=20&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
   C.ougiUsed=true;C.ougiNow=true;if(o==='shingan')for(const x of P.hand)G.knownByCpu.add(x.uid);ougiNow(C,P);
   G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');render();
@@ -985,8 +985,8 @@ function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
   <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.7）</h2><ol>
     <li>2人が同時に手札から1枚を伏せ（または何も出さずに「見送る」）、一斉に開ける。</li>
-    <li><b>気力</b>：毎ターン1溜まる（上限10）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
-    <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字の5分の1（切り上げ・最大5、罠は1）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
+    <li><b>気力</b>：1手目は10、毎ターン5溜まる（上限50）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
+    <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字を5の倍数に切り上げたぶん（最大25、罠は5）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
     <li>2人は<b>橋</b>の上で向き合っている。<b>攻撃</b>は右上の数字の歩数だけ、相手を押し込む。</li>
     <li>攻撃と<b>防御</b>がぶつかったら：攻撃のほうが大きければ、<b>差だけ押す</b>（攻撃24対防御13なら11歩押し込む）。防御が攻撃以上なら防ぎきって、<b>攻撃をそのまま跳ね返す</b>（攻撃13対防御24なら、13跳ね返す）。防御の数字は「ここまでなら受け止められる」壁の高さ。</li>
     <li>読み合いの目安：攻撃は「燃やす・見送る」に強く、防御は攻撃に強く、燃やすは防御に強い（相手の気力は無駄になり、自分は溜まる）。気力の量は見えているので、そこから相手の手を読む。</li>
