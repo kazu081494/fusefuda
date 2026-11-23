@@ -16,7 +16,7 @@ const {chromium}=require('playwright');
     }
     await p.click('[data-act=go-school]');
     await (await p.$$('[data-act=pick-kata]'))[g%5].click();
-    await (await p.$$('[data-act=pick-ougi]'))[g%8].click();
+    await (await p.$$('[data-act=pick-ougi]'))[g%11].click();
     await p.click('[data-act=start-game]');
     for(let i=0;i<120;i++){
       if(await p.$('.modal h2'))break;

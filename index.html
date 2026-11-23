@@ -440,6 +440,9 @@ const OUGI={
   fudou:{name:'不動',text:'このターン、押し込まれない'},
   issen:{name:'一閃',text:'このターン、押し込めたら、さらに3歩押し込む'},
   shingan:{name:'心眼',text:'このターン、相手の手札を全部見る'},
+  tensei:{name:'転生',text:'手札の素の攻撃と防御を入れ替える（攻撃3は防御3に、防御3は攻撃3に）。効果のある札はそのまま'},
+  shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
+  genwaku:{name:'幻惑',text:'このターン、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
 };
 
 /* CPUの性格（相手の欄に出る。クセを読むための手がかり） */
@@ -558,6 +561,12 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   // 一閃：押し込めたら+3歩。不動：押し込まれない（いちばん最後に効く）
   if(toC>0&&using(P,'issen')){toC+=3;notes.push('一閃：さらに3歩押し込む')}
   if(toP>0&&using(C,'issen')){toP+=3;notes.push('相手の一閃：さらに3歩押し込まれた')}
+  if(using(P,'genwaku')||using(C,'genwaku')){
+    const a=toC,b=toP,gp=using(P,'genwaku'),gc=using(C,'genwaku');
+    toC=(gp?b:0)+(gc?0:a);toP=(gc?a:0)+(gp?0:b);
+    if(gp&&b>0)notes.push(`幻惑：押し込まれるはずの${b}歩を、逆に押し込んだ`);
+    if(gc&&a>0)notes.push(`相手の幻惑：押し込むはずの${a}歩を、逆に押し込まれた`);
+  }
   if(toP>0&&using(P,'fudou')){toP=0;notes.push('不動：押し込まれない')}
   if(toC>0&&using(C,'fudou')){toC=0;notes.push('相手の不動：押し込めない')}
   return {toC,toP,net:toC-toP,why,notes,fx,base:baseC-baseP};
@@ -573,10 +582,12 @@ function newSide(counts,kata,ougi){
     noAtk:false,noAtkNext:false,yokoku:false,yokokuNext:false,history:[]};
   drawN(s,HAND_START);return s;
 }
+/* 出すのに要る気力（屍姫で加えた札は0） */
+const costOf=i=>i.free?0:def(i).cost;
 /* 出せるか（理由つき） */
 function blockReason(s,i){
   const d=def(i);
-  if(d.cost>s.energy)return '気力不足';
+  if(costOf(i)>s.energy)return '気力不足';
   if(d.type==='A'&&s.noAtk)return '攻撃不可';
   if(d.type==='T'&&s.traps.length>=trapMax(s))return '罠は満杯';
   return '';
@@ -627,12 +638,26 @@ function tick(){
 }
 /* 相手の手の種類（先読みで見える） */
 const actKind=ch=>ch.play&&def(ch.play).type==='A'?'攻撃してくる':'攻撃してこない';
+/* 使った瞬間に効く奥義。返り値は使った本人向けの説明 */
+function ougiNow(me,op){
+  if(me.ougi==='tensei'){
+    let n=0;for(const i of me.hand){const d=def(i);if(!d.eff&&(d.type==='A'||d.type==='D')){i.id=(d.type==='A'?'D':'A')+d.num;n++}}
+    return `転生：手札の${n}枚の攻撃と防御が入れ替わった`;
+  }
+  if(me.ougi==='shikabane'){
+    if(!op.discard.length)return '屍姫：相手の捨て札が無かった';
+    const x=rnd(op.discard);removeFrom(op.discard,x);x.free=true;me.hand.unshift(x);
+    return `屍姫：相手の捨て札から「${label(def(x))}」を手札に加えた（気力0で出せる）`;
+  }
+  return '';
+}
 function useOugi(){
   const P=G.p;if(G.phase!=='select'||P.ougiUsed)return;
   P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
   if(P.ougi==='shingan')P.seeAll=true;
+  const m=ougiNow(P,G.c);if(m){G.notices.push({t:m});log(m);if(G.sel&&blockReason(P,G.sel))G.sel=null}
   if(P.ougi==='sakiyomi'){G.cPre=cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
   render();
 }
@@ -659,8 +684,8 @@ function commit(pi,bi=null){
     else if(me.traps.length<trapMax(me)){me.traps.push({inst:t.inst,active:false});G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を奪った`)}
     else{op.discard.push(t.inst);G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を外した（置き場が無い）`)}
   }
-  G.pPlay=pi;if(pi){removeFrom(P.hand,pi);P.energy-=def(pi).cost}
-  const ci=ch.play;G.cPlay=ci;if(ci){removeFrom(C.hand,ci);C.energy-=def(ci).cost}
+  G.pPlay=pi;if(pi){removeFrom(P.hand,pi);P.energy-=costOf(pi)}
+  const ci=ch.play;G.cPlay=ci;if(ci){removeFrom(C.hand,ci);C.energy-=costOf(ci)}
   G.openMsgs.forEach(m=>log(m));
   G.sel=null;G.detail=null;
   G.res=outcome(P,C,pi?def(pi):null,ci?def(ci):null,G.pBurned?def(G.pBurned):null,G.cBurned?def(G.cBurned):null);
@@ -765,7 +790,7 @@ function cpuChoose(peek){
     const gain=clampE(E+ENERGY_GAIN+burnVal(d,C))-clampE(E+ENERGY_GAIN);
     combos.push({play:null,burn:o,ev:evOf(null,d)+0.45*gain-0.6-0.08*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)});
     if(blockReason(C,o))continue;
-    let ev=evOf(d)-0.22*d.cost;
+    let ev=evOf(d)-0.22*costOf(o);
     if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:-0.5;
     combos.push({play:o,burn:null,ev:ev+styleBias(d.type,d)});
   }
@@ -789,23 +814,26 @@ function cpuMaybeBefore(){
   if(o==='fudou')use=(G.gauge>=GOAL-3&&Math.random()<0.6)||(P.energy>=6&&Math.random()<0.25);
   if(o==='issen')use=can('A')&&C.energy>=4&&(G.gauge<=-(GOAL-5)||Math.random()<0.15);
   if(o==='shingan')use=G.turn>=2&&Math.random()<0.25;
+  if(o==='tensei'){const a=C.hand.filter(i=>def(i).type==='A'&&!def(i).eff).length,d=C.hand.filter(i=>def(i).type==='D'&&!def(i).eff).length;use=(a===0&&d>=2||d===0&&a>=2)&&Math.random()<0.6}
+  if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
+  if(o==='genwaku')use=P.energy>=4&&(G.gauge>=GOAL-4&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
-  C.ougiUsed=true;C.ougiNow=true;if(o==='shingan')C.seeAll=true;
+  C.ougiUsed=true;C.ougiNow=true;if(o==='shingan')C.seeAll=true;ougiNow(C,P);
   G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');render();
 }
 
 /* ---------- 描画 ---------- */
 const $app=document.getElementById('app');
 const silHTML=t=>`<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><use href="#sil-${t}"/></svg>`;
-function faceHTML(d){
-  return `${silHTML(d.type)}<span class="ccost" title="気力">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}`+
+function faceHTML(d,cost=d.cost){
+  return `${silHTML(d.type)}<span class="ccost" title="気力">${cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}`+
     (d.eff?`<span class="ctype">${TY[d.type].name}</span><span class="cname">${d.name}</span><span class="ctext">${d.short}</span>`
           :`<span class="plain">${TY[d.type].name}</span>`);
 }
 function cardHTML(i,o={}){
   const d=def(i);
-  return `<button class="card t-${d.type}${o.small?' small':''}${o.sel?' sel':''}${o.off?' off':''}${o.cls?' '+o.cls:''}"data-act="${o.act||'detail'}" data-uid="${i.uid}" aria-label="${label(d)}、気力${d.cost}${d.eff?'：'+d.short:''}">
-    ${faceHTML(d)}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:''}</button>`;
+  return `<button class="card t-${d.type}${o.small?' small':''}${o.sel?' sel':''}${o.off?' off':''}${o.cls?' '+o.cls:''}"data-act="${o.act||'detail'}" data-uid="${i.uid}" aria-label="${label(d)}、気力${costOf(i)}${d.eff?'：'+d.short:''}">
+    ${faceHTML(d,costOf(i))}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:i.free?'<span class="tag ban">屍</span>':''}</button>`;
 }
 const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力+${burnVal(d,s)}</b>${note?`<small>${note}</small>`:''}</span></div>`;
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
