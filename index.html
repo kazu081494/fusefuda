@@ -439,7 +439,7 @@ const OUGI={
   sakiyomi:{name:'先読み',text:'相手が攻撃してくるかどうかを見てから、自分の札を選べる'},
   fudou:{name:'不動',text:'このターン、押し込まれない'},
   issen:{name:'一閃',text:'このターン、押し込めたら、さらに3歩押し込む'},
-  shingan:{name:'心眼',text:'このターン、相手の手札を全部見る'},
+  shingan:{name:'心眼',text:'相手の今の手札を全部見る。見た札は、相手が出すか捨てるまで見えたまま'},
   tensei:{name:'転生',text:'手札の素の攻撃と防御を入れ替える（攻撃3は防御3に、防御3は攻撃3に）。効果のある札はそのまま'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
   genwaku:{name:'幻惑',text:'このターン、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
@@ -578,7 +578,7 @@ let screen='menu';let G=null;let builderPreset=null;
 function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
 function newSide(counts,kata,ougi){
   const d=[];for(const [id,c] of Object.entries(counts))for(let k=0;k<c;k++)d.push(mk(id));
-  const s={deck:shuffle(d),hand:[],discard:[],kata,ougi,ougiUsed:false,ougiNow:false,seeAll:false,energy:ENERGY_START-ENERGY_GAIN+1,burnGain:0,traps:[],
+  const s={deck:shuffle(d),hand:[],discard:[],kata,ougi,ougiUsed:false,ougiNow:false,energy:ENERGY_START-ENERGY_GAIN+1,burnGain:0,traps:[],
     noAtk:false,noAtkNext:false,yokoku:false,yokokuNext:false,history:[]};
   drawN(s,HAND_START);return s;
 }
@@ -599,7 +599,7 @@ function startGame(kata,ougi){
   clearTimers();
   const pre=rnd(PRESETS);
   G={p:newSide(deck,kata,ougi),c:newSide(pre.cards,rnd(Object.keys(KATA)),rnd(Object.keys(OUGI))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
-    gauge:0,prevGauge:0,revealAt:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),schoolInfo:false,
+    gauge:0,prevGauge:0,revealAt:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   screen='game';startTurn();
 }
@@ -610,7 +610,7 @@ function startTurn(){
   for(const s of [G.p,G.c]){
     s.energy=clampE(s.energy+ENERGY_GAIN);
     s.noAtk=s.noAtkNext;s.noAtkNext=false;s.yokoku=s.yokokuNext;s.yokokuNext=false;
-    s.ougiNow=false;s.seeAll=false;
+    s.ougiNow=false;
     for(const t of s.traps)t.active=true;
   }
   Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]});
@@ -656,7 +656,7 @@ function useOugi(){
   P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
-  if(P.ougi==='shingan')P.seeAll=true;
+  if(P.ougi==='shingan')for(const x of G.c.hand)G.knownOpp.add(x.uid);
   const m=ougiNow(P,G.c);if(m){G.notices.push({t:m});log(m);if(G.sel&&blockReason(P,G.sel))G.sel=null}
   if(P.ougi==='sakiyomi'){G.cPre=cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
   render();
@@ -728,6 +728,7 @@ function resolve(){
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
   drawN(P,1);drawN(C,1);
   for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
+  for(const u of [...G.knownByCpu])if(!P.hand.some(x=>x.uid===u))G.knownByCpu.delete(u);
   G.extra=msgs;
   const act=(d,b,opp)=>b?`「${label(def(b))}」を燃やした`:!d?'見送った':opp&&d.type==='T'?'罠を張った':label(d);
   log(`${act(pd,G.pBurned,false)} 対 ${act(cd,G.cBurned,true)}：${r.net>0?`${r.net}歩 押し込んだ`:r.net<0?`${-r.net}歩 押し込まれた`:'睨み合い'}`);
@@ -770,16 +771,21 @@ function styleBias(k,d){
   if(st==='tame'){if(k==='B')return C.energy<6?1.2:-1.0;if(k==='A')return d.num>=4?0.9:-0.3;if(k==='D')return -0.2}
   return 0;
 }
-/* 心眼：あなたの手札が見えているときは、出せる手を同じ重みで考える */
+/* 心眼：見たあなたの札は覚えておき、手を読むのに使う（見えていない札のぶんは、いつもの読みで補う） */
 function seenModel(){
-  const P=G.p,o=[...P.hand.filter(i=>!blockReason(P,i)).map(i=>def(i)),null];
-  return o.map(d=>({d,w:1/o.length}));
+  const P=G.p,known=P.hand.filter(i=>G.knownByCpu.has(i.uid));
+  if(!known.length)return cpuOppModel();
+  const unk=(P.hand.length-known.length)/P.hand.length;
+  const o=[...known.filter(i=>!blockReason(P,i)).map(i=>def(i)),null];
+  const list=o.map(d=>({d,w:(1-unk)/o.length}));
+  if(unk>0)for(const m of cpuOppModel())list.push({d:m.d,w:m.w*unk});
+  return list;
 }
 /* 相手の手：{play: 出す札, burn: 燃やす札}（どちらか一方。両方 null なら見送る）
    peek を渡すと、あなたが攻撃してくるかどうかだけ分かった状態（先読み）で決める */
 function cpuChoose(peek){
   const C=G.c,P=G.p,E=C.energy;
-  const model=peek===undefined?(C.seeAll?seenModel():cpuOppModel())
+  const model=peek===undefined?seenModel()
     :peek&&peek.type==='A'?[{d:{type:'A',num:Math.min(P.energy,5),cost:0,eff:null},w:1}]
     :(()=>{const l=cpuOppModel().filter(m=>!m.d||m.d.type!=='A'),t=l.reduce((a,b)=>a+b.w,0);return l.map(m=>({d:m.d,w:m.w/t}))})();
   const danger=G.gauge>=GOAL-3,chance=G.gauge<=-(GOAL-4);
@@ -818,7 +824,7 @@ function cpuMaybeBefore(){
   if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
   if(o==='genwaku')use=P.energy>=4&&(G.gauge>=GOAL-4&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
-  C.ougiUsed=true;C.ougiNow=true;if(o==='shingan')C.seeAll=true;ougiNow(C,P);
+  C.ougiUsed=true;C.ougiNow=true;if(o==='shingan')for(const x of P.hand)G.knownByCpu.add(x.uid);ougiNow(C,P);
   G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');render();
 }
 
@@ -948,7 +954,6 @@ function sideChips(s,isP){
     c.push(isP?`<button class="chip trap" data-act="mytrap" data-uid="${t.inst.uid}">罠：${def(t.inst).name}（${st}）</button>`:`<span class="chip trap">罠あり（${st}）</span>`);
   }
   c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}">山${s.deck.length}・捨${s.discard.length}</button>`);
-  if(isP&&s.seeAll)c.push('<span class="chip warn">心眼：手札が見えている</span>');
   return `<div class="chips">${c.join('')}</div>`;
 }
 const energyHTML=s=>{
@@ -969,7 +974,7 @@ function whyText(){
 }
 function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
-  const oppHand=C.hand.map(x=>P.seeAll||G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:P.seeAll?'':'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
+  const oppHand=C.hand.map(x=>G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
   const cells=[];for(let k=GOAL;k>=-GOAL;k--)cells.push(`<div class="cell${k===G.gauge?' on':''}${k===GOAL?' goal-p':''}${k===-GOAL?' goal-c':''}${k===0?' mid':''}"></div>`);
   const gTxt=G.gauge>0?`勝ちまで あと <b>${GOAL-G.gauge}</b> 歩`:G.gauge<0?`負けまで あと <b>${GOAL+G.gauge}</b> 歩`:'互角';
 
