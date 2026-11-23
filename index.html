@@ -152,12 +152,14 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
 
 .gauge{display:flex;flex-direction:column;gap:3px;flex:none}
-.cells{display:grid;grid-template-columns:repeat(17,minmax(0,1fr));gap:2px}
-.cell{height:16px;border-radius:3px;background:var(--table-3);position:relative}
-.cell.goal-p{background:color-mix(in srgb,var(--win) 35%,var(--table-3))}
-.cell.goal-c{background:color-mix(in srgb,var(--lose) 35%,var(--table-3))}
-.cell.mid{box-shadow:inset 0 0 0 1px var(--line)}
-.cell.on{background:var(--accent)}
+.cells{display:grid;grid-template-columns:repeat(17,minmax(0,1fr));gap:2px;padding:3px 0;border-block:3px solid #5a3d24;background:#1a120b;border-radius:2px}
+.cell{height:16px;border-radius:1px;background:linear-gradient(#8a6440,#6e4d30);position:relative}
+.cell.goal-p,.cell.goal-c{background:linear-gradient(#3e2a18,#2b1c10)}
+.cell.goal-p::before,.cell.goal-c::before{content:"";position:absolute;left:50%;top:-9px;width:9px;height:9px;transform:translateX(-50%);border-radius:50% 50% 30% 30%;background:var(--accent);box-shadow:0 0 6px rgba(226,178,71,.5)}
+.cell.goal-p{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--win) 70%,transparent)}
+.cell.goal-c{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--lose) 70%,transparent)}
+.cell.mid{box-shadow:inset 0 0 0 1px rgba(241,220,171,.35)}
+.cell.on{background:radial-gradient(circle,#fff6d6 0 30%,var(--accent) 70%);box-shadow:0 0 8px 2px rgba(226,178,71,.6);z-index:1}
 .gauge-labels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
 .gauge-labels b{color:var(--fg)}
 
@@ -210,6 +212,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .calls{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
 .calls .verdict{background:rgba(5,8,12,.72);border-radius:8px;padding:1px 8px}
 .calls .verdict .v{text-shadow:0 0 6px #000}
+.verdict .v small{display:block;font-size:12px;line-height:1.2}
 .play .calls{animation:callin .4s .55s both}
 @keyframes callin{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
 .stage .slot .who{color:#c9d3df}
@@ -276,6 +279,8 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .modal{background:var(--table-2);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:440px;width:100%;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
 .modal h2{font-family:var(--font-display);font-weight:400;font-size:30px}
 .modal h2.win{color:var(--win)}.modal h2.lose{color:var(--lose)}
+.modal .result{font-family:var(--font-display);font-weight:800;font-size:20px;margin-top:-6px}
+.modal .result.win{color:var(--win)}.modal .result.lose{color:var(--lose)}
 .dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .dl dt{color:var(--muted)}.dl dd{margin:0}
 .mini-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
@@ -555,7 +560,7 @@ function blockReason(s,i){
   if(d.type==='T'&&s.traps.length>=trapMax(s))return '罠は満杯';
   return '';
 }
-function log(m){G.log.push(`${G.turn}手目　${m}`)}
+function log(m){G.log.push(`${G.turn}合目　${m}`)}
 function clearTimers(){if(!G)return;clearInterval(G.tId);clearTimeout(G.cpuT);clearTimeout(G.autoT);G.tId=null;G.autoT=null}
 
 function startGame(school){
@@ -568,7 +573,7 @@ function startGame(school){
 }
 function startTurn(){
   clearTimers();
-  if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}手で決着がつかなかったので、目盛りの位置で決着`);
+  if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}合で決着がつかなかったので、橋の上の位置で決着`);
   G.turn++;
   for(const s of [G.p,G.c]){
     s.energy=clampE(s.energy+ENERGY_GAIN);
@@ -577,7 +582,7 @@ function startTurn(){
     for(const t of s.traps)t.active=true;
   }
   Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]});
-  if(!G.p.hand.length&&!G.p.deck.length&&!G.c.hand.length&&!G.c.deck.length)return finishByGauge('両者の札が尽きたので、目盛りの位置で決着');
+  if(!G.p.hand.length&&!G.p.deck.length&&!G.c.hand.length&&!G.c.deck.length)return finishByGauge('両者の札が尽きたので、橋の上の位置で決着');
   if(G.p.noAtk)G.notices.push({t:'このターン、あなたは攻撃できない'});
   if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
   if(G.p.yokoku)G.notices.push({t:'あなたの予告：攻撃の数字+2'});
@@ -678,9 +683,9 @@ function resolve(){
   for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
   G.extra=msgs;
   const act=(d,b,opp)=>b?`「${label(def(b))}」を燃やした`:!d?'見送った':opp&&d.type==='T'?'罠を張った':label(d);
-  log(`${act(pd,G.pBurned,false)} 対 ${act(cd,G.cBurned,true)}：${r.net>0?`${r.net}押した`:r.net<0?`${-r.net}押された`:'動かない'}`);
+  log(`${act(pd,G.pBurned,false)} 対 ${act(cd,G.cBurned,true)}：${r.net>0?`${r.net}歩 押し込んだ`:r.net<0?`${-r.net}歩 押し込まれた`:'睨み合い'}`);
   [...r.notes,...msgs].forEach(m=>log(m));
-  if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:'目盛りを端まで押し切った'};
+  if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:G.gauge>0?'相手を橋のたもとまで押し込んだ':'橋のたもとまで押し込まれた'};
   G.phase='result';
   if(!G.over){
     const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
@@ -821,12 +826,12 @@ function rulesHTML(){
     <li>2人が同時に手札から1枚を伏せ（または何も出さずに「見送る」）、一斉に開ける。</li>
     <li><b>気力</b>：毎ターン1溜まる（上限10）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
     <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字ぶん（最大5、罠は1）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
-    <li><b>攻撃</b>は右上の数字ぶん、目盛りを相手側へ押す。</li>
+    <li>2人は<b>橋</b>の上で向き合っている。<b>攻撃</b>は右上の数字の歩数だけ、相手を押し込む。</li>
     <li>攻撃と<b>防御</b>がぶつかったら：攻撃のほうが大きければ、<b>差だけ押す</b>（攻撃5対防御3なら2押す）。防御が攻撃以上なら防ぎきって、<b>攻撃をそのまま跳ね返す</b>（攻撃3対防御5なら、3跳ね返す）。防御の数字は「ここまでなら受け止められる」壁の高さ。</li>
     <li>読み合いの目安：攻撃は「燃やす・見送る」に強く、防御は攻撃に強く、燃やすは防御に強い（相手の気力は無駄になり、自分は溜まる）。気力の量は見えているので、そこから相手の手を読む。</li>
-    <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで動かない。防御どうしは動かない。</li>
+    <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで睨み合い。防御どうしも睨み合い。</li>
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで（影の流派は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
-    <li>相手の陣の端（8マス）まで押し切ったら勝ち。20手で決着がつかなければ、目盛りが寄っている側の勝ち。</li>
+    <li>相手を相手の岸（橋のたもと、8歩先）まで押し込んだら<b>勝負あり</b>。20合で決着がつかなければ、押し込んでいる側の勝ち。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
     <li>デッキは20枚、同じカードは3枚まで。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li><b>流派</b>：試合の前に1つ選ぶ。<b>型</b>はいつも効く小さな特性、<b>奥義</b>は1試合に1回、伏せる前に使う大技。相手の流派は秘密だが、型の効果は結果に出る（「相手の型：さらに1押す」など）ので、そこから推理できる。奥義は「使った」ことだけ知らされる。</li>
@@ -898,7 +903,7 @@ function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
   const oppHand=C.hand.map(x=>G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
   const cells=[];for(let k=GOAL;k>=-GOAL;k--)cells.push(`<div class="cell${k===G.gauge?' on':''}${k===GOAL?' goal-p':''}${k===-GOAL?' goal-c':''}${k===0?' mid':''}"></div>`);
-  const gTxt=G.gauge>0?`あと <b>${GOAL-G.gauge}</b> で勝ち`:G.gauge<0?`あと <b>${GOAL+G.gauge}</b> で負け`:'五分';
+  const gTxt=G.gauge>0?`勝ちまで あと <b>${GOAL-G.gauge}</b> 歩`:G.gauge<0?`負けまで あと <b>${GOAL+G.gauge}</b> 歩`:'互角';
 
   let oppSlot,meSlot;
   if(revealed){
@@ -940,10 +945,10 @@ function gameHTML(){
     // 罠が発動したら、真ん中に大きく出す
     for(const [fired,who] of [[G.res.fx.firedP,'あなた'],[G.res.fx.firedC,'相手']])
       for(const f of fired)center+=`<div class="trapfire ${who==='あなた'?'mine':'theirs'}">罠発動！<small>${who}の${f.name}</small></div>`;
-    center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n>0?`${n} 押した`:n<0?`${-n} 押された`:'動かない'}</span></div>`;
+    center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n?`${Math.abs(n)}歩<small>${n>0?'押し込んだ':'押し込まれた'}</small>`:'睨み合い'}</span></div>`;
     info+=`<p class="why">${whyText()}</p>`;
     // 罠・効果・流派で押す量が変わったときは、差し引きを最後に1行で出す（上の説明と真ん中の数が食い違って見えるため）
-    const tot=G.res.net!==G.res.base?[`<b>差し引き：${n>0?`${n}押した`:n<0?`${-n}押された`:'動かない'}</b>`]:[];
+    const tot=G.res.net!==G.res.base?[`<b>差し引き：${n>0?`${n}歩 押し込んだ`:n<0?`${-n}歩 押し込まれた`:'睨み合い'}</b>`]:[];
     const lines=[...G.openMsgs,...G.res.notes,...tot,...G.extra||[]];
     if(lines.length)info+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
   }
@@ -971,7 +976,7 @@ function gameHTML(){
   else if(ph==='result'&&!G.over)actions=`<button class="btn wide sub" data-act="next">すぐ次へ<i class="auto" style="animation-duration:${G.autoMs}ms"></i></button>`;
   else actions=`<button class="btn wide sub" disabled>　</button>`;
 
-  return `<div class="topbar"><span class="turn">${G.turn}手目</span>
+  return `<div class="topbar"><span class="turn">${G.turn}合目</span>
       ${ph==='select'&&settings.timer?`<div class="timer" id="tbox"><i id="tbar" style="width:100%"></i></div><span class="tnum" id="tnum">${settings.timer}秒</span>`:'<div class="spacer"></div>'}
       <button class="btn ghost tiny" data-act="open-log">記録</button>
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
@@ -979,8 +984,8 @@ function gameHTML(){
       <div class="side-head"><div class="who-line"><h2>相手</h2>${energyHTML(C)}</div>${sideChips(C,false)}</div>
       <div class="opp-hand">${oppHand}</div>
     </section>
-    <section class="gauge" aria-label="目盛り">
-      <div class="gauge-labels"><span>相手の陣</span><span>${gTxt}</span><span>自分の陣</span></div>
+    <section class="gauge" aria-label="橋">
+      <div class="gauge-labels"><span>相手の岸</span><span>${gTxt}</span><span>自分の岸</span></div>
       <div class="cells">${cells.join('')}</div>
     </section>
     <section class="battle stage${play?' play':''}" style="${stageStyle}" aria-label="場">
@@ -1000,9 +1005,10 @@ function gameHTML(){
 function overHTML(){
   const w=G.over.winner,ps=SCHOOLS[G.p.school],cs=SCHOOLS[G.c.school];
   return `<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="ovt">
-    <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w==='p'?'勝ち':w==='c'?'負け':'引き分け'}</h2>
+    <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w?'勝負あり':'引き分け'}</h2>
+    ${w?`<p class="result ${w==='p'?'win':'lose'}">あなたの${w==='p'?'勝ち':'負け'}</p>`:''}
     <p class="muted small">${G.over.reason}</p>
-    <dl class="dl"><dt>手数</dt><dd>${G.turn}手</dd>
+    <dl class="dl"><dt>合数</dt><dd>${G.turn}合</dd>
       <dt>あなたの流派</dt><dd>${ps.name}（奥義「${ps.ougi}」${G.p.ougiUsed?'使った':'使わなかった'}）</dd>
       <dt>相手の流派</dt><dd>${cs.name}（奥義「${cs.ougi}」${G.c.ougiUsed?'使った':'使わなかった'}）<br><span class="muted small">型：${cs.kata}</span></dd>
       <dt>相手のデッキ</dt><dd>${G.cpuDeck}</dd>
