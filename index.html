@@ -591,7 +591,7 @@ function cleanDeck(obj){
   return out;
 }
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
-let settings=Object.assign({speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
+let settings=Object.assign({vol:.8,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
@@ -972,7 +972,7 @@ function yomiOf(pa,ca,base){
 let AC=null,sndState='';
 function audio(){
   if(!settings.sound)return null;
-  try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}
+  try{if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();masterOf(AC)}if(AC.state==='suspended')AC.resume();setVolume();return AC}catch(e){return null}
 }
 /* スマホでは、画面に触れた瞬間に音の準備をしないと鳴らないことがある。触れるたびに起こし、最初の1回は無音を流して音の出口を開ける */
 let audioUnlocked=false;
@@ -980,8 +980,18 @@ document.addEventListener('pointerdown',()=>{
   const ac=audio();if(!ac)return;
   if(!audioUnlocked){try{const b=ac.createBuffer(1,1,22050),src=ac.createBufferSource();src.buffer=b;src.connect(ac.destination);src.start(0);audioUnlocked=true}catch(e){}}
 },{capture:true});
+/* 出口：大きい音を抑えるコンプレッサーを通してから、音量のつまみへ */
+function masterOf(ac){
+  if(ac._out)return ac._out;
+  const comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.knee.value=6;comp.ratio.value=12;comp.attack.value=.003;comp.release.value=.2;
+  const vol=ac.createGain();vol.gain.value=VOL_BOOST*(settings.vol??.8);
+  comp.connect(vol);vol.connect(ac.destination);ac._out=comp;ac._vol=vol;return comp;
+}
+const VOL_BOOST=1.7;
+function setVolume(){if(AC&&AC._vol)AC._vol.gain.value=VOL_BOOST*(settings.vol??.8)}
+const outOf=ac=>ac._out||masterOf(ac);
 function noiseBuf(ac,sec){const n=Math.floor(ac.sampleRate*sec),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return b}
-function env(ac,node,t,peak,dur,atk=0.004){const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+atk);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);node.connect(g);g.connect(ac.destination);return g}
+function env(ac,node,t,peak,dur,atk=0.004){const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+atk);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);node.connect(g);g.connect(outOf(ac));return g}
 const SFX={
   // 刀が当たる：高さのずれた金属の響きを重ね、最初に短い衝撃音
   clang(ac,t,big=1){
@@ -1021,38 +1031,72 @@ const SFX={
 };
 /* ---------- BGM（その場で作る） ----------
    琴のようなはじく音で、都節の音階（レ・ミ♭・ソ・ラ・シ♭）の旋律を毎回少しずつ違えて弾き続ける */
-const BGM={on:false,next:0,beat:0,deg:5,timer:null,out:null};
-const SCALE=[146.83,155.56,196,220,233.08,293.66,311.13,392,440,466.16,587.33,622.25,783.99];// レ3〜ソ5
-const BEAT=.78;// 1拍の長さ（秒）
-function pluck(ac,dst,f,t,v,dur=1.8){
-  const o1=ac.createOscillator(),o2=ac.createOscillator(),lp=ac.createBiquadFilter(),g=ac.createGain();
-  o1.type='triangle';o1.frequency.value=f;o2.type='sine';o2.frequency.value=f*2.01;
-  lp.type='lowpass';lp.frequency.setValueAtTime(Math.min(6000,f*14),t);lp.frequency.exponentialRampToValueAtTime(Math.max(300,f*2),t+.35);
-  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  const g2=ac.createGain();g2.gain.value=.35;o1.connect(lp);o2.connect(g2);g2.connect(lp);lp.connect(g);g.connect(dst);
-  o1.start(t);o2.start(t);o1.stop(t+dur+.05);o2.stop(t+dur+.05);
+const BGM={on:false,next:0,step:0,timer:null,out:null};
+// 音階（都節：レ・ミ♭・ソ・ラ・シ♭）。0=レ3 … 12=ソ5
+const SCALE=[146.83,155.56,196,220,233.08,293.66,311.13,392,440,466.16,587.33,622.25,783.99];
+const STEP=.27;// 8分音符1つの長さ（秒）。1小節＝8つ
+// 主旋律：[音（SCALEの番号）, 長さ（8分音符いくつ）]。-1 は休み。4小節×4句をくり返す
+const MELODY=[
+  // 句A
+  [8,1],[9,1],[8,1],[7,1],[8,2],[10,2], [9,1],[8,1],[7,1],[6,1],[5,4], [8,1],[9,1],[8,1],[7,1],[8,2],[10,2], [11,1],[10,1],[9,2],[8,4],
+  // 句B
+  [10,1],[11,1],[10,1],[9,1],[8,2],[7,2], [8,1],[9,1],[8,1],[7,1],[8,4], [12,1],[11,1],[10,2],[9,1],[8,1],[7,2], [8,2],[6,2],[5,4],
+];
+// 尺八風の音を重ねる句（句Bの後半）
+const MEL_LEN=MELODY.reduce((a,[,l])=>a+l,0);
+function pluck(ac,dst,f,t,v,dur=1.6){
+  const o1=ac.createOscillator(),o2=ac.createOscillator(),o3=ac.createOscillator(),lp=ac.createBiquadFilter(),g=ac.createGain();
+  o1.type='triangle';o1.frequency.value=f;o2.type='sine';o2.frequency.value=f*2.003;o3.type='sine';o3.frequency.value=f*3.01;
+  lp.type='lowpass';lp.frequency.setValueAtTime(Math.min(7000,f*16),t);lp.frequency.exponentialRampToValueAtTime(Math.max(400,f*2.5),t+.25);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.003);g.gain.exponentialRampToValueAtTime(v*.35,t+.12);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  const g2=ac.createGain();g2.gain.value=.45;const g3=ac.createGain();g3.gain.value=.15;
+  o1.connect(lp);o2.connect(g2);g2.connect(lp);o3.connect(g3);g3.connect(lp);lp.connect(g);g.connect(dst);
+  for(const o of [o1,o2,o3]){o.start(t);o.stop(t+dur+.05)}
 }
-function bgmBeat(ac,dst,t,beat){
-  // 低い刻み：2拍ごとにレ、8拍の後半はラ
-  if(beat%2===0)pluck(ac,dst,beat%16>=8?110:73.42,t,.16,2.2);
-  // 旋律：となりの音へ動くことが多く、ときどき跳ぶ。句の終わり（8拍目）はレかラに落ち着く
-  const end=beat%8===7;
-  if(end){BGM.deg=Math.random()<.6?5:3;pluck(ac,dst,SCALE[BGM.deg],t,.12,3);return}
-  if(Math.random()<.78){
-    const step=Math.random()<.75?(Math.random()<.5?-1:1):(Math.random()<.5?-2:2);
-    BGM.deg=Math.max(2,Math.min(SCALE.length-1,BGM.deg+step));
-    pluck(ac,dst,SCALE[BGM.deg],t,.11);
-    // 裏拍に小さく装飾
-    if(Math.random()<.3){const d2=Math.max(2,Math.min(SCALE.length-1,BGM.deg+(Math.random()<.5?1:-1)));pluck(ac,dst,SCALE[d2],t+BEAT/2,.06,1.2)}
+// 尺八風：息の混じった、ゆれのある長い音
+function flute(ac,dst,f,t,dur,v=.06){
+  const o=ac.createOscillator(),lfo=ac.createOscillator(),lg=ac.createGain(),g=ac.createGain();
+  o.type='sine';o.frequency.value=f;lfo.frequency.value=5.2;lg.gain.value=f*.012;lfo.connect(lg);lg.connect(o.frequency);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.12);g.gain.setValueAtTime(v,t+dur*.7);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  o.connect(g);g.connect(dst);o.start(t);lfo.start(t);o.stop(t+dur+.05);lfo.stop(t+dur+.05);
+  const n=ac.createBufferSource();n.buffer=noiseBuf(ac,dur);const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f*2;bp.Q.value=3;const ng=ac.createGain();
+  ng.gain.setValueAtTime(.0001,t);ng.gain.exponentialRampToValueAtTime(v*.5,t+.06);ng.gain.exponentialRampToValueAtTime(.0001,t+dur);n.connect(bp);bp.connect(ng);ng.connect(dst);n.start(t);
+}
+function drum(ac,dst,t,v,f0=100){
+  const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*.5,t+.25);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+.45);o.connect(g);g.connect(dst);o.start(t);o.stop(t+.5);
+}
+function rim(ac,dst,t,v){
+  const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.05);const hp=ac.createBiquadFilter();hp.type='bandpass';hp.frequency.value=2400;hp.Q.value=2;const g=ac.createGain();
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+.05);n.connect(hp);hp.connect(g);g.connect(dst);n.start(t);
+}
+/* 8分音符1つぶんを鳴らす。step は曲の頭からの通し番号 */
+function bgmStep(ac,dst,t,step){
+  const inBar=step%8,pos=step%MEL_LEN;
+  // 主旋律：この位置で始まる音があれば鳴らす
+  let acc=0;
+  for(const [d,l] of MELODY){
+    if(acc===pos&&d>=0){
+      pluck(ac,dst,SCALE[d],t,.15,Math.max(.8,l*STEP*2.2));
+      // 句Bの後半は、尺八風の音を1オクターブ下で重ねる
+      if(pos>=MEL_LEN-16&&l>=2)flute(ac,dst,SCALE[d]/2,t,l*STEP*1.1);
+    }
+    acc+=l;if(acc>pos)break;
   }
-  // ときどき遠くの太鼓
-  if(beat%16===0){const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(90,t);o.frequency.exponentialRampToValueAtTime(50,t+.4);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.12,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+.6);o.connect(g);g.connect(dst);o.start(t);o.stop(t+.7)}
+  // 琴の低い分散和音（レ・ラ・レ・ラ／句の後半はソ・レ）
+  const bass=(Math.floor(pos/16)%2===1&&pos%16>=8)?[2,5,7,5]:[0,3,5,3];
+  if(inBar%2===0)pluck(ac,dst,SCALE[bass[(inBar/2)%4]]/(inBar===0?2:1),t,inBar===0?.11:.06,1.4);
+  // 太鼓：ドン・(休)・ドン・カッ
+  if(inBar===0)drum(ac,dst,t,.32,95);
+  if(inBar===4)drum(ac,dst,t,.22,110);
+  if(inBar===6)rim(ac,dst,t,.12);
+  if(inBar===7&&step%32===31)drum(ac,dst,t,.18,130);
 }
 function bgmStart(){
   if(!settings.bgm)return;const ac=audio();if(!ac||BGM.on)return;
-  BGM.on=true;BGM.out=ac.createGain();BGM.out.gain.setValueAtTime(.0001,ac.currentTime);BGM.out.gain.exponentialRampToValueAtTime(.8,ac.currentTime+1.5);BGM.out.connect(ac.destination);
-  BGM.next=ac.currentTime+.1;BGM.beat=0;
-  BGM.timer=setInterval(()=>{if(!BGM.on)return;while(BGM.next<ac.currentTime+1.2){bgmBeat(ac,BGM.out,BGM.next,BGM.beat++);BGM.next+=BEAT}},250);
+  BGM.on=true;BGM.out=ac.createGain();BGM.out.gain.setValueAtTime(.0001,ac.currentTime);BGM.out.gain.exponentialRampToValueAtTime(.7,ac.currentTime+1.5);BGM.out.connect(outOf(ac));
+  BGM.next=ac.currentTime+.1;BGM.step=0;
+  BGM.timer=setInterval(()=>{if(!BGM.on)return;while(BGM.next<ac.currentTime+1){bgmStep(ac,BGM.out,BGM.next,BGM.step++);BGM.next+=STEP}},200);
 }
 function bgmStop(){
   if(!BGM.on)return;BGM.on=false;clearInterval(BGM.timer);
@@ -1309,6 +1353,7 @@ function menuHTML(){
         <button class="chip${settings.sound?' on':''}" data-act="snd-sfx" aria-pressed="${!!settings.sound}">効果音 ${settings.sound?'あり':'なし'}</button>
         <button class="chip${settings.sound&&settings.bgm?' on':''}" data-act="snd-bgm" aria-pressed="${!!(settings.sound&&settings.bgm)}">曲 ${settings.sound&&settings.bgm?'あり':'なし'}</button>
         <button class="chip" data-act="snd-test">音を試す</button></div>
+      <label class="row" for="volSel"><span>音量</span><input type="range" id="volSel" min="0" max="1" step="0.05" value="${settings.vol??.8}" style="flex:1"></label>
       <p class="small muted" id="sndState">${sndState||'「音を試す」を押すと、刀の音と曲の一節が鳴る'}</p>
       <label class="row" for="speedSel"><span>結果のあと進む速さ</span>
       <select id="speedSel">${[['fast','はやい'],['normal','ふつう'],['slow','ゆっくり']].map(([k,n])=>`<option value="${k}" ${settings.speed===k?'selected':''}>${n}</option>`).join('')}</select></label>
@@ -1587,6 +1632,7 @@ function modalHTML(){
 /* ---------- 操作 ---------- */
 document.addEventListener('change',e=>{
   if(e.target.id==='timerSel'){settings.timer=Number(e.target.value);store.set(KEY_SET,settings)}
+  if(e.target.id==='volSel'){settings.vol=Number(e.target.value);store.set(KEY_SET,settings);setVolume()}
   if(e.target.id==='speedSel'&&SPEEDS[e.target.value]){settings.speed=e.target.value;store.set(KEY_SET,settings)}
 });
 document.addEventListener('click',e=>{
@@ -1603,7 +1649,7 @@ document.addEventListener('click',e=>{
       const was=settings.sound;settings.sound=true;const ac=audio();settings.sound=was;
       if(!ac){sndState='この画面では音を出せない（ブラウザが音を止めている）。Chrome などのブラウザで開くと鳴ることがある';render();break}
       SFX.clang(ac,ac.currentTime+.05,1);
-      const g=ac.createGain();g.gain.value=.8;g.connect(ac.destination);for(let i=0;i<6;i++)bgmBeat(ac,g,ac.currentTime+.6+i*BEAT,i);
+      const g=ac.createGain();g.gain.value=.7;g.connect(outOf(ac));for(let i=0;i<16;i++)bgmStep(ac,g,ac.currentTime+.6+i*STEP,i);
       setTimeout(()=>{sndState=ac.state==='running'?'音は出せる状態（鳴らなければ、端末のメディア音量を上げる）':`音が止められている（状態：${ac.state}）。Chrome などのブラウザで開くと鳴ることがある`;const el=document.getElementById('sndState');if(el)el.textContent=sndState},400);
       break}
     case 'tutorial':bgmStart();startTutorial();window.scrollTo(0,0);break;
