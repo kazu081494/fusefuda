@@ -204,7 +204,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .duel{position:absolute;left:-6px;right:-6px;bottom:0;height:56%;transform:translateX(var(--g1));pointer-events:none}
 .play .duel{animation:gshift .5s .6s ease-in-out both}
 @keyframes gshift{from{transform:translateX(var(--g0))}to{transform:translateX(var(--g1))}}
-.samurai{position:absolute;bottom:10%;height:78%;aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
+.samurai{position:absolute;bottom:10%;height:min(78%,120px);aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
 .samurai svg,.samurai img{width:100%;height:100%;display:block;object-fit:contain;object-position:bottom}
 img.sil{object-fit:contain;height:auto}
 .samurai.opp{left:12%}
@@ -247,8 +247,8 @@ img.sil{object-fit:contain;height:auto}
 .stage .big.empty{border-color:rgba(201,211,223,.35);color:#c9d3df;background:rgba(12,17,27,.55)}
 .slot{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:0}
 .slot .who{font-size:11.5px;color:var(--muted);flex:none}
-.bigwrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
-.big{height:min(100%,200px);aspect-ratio:5/7;max-width:100%;border-radius:10px}
+.bigwrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center;container-type:size}
+.big{width:min(100cqw,100cqh*5/7,180px);height:auto;aspect-ratio:5/7;max-width:100%;border-radius:10px}
 .big.card{cursor:default;padding:30px 7px 8px;gap:2px}
 .big.card .ccost{width:24px;height:24px;font-size:14px;top:4px;left:5px}
 .big.card .cnum{font-size:28px;top:4px;right:7px}
@@ -1488,10 +1488,11 @@ function cardHTML(i,o={}){
 }
 const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力+${burnVal(d,s)}</b>${note?`<small>${note}</small>`:''}</span></div>`;
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
-/* 広い画面（パソコンのブラウザなど）では、画面の高さに合わせて全体を拡大する（1〜1.6倍）。スマホはそのまま */
+/* 画面の大きさに合わせて全体を拡大する（1〜1.6倍）。幅360px・縦700pxが等倍 */
 function fitZoom(){
   const w=innerWidth,h=innerHeight;
-  const z=w<700?1:Math.max(1,Math.min(1.6,h/760,w/620));
+  // 幅360px・縦700pxを基準に、それより大きい画面ではそのぶん拡大（スマホもパソコンも）
+  const z=Math.max(1,Math.min(1.6,h/700,w/360));
   document.documentElement.style.setProperty('--z',z);
   document.body.classList.toggle('zoomed',z>1);
 }
