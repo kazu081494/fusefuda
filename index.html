@@ -76,7 +76,8 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .title{padding-block:18px 6px;display:flex;flex-direction:column;gap:6px;position:relative}
 .title>*{position:relative}
 .title .lamp{position:absolute;right:-6px;top:-4px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(253,243,216,.35) 0%,rgba(241,220,171,.12) 45%,transparent 70%);pointer-events:none}
-.title .lamp svg{position:absolute;inset:22px;fill:var(--table);opacity:.9}
+.title .lamp svg,.title .lamp img{position:absolute;inset:22px;width:calc(100% - 44px);height:calc(100% - 44px);object-fit:contain;fill:var(--table);opacity:.9}
+.title .lamp img{filter:brightness(.35)}
 .title h1{font-family:var(--font-display);font-weight:400;font-size:clamp(44px,13vw,64px);line-height:1;letter-spacing:.04em}
 .title .sub{color:var(--muted)}
 .title .yomi{font-size:12px;letter-spacing:.3em;color:var(--muted);margin-top:-2px}
@@ -235,7 +236,9 @@ img.sil{object-fit:contain;height:auto}
 .big.empty{border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--muted);padding:6px}
 .big.back{display:flex;align-items:center;justify-content:center}
 .big.back span{font-size:12.5px;font-weight:700;background:var(--table);padding:2px 8px;border-radius:6px}
-.big.back.t-T{border-color:var(--trap)}
+.big.back.t-T{border-color:var(--trap);position:relative;overflow:hidden}
+.big.back.t-T img{position:absolute;inset:10% 8% 24%;width:84%;height:66%;object-fit:contain;filter:brightness(.25) drop-shadow(0 0 2px #9fd0a4) drop-shadow(0 0 10px rgba(110,190,120,.55))}
+.big.back.t-T span{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);white-space:nowrap}
 .big.dim{opacity:.55}
 .reveal{animation:flip .35s ease-out both}
 @keyframes flip{from{transform:rotateY(80deg);opacity:.2}to{transform:none;opacity:1}}
@@ -923,7 +926,7 @@ const $app=document.getElementById('app');
 const ARTS=new Set(["oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
 /* 札の影：効果の札はその札の絵、素の札は型の絵（刀・唐傘・狐） */
 /* 画像生成AIで作った絵が届いた札の ID（art/cards/<ID>.png。作り方は art/PROMPTS.md）。ここに無い札は下の影絵のまま */
-const ART_IMG=new Set(["teisatsu","kaeshi","samurai","D"]);
+const ART_IMG=new Set(["teisatsu","kaeshi","samurai","D","T"]);
 const artKey=d=>d.eff||d.type;
 const silHTML=d=>ART_IMG.has(artKey(d))?`<img class="sil" src="art/cards/${artKey(d)}.png" alt="" aria-hidden="true">`
   :`<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><use href="#${ARTS.has(d.eff)?'art-'+d.eff:'sil-'+d.type}"/></svg>`;
@@ -963,7 +966,7 @@ function deckSummary(){
 }
 function menuHTML(){
   const st=deckStats(deck);
-  return `<div class="title"><div class="lamp" aria-hidden="true"><svg viewBox="0 0 100 100"><use href="#sil-T"/></svg></div><h1>月花乱舞</h1><p class="yomi">げっからんぶ</p>
+  return `<div class="title"><div class="lamp" aria-hidden="true">${ART_IMG.has('T')?'<img src="art/cards/T.png" alt="">':'<svg viewBox="0 0 100 100"><use href="#sil-T"/></svg>'}</div><h1>月花乱舞</h1><p class="yomi">げっからんぶ</p>
     <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
     <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>は防ぎきれば跳ね返す。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と、気力が溜まる。</p></div>
     <button class="btn wide" data-act="go-school" ${st.ok?'':'disabled'}>対戦する</button>
@@ -1078,7 +1081,7 @@ function gameHTML(){
   let oppSlot,meSlot;
   if(revealed){
     const cd=G.cPlay?def(G.cPlay):null,pd=G.pPlay?def(G.pPlay):null;
-    oppSlot=G.cBurned?burntHTML(def(G.cBurned),C,'reveal','燃やした','守りなし'):!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?'<div class="big back t-T reveal"><span>罠を張った</span></div>':bigHTML(cd,'reveal');
+    oppSlot=G.cBurned?burntHTML(def(G.cBurned),C,'reveal','燃やした','守りなし'):!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?`<div class="big back t-T reveal">${ART_IMG.has('T')?'<img src="art/cards/T.png" alt="">':''}<span>罠を張った</span></div>`:bigHTML(cd,'reveal');
     meSlot=G.pBurned?burntHTML(def(G.pBurned),P,'reveal','燃やした','守りなし'):!pd?'<div class="big empty reveal">見送った</div>':bigHTML(pd,'reveal');
   }else{
     oppSlot=`<div class="big empty">${G.cPre?`相手は<br><b>${actKind(G.cPre)}</b>`:'相手が選んでいる'}</div>`;
