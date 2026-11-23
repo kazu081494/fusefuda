@@ -21,16 +21,18 @@ const {chromium}=require('playwright');
     for(let i=0;i<120;i++){
       if(await p.$('.modal h2'))break;
       const ph=await p.evaluate(()=>G.phase);
-      if(ph==='select'){
+      // 相手の奥義やカットインで画面が描き直されると、押そうとした札が消えることがある。そのときはやり直す
+      if(ph==='select')try{
         if(Math.random()<0.15&&await p.$('[data-act=ougi]'))await p.click('[data-act=ougi]');
         if(Math.random()<0.3){await p.click('[data-act=burn]');const all=await p.$$('[data-act=hand]');if(all.length){await all[Math.floor(Math.random()*all.length)].click();if(Math.random()<0.6){await p.click('[data-act=commit]');continue}}}
         const hs2=await p.$$('[data-act=hand]:not(.off)');
-        if(!hs2.length||Math.random()<0.1){await p.click('[data-act=pass]');continue}
+        if(!hs2.length||Math.random()<0.1){await p.click('[data-act=pass]',{timeout:2000});continue}
         const idx=Math.floor(Math.random()*hs2.length);
         await hs2[idx].click();
         const again=(await p.$$('.card.sel'))[0];
-        if(again)await again.click();
-      }else if(ph==='result'){
+        if(again)await again.click({timeout:2000});
+      }catch(e){if(!/not attached|Timeout/.test(e.message))throw e}
+      else if(ph==='result'){
         if(await p.$('[data-act=next]'))await p.click('[data-act=next]');
       }
     }
