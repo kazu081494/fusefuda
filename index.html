@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>伏せ札 試作</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* ページの土台 */
+body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+/* 夜の卓：深い藍鼠の卓に、紙の札。攻撃＝朱、防御＝藍、罠＝苔。気力は真鍮色。単一テーマ（意図的に暗い卓）。対戦画面は一画面に収める */
+:root{
+  color-scheme: dark;
+  --table:#18212c;
+  --table-2:#202b38;
+  --table-3:#2a3746;
+  --line:#3b4b5d;
+  --fg:#e9edf1;
+  --muted:#9aa8b6;
+  --paper:#f1ead9;
+  --ink:#201c17;
+  --ink-muted:#5e574b;
+  --atk:#c94a2a;
+  --def:#356fb6;
+  --trap:#47864d;
+  --accent:#e2b247;
+  --accent-ink:#231a05;
+  --win:#7cc58a;
+  --lose:#ee8a74;
+  --font-display:"Dela Gothic One","Hiragino Sans","Yu Gothic",system-ui,sans-serif;
+  --font-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--table);height:100%}
+body{
+  color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  -webkit-tap-highlight-color:transparent;
+}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--table)}
+#app{max-width:560px;margin:0 auto;padding-block:14px 40px;display:flex;flex-direction:column;gap:14px}
+#app.fit{height:100%;min-height:560px;padding-block:8px 10px;gap:7px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;text-wrap:balance}
+p{margin:0}
+
+/* 汎用 */
+.btn{appearance:none;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;min-height:46px;padding:10px 16px;cursor:pointer;letter-spacing:.02em;position:relative;overflow:hidden}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.sub{background:var(--table-3);color:var(--fg)}
+.btn.wide{width:100%}
+.btn.tiny{min-height:32px;padding:3px 10px;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row > .btn{flex:1 1 auto}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.panel{background:var(--table-2);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.label{font-size:12px;letter-spacing:.08em;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.chip{font-size:11.5px;padding:2px 8px;border-radius:999px;background:var(--table-3);color:var(--fg);border:1px solid transparent;white-space:nowrap}
+button.chip{cursor:pointer;border-color:var(--line)}
+.chip.warn{background:transparent;border-color:var(--accent);color:var(--accent)}
+.chip.on{background:var(--accent);color:var(--accent-ink)}
+.chip.trap{background:transparent;border-color:var(--trap);color:#9fd0a4}
+.energy{display:inline-flex;align-items:baseline;gap:3px;font-size:12px;color:var(--accent);white-space:nowrap}
+.energy b{font-family:var(--font-display);font-weight:400;font-size:20px;line-height:1}
+
+/* タイトル */
+.title{padding-block:18px 6px;display:flex;flex-direction:column;gap:6px}
+.title h1{font-family:var(--font-display);font-weight:400;font-size:clamp(44px,13vw,64px);line-height:1;letter-spacing:.04em}
+.title .sub{color:var(--muted)}
+.tri{font-size:13px;color:var(--muted)}
+.tri b{font-weight:700}
+.tri .a{color:var(--atk)}.tri .d{color:var(--def)}.tri .t{color:#9fd0a4}
+
+/* 札：左上に気力（コスト）、右上に数字、効果は札に全文 */
+.t-A{--tc:var(--atk)}.t-D{--tc:var(--def)}.t-T{--tc:var(--trap)}
+.card{
+  position:relative;appearance:none;border:0;cursor:pointer;
+  aspect-ratio:5/8;width:100%;border-radius:8px;
+  background:var(--paper);color:var(--ink);
+  border-top:6px solid var(--tc);
+  padding:22px 5px 6px;
+  display:flex;flex-direction:column;align-items:stretch;text-align:left;gap:1px;
+  box-shadow:0 2px 0 rgba(0,0,0,.35);
+  transition:transform .12s ease, box-shadow .12s ease;
+  min-width:0;
+}
+.card .ccost{position:absolute;top:3px;left:4px;width:18px;height:18px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}
+.card .cnum{position:absolute;top:2px;right:5px;font-family:var(--font-display);font-size:20px;line-height:1;color:var(--tc)}
+.card .ctype{font-size:10px;font-weight:700;color:var(--tc);line-height:1.3}
+.card .cname{font-size:12px;font-weight:700;line-height:1.2;word-break:keep-all;overflow-wrap:anywhere}
+.card .ctext{font-size:9.5px;line-height:1.32;color:var(--ink-muted);overflow-wrap:anywhere;margin-top:1px}
+.card .plain{margin:auto;font-family:var(--font-display);font-size:17px;color:var(--tc);line-height:1}
+.card .tag{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--accent-ink);white-space:nowrap;line-height:1.6}
+.card .tag.ban{background:var(--ink);color:var(--paper)}
+.card.sel{transform:translateY(-7px);box-shadow:0 0 0 3px var(--accent),0 8px 14px rgba(0,0,0,.4)}
+.card.off{opacity:.4}
+.card.small{aspect-ratio:5/7;padding:15px 3px 4px;border-top-width:4px}
+.card.small .ccost{width:13px;height:13px;font-size:8.5px;top:2px;left:2px}
+.card.small .cnum{font-size:13px;top:1px;right:3px}
+.card.small .ctype{font-size:8.5px}
+.card.small .cname{font-size:8.5px}
+.card.small .ctext{display:none}
+.card.small .plain{font-size:11px}
+.back{
+  aspect-ratio:5/7;width:100%;border-radius:7px;
+  background:repeating-linear-gradient(45deg,transparent 0 5px,rgba(255,255,255,.05) 5px 6px),var(--table-3);
+  border:2px solid var(--line);
+}
+
+/* 対戦画面（一画面） */
+.topbar{display:flex;align-items:center;gap:8px;flex:none}
+.topbar .turn{font-family:var(--font-display);font-size:16px;white-space:nowrap}
+.timer{flex:1;height:8px;border-radius:99px;background:var(--table-3);overflow:hidden;position:relative}
+.timer i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:99px;transition:width .2s linear}
+.timer.low i{background:var(--lose)}
+.tnum{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;min-width:2.6em;text-align:right}
+.spacer{flex:1}
+.side{display:flex;flex-direction:column;gap:5px;flex:none}
+.side-head{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.side-head .who-line{display:flex;align-items:center;gap:10px}
+.side-head h2{font-size:14px;font-weight:700}
+.opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
+
+.gauge{display:flex;flex-direction:column;gap:3px;flex:none}
+.cells{display:grid;grid-template-columns:repeat(17,minmax(0,1fr));gap:2px}
+.cell{height:16px;border-radius:3px;background:var(--table-3);position:relative}
+.cell.goal-p{background:color-mix(in srgb,var(--win) 35%,var(--table-3))}
+.cell.goal-c{background:color-mix(in srgb,var(--lose) 35%,var(--table-3))}
+.cell.mid{box-shadow:inset 0 0 0 1px var(--line)}
+.cell.on{background:var(--accent)}
+.gauge-labels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
+.gauge-labels b{color:var(--fg)}
+
+.battle{flex:1 1 auto;min-height:150px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:8px}
+.slot{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:0}
+.slot .who{font-size:11.5px;color:var(--muted);flex:none}
+.bigwrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+.big{height:min(100%,200px);aspect-ratio:5/7;max-width:100%;border-radius:10px}
+.big.card{cursor:default;padding:30px 7px 8px;gap:2px}
+.big.card .ccost{width:24px;height:24px;font-size:14px;top:4px;left:5px}
+.big.card .cnum{font-size:28px;top:4px;right:7px}
+.big.card .ctype{font-size:12px}
+.big.card .cname{font-size:14px}
+.big.card .ctext{font-size:11px}
+.big.card .plain{font-size:24px}
+.big.empty{border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--muted);padding:6px}
+.big.back{display:flex;align-items:center;justify-content:center}
+.big.back span{font-size:12.5px;font-weight:700;background:var(--table);padding:2px 8px;border-radius:6px}
+.big.back.t-T{border-color:var(--trap)}
+.big.dim{opacity:.55}
+.reveal{animation:flip .35s ease-out both}
+@keyframes flip{from{transform:rotateY(80deg);opacity:.2}to{transform:none;opacity:1}}
+
+.center{display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:0;overflow:auto;text-align:center}
+.verdict{display:flex;flex-direction:column;gap:0}
+.verdict .v{font-family:var(--font-display);font-size:22px;line-height:1.25}
+.verdict .v.win{color:var(--win)}.verdict .v.lose{color:var(--lose)}
+.verdict .why{font-size:11.5px;color:var(--muted);line-height:1.4}
+.msgs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}
+.notice{font-size:11.5px;line-height:1.4;padding:5px 7px;border-radius:7px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);text-align:left}
+.notice.alert{font-weight:700;animation:pulse 1.2s ease-in-out 2}
+@keyframes pulse{50%{background:color-mix(in srgb,var(--accent) 30%,transparent)}}
+.detail{font-size:11.5px;line-height:1.45;text-align:left;background:var(--table-2);border-radius:8px;padding:6px 8px}
+.detail b{display:block;font-size:12.5px}
+.hintline{font-size:11.5px;color:var(--muted)}
+
+.hand{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 24px) / 5);gap:6px;overflow-x:auto;padding:9px 0 9px;scrollbar-width:thin}
+.actions{display:flex;flex-direction:column;gap:6px;flex:none}
+.acts{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+.acts .btn{padding:8px 4px;font-size:14px}
+.btn.sub.on{background:var(--lose);color:var(--ink)}
+.card.burn{opacity:.6;box-shadow:0 0 0 3px var(--lose)}
+.energy .plus{color:var(--lose);font-weight:700;font-size:13px;margin-left:1px}
+.prompt{font-size:12.5px;color:var(--accent);font-weight:700}
+.auto{position:absolute;inset:auto 0 0 0;height:4px;background:var(--accent-ink);opacity:.35;transform-origin:left;animation:autofill linear both}
+@keyframes autofill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* モーダル */
+.modal-bg{position:fixed;inset:0;background:rgba(8,12,18,.72);display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));z-index:20}
+.modal{background:var(--table-2);border:1px solid var(--line);border-radius:16px;padding:18px;max-width:440px;width:100%;max-height:100%;overflow:auto;display:flex;flex-direction:column;gap:12px}
+.modal h2{font-family:var(--font-display);font-weight:400;font-size:30px}
+.modal h2.win{color:var(--win)}.modal h2.lose{color:var(--lose)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
+.dl dt{color:var(--muted)}.dl dd{margin:0}
+.mini-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.loglist{margin:0;padding-left:1.4em;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+
+/* 能力選び */
+.abil{appearance:none;text-align:left;background:var(--table-2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;display:grid;grid-template-columns:1fr auto;gap:2px 10px}
+.abil:hover{border-color:var(--accent)}
+.abil b{font-size:17px}
+.abil .when{font-size:12px;color:var(--accent);align-self:center}
+.abil .t{grid-column:1/-1;font-size:13px;color:var(--muted)}
+
+/* デッキ */
+.sticky{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--table);padding-block:8px;display:flex;flex-direction:column;gap:6px}
+.stats{display:flex;gap:14px;flex-wrap:wrap;font-variant-numeric:tabular-nums;align-items:baseline}
+.stat b{font-family:var(--font-display);font-weight:400;font-size:22px}
+.stat.bad b{color:var(--lose)}
+.stat.ok b{color:var(--win)}
+.group{display:flex;flex-direction:column;gap:6px}
+.group h3{font-size:14px;display:flex;align-items:center;gap:8px}
+.group h3::before{content:"";width:10px;height:10px;border-radius:3px;background:var(--tc)}
+.crow{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--table-2);border-radius:10px;padding:6px 8px}
+.crow .card{cursor:default;aspect-ratio:5/7;padding:16px 2px 2px}
+.crow .card .ccost{width:14px;height:14px;font-size:9px;top:2px;left:2px}
+.crow .card .cnum{font-size:14px;top:2px;right:3px}
+.crow .card .plain{font-size:12px}
+.crow .info{min-width:0;display:flex;flex-direction:column}
+.crow .info b{font-size:14px}
+.crow .info span{font-size:12px;color:var(--muted);line-height:1.4}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--table-3);cursor:pointer;font-weight:700;font-size:18px;line-height:1}
+.stepper button:disabled{opacity:.3;cursor:not-allowed}
+.stepper .n{min-width:1.6em;text-align:center;font-variant-numeric:tabular-nums;font-weight:700}
+.stepper .n.zero{color:var(--muted);font-weight:400}
+
+.rules ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
+select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+
+@media (prefers-reduced-motion: reduce){
+  .reveal,.notice.alert,.auto{animation:none}
+  .card,.timer i{transition:none}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+/* ---------- 定数 ---------- */
+const GOAL=8,ENERGY_START=1,ENERGY_GAIN=1,BURN_MAX=5,ENERGY_MAX=10,DECK_SIZE=20,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
+const TIMER_OPTIONS=[30,45,60,0],TIMER_DEFAULT=45;
+const TY={A:{name:'攻撃'},D:{name:'防御'},T:{name:'罠'}};
+const TYPES=['A','D','T'];
+
+/* ---------- カード ----------
+   [id, 名前, 型, 数字, 気力, 札に刷る文, 詳しい説明]  罠の数字は null */
+const EFFECTS=[
+  ['oiuchi','追い討ち','A',2,2,'押せたら、さらに2押す','押せたら、押す量に2を足す'],
+  ['kantsu','貫通','A',3,3,'防御を無視して押す','相手が防御していても、数字の3をそのまま押す'],
+  ['sutemi','捨て身','A',6,4,'押せなかったら、自分が2押される','数字6の攻撃を気力4で出せる。ただし1も押せなかったら、自分が2押される'],
+  ['rengeki','連撃','A',2,2,'相手が攻撃も防御もしていなければ、2倍押す','相手が「見送った」か「罠を張った」ターンなら、押す量が2倍になる'],
+  ['teisatsu','偵察','A',1,1,'相手の手札を1枚のぞく','開けたとき、相手の手札を1枚ランダムに見る。出されるまで表のまま見える'],
+  ['yokoku','予告','A',2,1,'次のターン、自分の攻撃の数字+2','開けたとき予告する。次のターン、自分の攻撃カードの数字が2増える（相手にも見える）'],
+  ['hangeki','反撃','D',3,3,'防ぎきったら、余ったぶん押し返す','相手の攻撃の数字より大きければ、その差だけ相手を押し返す'],
+  ['ukenagashi','受け流し','D',2,1,'押される量をさらに半分にする','防御の2を引いたあと、押される量をさらに半分（切り捨て）にする'],
+  ['meisou','瞑想','D',1,0,'気力を3得る','気力0で出せる防御1。開けたとき、気力を3得る（上限10）'],
+  ['kakuran','撹乱','D',1,1,'相手の手札を1枚捨てさせる（相手は1枚引く）','開けたとき、相手は手札を1枚ランダムに捨てて、1枚引く'],
+  ['fuuji','封じ手','D',2,2,'防ぎきったら、次のターン相手は攻撃できない','相手の攻撃を1も通さなかったら、次のターン相手は攻撃カードを出せない'],
+  ['mikiri','見切り','D',1,2,'相手の罠を1枚外す','開けたとき、相手が張っている罠を発動させずに捨てさせる'],
+  ['otoshiana','落とし穴','T',null,1,'相手が攻撃したら、押される量を3減らす','張った次のターンから効く。相手が攻撃してきたら、押される量を3減らして捨てる'],
+  ['kaeshi','返し罠','T',null,3,'相手が4以上で攻撃したら、跳ね返す','張った次のターンから効く。相手が数字4以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
+  ['dorobou','気力泥棒','T',null,1,'相手が攻撃したら、気力を3奪う','張った次のターンから効く。相手が攻撃してきたら、相手の気力を3まで奪って自分のものにする'],
+  ['machibuse','待ち伏せ','T',null,2,'相手が攻撃しなかったら、3押す','張った次のターンから効く。相手が防御・溜める・罠を張るのどれかをしたら、相手を3押す'],
+  ['ashikase','足かせ','T',null,2,'相手が攻撃したら、次のターン攻撃させない','張った次のターンから効く。相手が攻撃してきたら、次のターン相手は攻撃カードを出せない'],
+];
+const CARDS={};const POOL=[];
+for(const t of TYPES){
+  if(t!=='T')for(let n=1;n<=5;n++){const d={id:t+n,type:t,num:n,cost:n,name:'',eff:null,short:'',text:''};CARDS[d.id]=d;POOL.push(d);}
+  for(const e of EFFECTS){if(e[2]!==t)continue;const d={id:e[0],eff:e[0],name:e[1],type:e[2],num:e[3],cost:e[4],short:e[5],text:e[6]};CARDS[d.id]=d;POOL.push(d);}
+}
+const PRESETS=[
+  {key:'soku',name:'速攻',desc:'重い攻撃で一気に押す。瞑想で気力を補う',cards:{A5:3,A4:3,A3:2,oiuchi:2,kantsu:2,sutemi:2,D2:2,meisou:2,otoshiana:2}},
+  {key:'mamori',name:'守りの城',desc:'受け止めて反撃。返し罠で大振りを狩る',cards:{D5:2,D4:3,hangeki:3,ukenagashi:2,fuuji:2,meisou:2,A4:2,A3:2,kaeshi:2}},
+  {key:'wana',name:'罠師',desc:'罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:2,kaeshi:2,dorobou:2,machibuse:2,ashikase:2,mikiri:1,A4:2,A3:2,D3:2,meisou:2,teisatsu:1}},
+  {key:'kin',name:'均衡',desc:'攻守と罠を少しずつ。予告と見切りで読みを外す',cards:{A5:2,A3:2,D4:2,D2:2,oiuchi:1,yokoku:2,teisatsu:1,hangeki:1,kakuran:2,mikiri:1,meisou:2,otoshiana:1,machibuse:1}},
+];
+const ABILITIES={
+  tousi:{name:'透視',when:'伏せる前',phase:'before',text:'このターン、相手の手札を全部見る'},
+  baigeki:{name:'倍撃',when:'伏せる前',phase:'before',text:'このターン、自分が押す量が2倍になる'},
+  kaihou:{name:'気力解放',when:'伏せる前',phase:'before',text:'気力を5得る（上限10）'},
+  surikae:{name:'すり替え',when:'開けた後',phase:'after',text:'開けた自分のカードを、手札の1枚と差し替える（気力は払い直す）'},
+  funbari:{name:'踏ん張り',when:'開けた後',phase:'after',text:'このターン、自分が押される量を0にする'},
+};
+
+/* ---------- 保存（ブラウザ内だけ） ---------- */
+const KEY_DECK='fusefuda.deck.v4',KEY_SET='fusefuda.settings.v1';
+const store={
+  get(k,f){try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+function cleanDeck(obj){
+  const out={};if(!obj||typeof obj!=='object')return null;
+  for(const [id,c] of Object.entries(obj)){if(CARDS[id]&&Number.isInteger(c)&&c>0)out[id]=Math.min(c,COPY_MAX);}
+  return out;
+}
+let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
+let settings=Object.assign({timer:TIMER_DEFAULT},store.get(KEY_SET,{}));
+if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
+function saveDeck(){store.set(KEY_DECK,deck)}
+function deckStats(counts){
+  let n=0,cost=0;const by={A:0,D:0,T:0};
+  for(const [id,c] of Object.entries(counts)){n+=c;cost+=CARDS[id].cost*c;by[CARDS[id].type]+=c;}
+  const errs=[];if(n!==DECK_SIZE)errs.push(`20枚ちょうどにする（今${n}枚）`);
+  return {n,avg:n?cost/n:0,by,errs,ok:errs.length===0};
+}
+
+/* ---------- 道具 ---------- */
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function removeFrom(a,x){const i=a.indexOf(x);if(i>=0)a.splice(i,1)}
+let UID=0;
+const mk=id=>({uid:++UID,id});
+const def=i=>CARDS[i.id];
+const label=d=>d.type==='T'?`${d.name}（罠）`:d.eff?`${d.name}（${TY[d.type].name}${d.num}）`:`${TY[d.type].name}${d.num}`;
+const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
+/* 燃やすと得る気力：数字ぶん（最大5）。数字の無い罠は1 */
+const burnVal=d=>d.num==null?1:Math.min(BURN_MAX,d.num);
+/* このターン使える気力（あなたが燃やす札を選んでいれば、そのぶん足す） */
+const availE=s=>s===(G&&G.p)&&G.pBurn?clampE(s.energy+burnVal(def(G.pBurn))):s.energy;
+
+/* ---------- 解決（純関数：状態は変えない） ----------
+   P,C は両者の状態、pd,cd は出したカードの定義（見送ったなら null）
+   返り値：toC＝あなたが相手を押す量、toP＝相手があなたを押す量 */
+const kind=d=>!d||d.type==='T'?'P':d.type;
+function outcome(P,C,pd,cd){
+  const kp=kind(pd),kc=kind(cd),notes=[],fx={banP:false,banC:false,stealFromP:0,stealFromC:0,trapP:false,trapC:false};
+  const numOf=(s,d,k)=>k==='A'?d.num+(s.yokoku?2:0):k==='D'?d.num:0;
+  const np=numOf(P,pd,kp),nc=numOf(C,cd,kc);
+  let toC=0,toP=0,why='';
+  if(kp==='A'&&kc==='A'){
+    if(np>nc){toC=np;why=`攻撃どうし：${np}が${nc}に勝って、${np}押す`}
+    else if(nc>np){toP=nc;why=`攻撃どうし：${nc}が${np}に勝って、${nc}押す`}
+    else why=`攻撃どうし：同じ${np}で相打ち`;
+  }else if(kp==='A'&&kc==='D'){
+    const d=pd.eff==='kantsu'?0:nc;toC=Math.max(0,np-d);
+    why=pd.eff==='kantsu'?'貫通：防御を無視':`攻撃${np} − 防御${nc}`;
+    if(cd.eff==='hangeki'&&nc>np){toP+=nc-np;notes.push(`反撃：${nc-np}押し返した`)}
+    if(cd.eff==='fuuji'&&toC===0){fx.banP=true;notes.push('封じ手：次のターン、あなたは攻撃できない')}
+  }else if(kc==='A'&&kp==='D'){
+    const d=cd.eff==='kantsu'?0:np;toP=Math.max(0,nc-d);
+    why=cd.eff==='kantsu'?'相手の貫通：防御を無視':`攻撃${nc} − 防御${np}`;
+    if(pd.eff==='hangeki'&&np>nc){toC+=np-nc;notes.push(`反撃：${np-nc}押し返した`)}
+    if(pd.eff==='fuuji'&&toP===0){fx.banC=true;notes.push('封じ手：次のターン、相手は攻撃できない')}
+  }else if(kp==='A'){toC=np;why='相手は防いでいない：そのまま押す'}
+  else if(kc==='A'){toP=nc;why='あなたは防いでいない：そのまま押される'}
+  else why='どちらも攻撃していない';
+  // 攻め手の上乗せ
+  const boost=(side,d,k,ok,push,who)=>{
+    if(k!=='A')return push;
+    if(push>0&&d.eff==='rengeki'&&ok==='P'){push*=2;notes.push(`連撃：${who}の押す量が2倍`)}
+    if(push>0&&d.eff==='oiuchi'){push+=2;notes.push(`追い討ち：${who}がさらに2押す`)}
+    if(push>0&&side.bai){push*=2;notes.push(`倍撃：${who}の押す量が2倍`)}
+    return push;
+  };
+  const baseC=toC,baseP=toP;
+  toC=boost(P,pd,kp,kc,toC,'あなた');toP=boost(C,cd,kc,kp,toP,'相手');
+  if(kp==='A'&&pd.eff==='sutemi'&&baseC===0){toP+=2;notes.push('捨て身：押せなかったので、あなたが2押される')}
+  if(kc==='A'&&cd.eff==='sutemi'&&baseP===0){toC+=2;notes.push('相手の捨て身：押せなかったので、相手が2押される')}
+  // 受け手の軽減
+  if(cd&&cd.eff==='ukenagashi'&&toC>0){toC=Math.floor(toC/2);notes.push('受け流し：押す量が半分')}
+  if(pd&&pd.eff==='ukenagashi'&&toP>0){toP=Math.floor(toP/2);notes.push('受け流し：押される量が半分')}
+  // 罠（見切りで外された罠は発動しない）
+  const trap=(owner,victimD,victimK,victimN,isP)=>{
+    const t=owner.trap;if(!t||!t.active)return;
+    if(victimD&&victimD.eff==='mikiri')return;
+    const id=def(t.inst).eff,on=isP?'あなた':'相手',vn=isP?'相手':'あなた';
+    let fired=false;
+    if(id==='otoshiana'&&victimK==='A'){fired=true;if(isP)toP=Math.max(0,toP-3);else toC=Math.max(0,toC-3);notes.push(`${on}の落とし穴：押される量を3減らした`)}
+    if(id==='kaeshi'&&victimK==='A'&&victimN>=4){fired=true;if(isP){toP=0;toC+=victimN}else{toC=0;toP+=victimN}notes.push(`${on}の返し罠：攻撃を跳ね返して${victimN}押した`)}
+    if(id==='dorobou'&&victimK==='A'){fired=true;if(isP)fx.stealFromC=3;else fx.stealFromP=3;notes.push(`${on}の気力泥棒：${vn}の気力を奪う`)}
+    if(id==='machibuse'&&victimK!=='A'){fired=true;if(isP)toC+=3;else toP+=3;notes.push(`${on}の待ち伏せ：${vn}を3押した`)}
+    if(id==='ashikase'&&victimK==='A'){fired=true;if(isP)fx.banC=true;else fx.banP=true;notes.push(`${on}の足かせ：次のターン、${vn}は攻撃できない`)}
+    if(fired){if(isP)fx.trapP=true;else fx.trapC=true}
+  };
+  trap(P,cd,kc,nc,true);trap(C,pd,kp,np,false);
+  if(P.funbari&&toP>0){toP=0;notes.push('踏ん張り：あなたは押されない')}
+  if(C.funbari&&toC>0){toC=0;notes.push('相手の踏ん張り：相手は押されない')}
+  return {toC,toP,net:toC-toP,why,notes,fx};
+}
+
+/* ---------- 試合 ---------- */
+let screen='menu';let G=null;let builderPreset=null;
+
+function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
+function newSide(counts,ability){
+  const d=[];for(const [id,c] of Object.entries(counts))for(let k=0;k<c;k++)d.push(mk(id));
+  const s={deck:shuffle(d),hand:[],discard:[],ability,abilityUsed:false,energy:ENERGY_START-ENERGY_GAIN+1,trap:null,
+    noAtk:false,noAtkNext:false,yokoku:false,yokokuNext:false,bai:false,seeAll:false,funbari:false,history:[]};
+  drawN(s,HAND_START);return s;
+}
+/* 出せるか（理由つき） */
+function blockReason(s,i){
+  const d=def(i);
+  if(d.cost>availE(s))return '気力不足';
+  if(d.type==='A'&&s.noAtk)return '攻撃不可';
+  if(d.type==='T'&&s.trap)return '罠は1枚まで';
+  return '';
+}
+const playable=s=>s.hand.filter(i=>!blockReason(s,i));
+function log(m){G.log.push(`${G.turn}手目　${m}`)}
+function clearTimers(){if(!G)return;clearInterval(G.tId);clearTimeout(G.cpuT);clearTimeout(G.autoT);G.tId=null;G.autoT=null}
+
+function startGame(ability){
+  clearTimers();
+  const pre=rnd(PRESETS);
+  G={p:newSide(deck,ability),c:newSide(pre.cards,rnd(Object.keys(ABILITIES))),cpuDeck:pre.name,
+    gauge:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),
+    pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,pBurn:null,burnMode:false,burnMsgs:[]};
+  screen='game';startTurn();
+}
+function startTurn(){
+  clearTimers();
+  if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}手で決着がつかなかったので、目盛りの位置で決着`);
+  G.turn++;
+  for(const s of [G.p,G.c]){
+    s.energy=clampE(s.energy+ENERGY_GAIN);
+    s.noAtk=s.noAtkNext;s.noAtkNext=false;s.yokoku=s.yokokuNext;s.yokokuNext=false;
+    s.bai=false;s.seeAll=false;s.funbari=false;
+    if(s.trap)s.trap.active=true;
+  }
+  Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,pBurn:null,burnMode:false,burnMsgs:[]});
+  if(!G.p.hand.length&&!G.p.deck.length&&!G.c.hand.length&&!G.c.deck.length)return finishByGauge('両者の札が尽きたので、目盛りの位置で決着');
+  if(G.p.noAtk)G.notices.push({t:'このターン、あなたは攻撃できない'});
+  if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
+  if(G.p.yokoku)G.notices.push({t:'あなたの予告：攻撃の数字+2'});
+  if(G.c.yokoku)G.notices.push({t:'相手の予告：相手の攻撃の数字+2'});
+  G.phase='select';render();startTimer();
+  G.cpuT=setTimeout(cpuMaybeBefore,900+Math.random()*3500);
+}
+function startTimer(){
+  clearInterval(G.tId);
+  if(!settings.timer){G.tEnd=null;return}
+  G.tEnd=Date.now()+settings.timer*1000;G.tId=setInterval(tick,200);tick();
+}
+function tick(){
+  if(!G||G.phase!=='select'||!G.tEnd)return;
+  const left=Math.max(0,(G.tEnd-Date.now())/1000);
+  const bar=document.getElementById('tbar'),num=document.getElementById('tnum'),box=document.getElementById('tbox');
+  if(bar)bar.style.width=(left/settings.timer*100)+'%';
+  if(num)num.textContent=Math.ceil(left)+'秒';
+  if(box)box.classList.toggle('low',left<=10);
+  if(left<=0){clearInterval(G.tId);const s=G.sel&&!blockReason(G.p,G.sel)?G.sel:null;log(s?'時間切れ：選んでいた札で確定':'時間切れ：見送った');commit(s)}
+}
+function useAbility(){
+  const P=G.p;if(G.phase!=='select'||P.abilityUsed)return;
+  const a=P.ability;if(ABILITIES[a].phase!=='before')return;
+  P.abilityUsed=true;G.pUsedNow=true;
+  if(a==='tousi'){P.seeAll=true;log('透視：相手の手札を見た')}
+  if(a==='baigeki'){P.bai=true;log('倍撃：このターン押す量が2倍')}
+  if(a==='kaihou'){P.energy=clampE(P.energy+5);log('気力解放：気力を5得た')}
+  render();
+}
+/* あなたの手を確定（null＝溜める） */
+function commit(pi){
+  if(G.phase!=='select')return;
+  if(pi&&blockReason(G.p,pi))return;
+  clearTimers();
+  const P=G.p,C=G.c;
+  const ch=cpuChoose();   // 相手はあなたの燃やす札を知らずに決める（同時）
+  G.burnMsgs=[];
+  const burn=(s,b,who)=>{const v=burnVal(def(b));removeFrom(s.hand,b);s.discard.push(b);s.energy=clampE(s.energy+v);G.burnMsgs.push(`${who}は「${label(def(b))}」を燃やして気力+${v}`)};
+  if(G.pBurn){burn(P,G.pBurn,'あなた');G.pBurn=null}
+  if(ch.burn)burn(C,ch.burn,'相手');
+  G.burnMode=false;
+  G.pPlay=pi;if(pi){removeFrom(P.hand,pi);P.energy-=def(pi).cost}
+  const ci=ch.play;G.cPlay=ci;if(ci){removeFrom(C.hand,ci);C.energy-=def(ci).cost}
+  G.burnMsgs.forEach(m=>log(m));
+  G.sel=null;G.detail=null;
+  G.res=outcome(P,C,pi?def(pi):null,ci?def(ci):null);
+  if(playerAfterOptions().length){G.phase='after';render()}
+  else{cpuAfter();resolve()}
+}
+function swapOptions(s,cur){
+  const refund=cur?def(cur).cost:0;
+  return s.hand.filter(i=>{const d=def(i);if(d.cost>s.energy+refund)return false;if(d.type==='A'&&s.noAtk)return false;if(d.type==='T'&&s.trap)return false;return true});
+}
+function playerAfterOptions(){
+  const P=G.p;if(P.abilityUsed)return[];const o=[];
+  if(P.ability==='surikae'&&G.res.net<=0&&swapOptions(P,G.pPlay).length)o.push('surikae');
+  if(P.ability==='funbari'&&G.res.toP>0)o.push('funbari');
+  return o;
+}
+function doSwap(x){
+  const P=G.p;
+  if(!swapOptions(P,G.pPlay).includes(x))return;
+  if(G.pPlay){P.hand.push(G.pPlay);P.energy+=def(G.pPlay).cost}
+  removeFrom(P.hand,x);P.energy-=def(x).cost;G.pPlay=x;P.abilityUsed=true;
+  log(`すり替え：「${label(def(x))}」に差し替えた`);
+  G.res=outcome(P,G.c,def(x),G.cPlay?def(G.cPlay):null);
+  cpuAfter();resolve();
+}
+function cpuAfter(){
+  const C=G.c,P=G.p;if(C.abilityUsed)return;
+  const cd=()=>G.cPlay?def(G.cPlay):null,pd=G.pPlay?def(G.pPlay):null;
+  if(C.ability==='surikae'&&G.res.net>=0){
+    let best=null,bestNet=G.res.net;
+    for(const x of swapOptions(C,G.cPlay)){
+      const saveE=C.energy;C.energy=C.energy+(G.cPlay?def(G.cPlay).cost:0)-def(x).cost;
+      const r=outcome(P,C,pd,def(x));C.energy=saveE;
+      if(r.net<bestNet-1){best=x;bestNet=r.net}
+    }
+    if(best&&(Math.random()<0.6||G.gauge+G.res.net>=GOAL)){
+      if(G.cPlay){C.hand.push(G.cPlay);C.energy+=def(G.cPlay).cost}
+      removeFrom(C.hand,best);C.energy-=def(best).cost;G.cPlay=best;C.abilityUsed=true;
+      G.res=outcome(P,C,pd,def(best));G.notices.push({t:'相手が能力を使った',alert:true});log('相手が能力を使った');
+    }
+  }
+  if(C.ability==='funbari'&&G.res.toC>=3&&(G.gauge+G.res.net>=GOAL||G.res.toC>=4||Math.random()<0.4)){
+    C.funbari=true;C.abilityUsed=true;G.res=outcome(P,C,pd,cd());
+    G.notices.push({t:'相手が能力を使った',alert:true});log('相手が能力を使った');
+  }
+}
+function openEff(who,inst,msgs){
+  if(!inst)return;
+  const d=def(inst),me=who==='p'?G.p:G.c,op=who==='p'?G.c:G.p;
+  const mn=who==='p'?'あなた':'相手',on=who==='p'?'相手':'あなた';
+  switch(d.eff){
+    case 'teisatsu':if(op.hand.length){const x=rnd(op.hand);
+      if(who==='p'){G.knownOpp.add(x.uid);msgs.push(`偵察：相手の手札に「${label(def(x))}」がある`)}
+      else msgs.push(`偵察：相手に「${label(def(x))}」を見られた`)}break;
+    case 'kakuran':if(op.hand.length){const x=rnd(op.hand);removeFrom(op.hand,x);op.discard.push(x);drawN(op,1);
+      msgs.push(`撹乱：${on}は「${label(def(x))}」を捨てて1枚引いた`)}break;
+    case 'meisou':me.energy=clampE(me.energy+3);msgs.push(`瞑想：${mn}は気力を3得た`);break;
+    case 'yokoku':me.yokokuNext=true;msgs.push(`予告：次のターン、${mn}の攻撃の数字+2`);break;
+    case 'mikiri':if(op.trap){const t=op.trap.inst;op.discard.push(t);op.trap=null;msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else msgs.push('見切り：外す罠がなかった');break;
+  }
+}
+function resolve(){
+  const P=G.p,C=G.c,r=G.res,msgs=[];
+  const pd=G.pPlay?def(G.pPlay):null,cd=G.cPlay?def(G.cPlay):null;
+  P.history.push(kind(pd));C.history.push(kind(cd));
+  // 罠の発動（解決の前の状態で判定済み）→ 捨てる
+  if(r.fx.trapP&&P.trap){P.discard.push(P.trap.inst);P.trap=null}
+  if(r.fx.trapC&&C.trap){C.discard.push(C.trap.inst);C.trap=null}
+  if(r.fx.stealFromP){const k=Math.min(P.energy,r.fx.stealFromP);P.energy-=k;C.energy=clampE(C.energy+k)}
+  if(r.fx.stealFromC){const k=Math.min(C.energy,r.fx.stealFromC);C.energy-=k;P.energy=clampE(P.energy+k)}
+  if(r.fx.banP)P.noAtkNext=true;
+  if(r.fx.banC)C.noAtkNext=true;
+  openEff('p',G.pPlay,msgs);openEff('c',G.cPlay,msgs);
+  // 出した札の行き先：罠は場へ、それ以外は捨て札へ
+  for(const [s,inst] of [[P,G.pPlay],[C,G.cPlay]]){
+    if(!inst)continue;
+    if(def(inst).type==='T'&&!s.trap)s.trap={inst,active:false};
+    else s.discard.push(inst);
+  }
+  G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
+  drawN(P,1);drawN(C,1);
+  for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
+  G.extra=msgs;
+  log(`${pd?label(pd):'見送った'} 対 ${cd?(cd.type==='T'?'罠を張った':label(cd)):'見送った'}：${r.net>0?`${r.net}押した`:r.net<0?`${-r.net}押された`:'動かない'}`);
+  [...r.notes,...msgs].forEach(m=>log(m));
+  if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:'目盛りを端まで押し切った'};
+  G.phase='result';
+  if(!G.over){
+    const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
+    G.autoMs=Math.min(7000,2600+n*900+(alert?900:0));
+    G.autoT=setTimeout(()=>{if(G&&G.phase==='result'&&!G.over)startTurn()},G.autoMs);
+  }
+  render();
+}
+function finishByGauge(reason){
+  clearTimers();
+  G.over={winner:G.gauge>0?'p':G.gauge<0?'c':null,reason};
+  G.phase='result';render();
+}
+
+/* ---------- CPU ---------- */
+function cpuOppModel(){
+  const P=G.p,C=G.c;
+  if(C.seeAll){
+    const opts=[...playable(P).map(i=>def(i)),null];
+    return opts.map(d=>({d,w:1/opts.length}));
+  }
+  const E=P.energy+(P.hand.length>1?2:0),recent=P.history.slice(-6);
+  const cnt=k=>1+recent.filter(x=>x===k).length*0.8;
+  const hi=Math.min(E,5),list=[];
+  if(!P.noAtk&&hi>=1){
+    list.push({d:{type:'A',num:hi,cost:hi,eff:null},w:cnt('A')*0.6});
+    if(hi>=3)list.push({d:{type:'A',num:hi-2,cost:hi-2,eff:null},w:cnt('A')*0.4});
+  }
+  if(E>=1)list.push({d:{type:'D',num:Math.min(E,4),cost:Math.min(E,4),eff:null},w:cnt('D')});
+  list.push({d:null,w:cnt('P')*0.8});
+  const s=list.reduce((a,b)=>a+b.w,0);list.forEach(o=>o.w/=s);
+  return list;
+}
+/* 相手の手：{burn: 燃やす札 or null, play: 出す札 or null} */
+function cpuChoose(){
+  const C=G.c,P=G.p,model=cpuOppModel();
+  const danger=G.gauge>=GOAL-3,chance=G.gauge<=-(GOAL-4);
+  const combos=[];
+  for(const b of [null,...C.hand]){
+    const saveE=C.energy;
+    if(b)C.energy=clampE(C.energy+burnVal(def(b)));
+    const plays=[...C.hand.filter(i=>{if(i===b)return false;const d=def(i);return d.cost<=C.energy&&!(d.type==='A'&&C.noAtk)&&!(d.type==='T'&&C.trap)}),null];
+    for(const o of plays){
+      const d=o?def(o):null;let ev=0;
+      const e2=C.energy;if(d)C.energy-=d.cost;
+      for(const m of model){const r=outcome(P,C,m.d,d);ev+=m.w*(-r.net)*(danger&&r.toP<r.toC?1.4:1)*(chance?1.2:1)}
+      C.energy=e2;
+      if(d){ev-=0.22*d.cost;if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.trap?2:-0.5}
+      else ev+=0.15;
+      if(b)ev-=1.0+0.1*def(b).cost+(C.hand.length<=2?0.8:0);
+      combos.push({burn:b,play:o,ev});
+    }
+    C.energy=saveE;
+  }
+  const temp=G.pUsedNow?1.0:0.55;
+  const mx=Math.max(...combos.map(c=>c.ev)),ex=combos.map(c=>Math.exp((c.ev-mx)/temp)),tot=ex.reduce((a,b)=>a+b,0);
+  let u=Math.random()*tot;for(let i=0;i<combos.length;i++){u-=ex[i];if(u<=0)return combos[i]}
+  return combos[combos.length-1];
+}
+function cpuMaybeBefore(){
+  if(!G||G.phase!=='select'||G.c.abilityUsed)return;
+  const C=G.c;let use=false;
+  if(C.ability==='tousi')use=G.turn>=2&&Math.random()<0.3;
+  if(C.ability==='baigeki')use=C.energy>=4&&!C.noAtk&&((G.gauge<=-(GOAL-5))||(G.gauge>=GOAL-3)||Math.random()<0.15);
+  if(C.ability==='kaihou')use=G.turn>=2&&C.energy<=2&&Math.random()<0.5;
+  if(!use)return;
+  C.abilityUsed=true;
+  if(C.ability==='tousi')C.seeAll=true;
+  if(C.ability==='baigeki')C.bai=true;
+  if(C.ability==='kaihou')C.energy=clampE(C.energy+5);
+  G.notices.push({t:'相手が能力を使った',alert:true});log('相手が能力を使った');render();
+}
+
+/* ---------- 描画 ---------- */
+const $app=document.getElementById('app');
+function faceHTML(d){
+  return `<span class="ccost" title="気力">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}`+
+    (d.eff?`<span class="ctype">${TY[d.type].name}</span><span class="cname">${d.name}</span><span class="ctext">${d.short}</span>`
+          :`<span class="plain">${TY[d.type].name}</span>`);
+}
+function cardHTML(i,o={}){
+  const d=def(i);
+  return `<button class="card t-${d.type}${o.small?' small':''}${o.sel?' sel':''}${o.off?' off':''}${o.cls?' '+o.cls:''}"data-act="${o.act||'detail'}" data-uid="${i.uid}" aria-label="${label(d)}、気力${d.cost}${d.eff?'：'+d.short:''}">
+    ${faceHTML(d)}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:''}</button>`;
+}
+const bigHTML=(d,cls='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}</div>`;
+function render(){
+  $app.className=screen==='game'?'fit':'';
+  if(screen==='menu')$app.innerHTML=menuHTML();
+  else if(screen==='ability')$app.innerHTML=abilityHTML();
+  else if(screen==='builder')$app.innerHTML=builderHTML();
+  else if(screen==='rules')$app.innerHTML=rulesHTML();
+  else if(screen==='game')$app.innerHTML=gameHTML();
+  if(screen==='game'&&G.phase==='select')tick();
+}
+function deckSummary(){
+  const st=deckStats(deck);
+  return `<div class="panel">
+    <div class="label">あなたのデッキ</div>
+    <div class="stats">
+      <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / 20枚</span>
+      <span class="small muted">平均の気力 ${st.avg.toFixed(1)}</span>
+      <span class="small muted">攻撃 ${st.by.A}・防御 ${st.by.D}・罠 ${st.by.T}</span>
+    </div>
+    ${st.ok?'':`<p class="small" style="color:var(--lose)">${st.errs.join('／')}</p>`}
+    <button class="btn sub" data-act="go-builder">デッキを組む</button>
+  </div>`;
+}
+function menuHTML(){
+  const st=deckStats(deck);
+  return `<div class="title"><h1>伏せ札</h1>
+    <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
+    <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>はそのぶん減らす。<b class="t">罠</b>は伏せて待つ。気力が足りなければ、手札を燃やす。</p></div>
+    <button class="btn wide" data-act="go-ability" ${st.ok?'':'disabled'}>対戦する</button>
+    ${deckSummary()}
+    <div class="panel">
+      <label class="row" for="timerSel"><span>持ち時間（1手）</span>
+      <select id="timerSel">${TIMER_OPTIONS.map(v=>`<option value="${v}" ${settings.timer===v?'selected':''}>${v?v+'秒':'なし'}</option>`).join('')}</select></label>
+    </div>
+    <button class="btn ghost" data-act="go-rules">ルールを読む</button>`;
+}
+function abilityHTML(){
+  return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
+    <h2 style="font-size:20px">能力を1つ選ぶ</h2>
+    <p class="small muted">1試合に1回だけ使えます。相手には中身は秘密で、使ったことだけ知らされます。相手（CPU）も1つ選んでいます。</p>
+    ${Object.entries(ABILITIES).map(([k,a])=>`<button class="abil" data-act="pick-ability" data-ab="${k}"><b>${a.name}</b><span class="when">${a.when}</span><span class="t">${a.text}</span></button>`).join('')}`;
+}
+function rulesHTML(){
+  return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
+  <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.4）</h2><ol>
+    <li>2人が同時に手札から1枚を伏せ（または何も出さずに「見送る」）、一斉に開ける。</li>
+    <li><b>気力</b>：毎ターン1溜まる（上限10）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
+    <li><b>燃やす</b>：伏せるとき、手札をもう1枚燃やせる（1ターンに1枚）。その札の数字ぶん（最大5、罠は1）気力が増え、そのターンから使える。燃やした札は表向きで捨て札になり、開けるときに相手にも見える。</li>
+    <li><b>攻撃</b>は右上の数字ぶん、目盛りを相手側へ押す。相手が<b>防御</b>していたら、防御の数字ぶん減る。</li>
+    <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで動かない。</li>
+    <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
+    <li>相手の陣の端（8マス）まで押し切ったら勝ち。20手で決着がつかなければ、目盛りが寄っている側の勝ち。</li>
+    <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
+    <li>デッキは20枚、同じカードは3枚まで。強いカードは気力で縛られるので、数字の上限は無い。</li>
+    <li>能力は1試合に1回。中身は秘密で、使ったことだけ相手に知らされる。</li>
+    <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカード（無ければ見送る）で確定する。</li>
+  </ol></div>`;
+}
+function builderHTML(){
+  const st=deckStats(deck);
+  const groups=TYPES.map(t=>`<div class="group t-${t}"><h3>${TY[t].name}</h3>
+    ${POOL.filter(d=>d.type===t).map(d=>{const c=deck[d.id]||0;
+      return `<div class="crow"><div class="card t-${d.type}" aria-hidden="true"><span class="ccost">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}<span class="plain">${TY[d.type].name[0]}</span></div>
+        <div class="info"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}<span class="muted" style="font-weight:400;font-size:12px">　気力${d.cost}</span></b><span>${d.eff?d.text:'効果なし'}</span></div>
+        <div class="stepper"><button data-act="dec" data-id="${d.id}" ${c?'':'disabled'} aria-label="${label(d)}を1枚減らす">−</button>
+        <span class="n ${c?'':'zero'}">${c}</span>
+        <button data-act="inc" data-id="${d.id}" ${c>=COPY_MAX||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`}).join('')}
+  </div>`).join('');
+  return `<div class="row"><button class="btn ghost" data-act="go-menu">メニューへ戻る</button></div>
+  <div class="sticky">
+    <div class="stats">
+      <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / 20枚</span>
+      <span class="small muted">平均の気力 ${st.avg.toFixed(1)}</span>
+      <span class="small muted">攻撃 ${st.by.A}・防御 ${st.by.D}・罠 ${st.by.T}</span>
+    </div>
+    <p class="small" style="color:${st.ok?'var(--win)':'var(--lose)'}">${st.ok?'このデッキで対戦できます（自動で保存）':st.errs.join('／')}</p>
+  </div>
+  <div class="panel"><div class="label">見本のデッキから始める</div>
+    <div class="chips">${PRESETS.map(p=>`<button class="chip" data-act="preset" data-key="${p.key}">${p.name}</button>`).join('')}<button class="chip" data-act="clear">全部外す</button></div>
+    <p class="small muted">${builderPreset?builderPreset.desc:'見本を選ぶと、いまのデッキと入れ替わります'}</p>
+  </div>
+  ${groups}`;
+}
+function sideChips(s,isP){
+  const a=ABILITIES[s.ability];const c=[];
+  c.push(isP?`<span class="chip ${s.abilityUsed?'':'on'}">能力：${a.name}${s.abilityUsed?'（済）':''}</span>`
+            :`<span class="chip ${s.abilityUsed?'':'warn'}">能力：${s.abilityUsed?'使用済み':'？'}</span>`);
+  if(s.trap){
+    const st=s.trap.active?'発動待ち':'次から';
+    c.push(isP?`<button class="chip trap" data-act="mytrap">罠：${def(s.trap.inst).name}（${st}）</button>`:`<span class="chip trap">罠あり（${st}）</span>`);
+  }
+  c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}">山${s.deck.length}・捨${s.discard.length}</button>`);
+  if(isP&&s.bai)c.push('<span class="chip warn">倍撃中</span>');
+  if(isP&&s.seeAll)c.push('<span class="chip warn">透視中</span>');
+  return `<div class="chips">${c.join('')}</div>`;
+}
+const energyHTML=s=>{
+  const plus=s===G.p&&G.pBurn?clampE(s.energy+burnVal(def(G.pBurn)))-s.energy:0;
+  return `<span class="energy" aria-label="気力${s.energy}">気力<b>${s.energy}</b>${plus?`<span class="plus">+${plus}</span>`:''}/${ENERGY_MAX}</span>`;
+};
+function gameHTML(){
+  const P=G.p,C=G.c,ph=G.phase,revealed=['after','swap','result'].includes(ph);
+  const oppHand=C.hand.map(x=>{
+    const known=G.knownOpp.has(x.uid);
+    return (P.seeAll||known)?cardHTML(x,{small:true,tag:known&&!P.seeAll?'判明':''}):'<div class="back" aria-label="伏せた手札"></div>';
+  }).join('');
+  const cells=[];for(let k=GOAL;k>=-GOAL;k--)cells.push(`<div class="cell${k===G.gauge?' on':''}${k===GOAL?' goal-p':''}${k===-GOAL?' goal-c':''}${k===0?' mid':''}"></div>`);
+  const gTxt=G.gauge>0?`あと <b>${GOAL-G.gauge}</b> で勝ち`:G.gauge<0?`あと <b>${GOAL+G.gauge}</b> で負け`:'五分';
+
+  let oppSlot,meSlot;
+  if(revealed){
+    const cd=G.cPlay?def(G.cPlay):null,pd=G.pPlay?def(G.pPlay):null;
+    oppSlot=!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?'<div class="big back t-T reveal"><span>罠を張った</span></div>':bigHTML(cd,'reveal');
+    meSlot=!pd?'<div class="big empty reveal">見送った</div>':bigHTML(pd,'reveal');
+  }else{
+    oppSlot=`<div class="big empty">${ph==='select'?'相手が選んでいる':''}</div>`;
+    meSlot=G.sel?bigHTML(def(G.sel),'dim'):'<div class="big empty">手札から1枚選ぶ<br>（見送っても良い）</div>';
+  }
+
+  let center='';
+  if(G.res&&revealed){
+    const n=G.res.net;
+    center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n>0?`${n} 押した`:n<0?`${-n} 押された`:'動かない'}</span><span class="why">${G.res.why}</span></div>`;
+    const lines=[...G.burnMsgs,...G.res.notes,...(ph==='result'?G.extra||[]:[])];
+    if(lines.length)center+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
+  }
+  center+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}">${n.t}</div>`).join('');
+  if(ph==='select'&&G.burnMode)center+=`<div class="notice">燃やす札をタップ。その札の数字ぶん（最大${BURN_MAX}）気力が増える。何を燃やしたかは、開けるときに相手にも見える</div>`;
+  else if(ph==='select'&&G.pBurn)center+=`<p class="hintline">「${label(def(G.pBurn))}」を燃やす（気力+${burnVal(def(G.pBurn))}）。もう一度タップで取り消し</p>`;
+  if(!revealed&&G.detail){const d=def(G.detail);center+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d)}</span></div>`}
+  if(ph==='select'&&G.sel)center+='<p class="hintline">もう一度タップで伏せる</p>';
+
+  const hand=P.hand.map(x=>{
+    if(ph==='select'&&x===G.pBurn)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
+    const why=ph==='select'?(G.burnMode?'':blockReason(P,x)):ph==='swap'&&!swapOptions(P,G.pPlay).includes(x)?'出せない':'';
+    return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why,tagBan:!!why});
+  }).join('');
+
+  const ab=ABILITIES[P.ability];let actions='';
+  if(ph==='select')actions=`<div class="acts">
+      ${ab.phase==='before'&&!P.abilityUsed?`<button class="btn sub" data-act="ability">${ab.name}</button>`:''}
+      <button class="btn sub${G.burnMode?' on':''}" data-act="burn">${G.burnMode?'やめる':'燃やす'}</button>
+      <button class="btn ghost" data-act="pass">見送る</button>
+      <button class="btn" data-act="commit" ${G.sel&&!blockReason(P,G.sel)?'':'disabled'}>伏せる</button></div>`;
+  else if(ph==='after'){
+    const o=playerAfterOptions();
+    actions=`<div class="row">
+      ${o.includes('surikae')?'<button class="btn" data-act="after-surikae">すり替える</button>':''}
+      ${o.includes('funbari')?'<button class="btn" data-act="after-funbari">踏ん張る</button>':''}
+      <button class="btn ghost" data-act="after-skip">使わずに進む</button></div>`;
+  }
+  else if(ph==='swap')actions=`<div class="row"><span class="prompt" style="flex:1">差し替えるカードを選ぶ</span><button class="btn ghost" data-act="swap-cancel">やめる</button></div>`;
+  else if(ph==='result'&&!G.over)actions=`<button class="btn wide sub" data-act="next">すぐ次へ<i class="auto" style="animation-duration:${G.autoMs}ms"></i></button>`;
+  else actions=`<button class="btn wide sub" disabled>　</button>`;
+
+  return `<div class="topbar"><span class="turn">${G.turn}手目</span>
+      ${ph==='select'&&settings.timer?`<div class="timer" id="tbox"><i id="tbar" style="width:100%"></i></div><span class="tnum" id="tnum">${settings.timer}秒</span>`:'<div class="spacer"></div>'}
+      <button class="btn ghost tiny" data-act="open-log">記録</button>
+      <button class="btn ghost tiny" data-act="resign">投了</button></div>
+    <section class="side" aria-label="相手">
+      <div class="side-head"><div class="who-line"><h2>相手</h2>${energyHTML(C)}</div>${sideChips(C,false)}</div>
+      <div class="opp-hand">${oppHand}</div>
+    </section>
+    <section class="gauge" aria-label="目盛り">
+      <div class="gauge-labels"><span>相手の陣</span><span>${gTxt}</span><span>自分の陣</span></div>
+      <div class="cells">${cells.join('')}</div>
+    </section>
+    <section class="battle" aria-label="場">
+      <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
+      <div class="center">${center}</div>
+      <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
+    </section>
+    <section class="side" aria-label="あなた">
+      <div class="side-head"><div class="who-line"><h2>あなた</h2>${energyHTML(P)}</div>${sideChips(P,true)}</div>
+      <div class="hand">${hand}</div>
+      <div class="actions">${actions}</div>
+    </section>
+    ${G.over?overHTML():''}${G.modal?modalHTML():''}`;
+}
+function overHTML(){
+  const w=G.over.winner;
+  return `<div class="modal-bg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="ovt">
+    <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w==='p'?'勝ち':w==='c'?'負け':'引き分け'}</h2>
+    <p class="muted small">${G.over.reason}</p>
+    <dl class="dl"><dt>手数</dt><dd>${G.turn}手</dd>
+      <dt>あなたの能力</dt><dd>${ABILITIES[G.p.ability].name}${G.p.abilityUsed?'（使った）':'（使わなかった）'}</dd>
+      <dt>相手の能力</dt><dd>${ABILITIES[G.c.ability].name}${G.c.abilityUsed?'（使った）':'（使わなかった）'}</dd>
+      <dt>相手のデッキ</dt><dd>${G.cpuDeck}</dd></dl>
+    <div class="row"><button class="btn" data-act="go-ability">もう一戦</button><button class="btn ghost" data-act="go-menu">メニュー</button></div>
+  </div></div>`;
+}
+function modalHTML(){
+  let body;
+  if(G.modal==='log'){
+    body=`<h3>記録</h3>${G.log.length?`<ol class="loglist" reversed>${[...G.log].reverse().map(l=>`<li>${l}</li>`).join('')}</ol>`:'<p class="muted small">まだありません</p>'}`;
+  }else{
+    const s=G.modal==='p'?G.p:G.c;
+    body=`<h3>${G.modal==='p'?'あなた':'相手'}の捨て札（${s.discard.length}枚）・山札 ${s.deck.length}枚</h3>
+    ${s.discard.length?`<div class="mini-list">${s.discard.map(x=>cardHTML(x,{act:'noop'})).join('')}</div>`:'<p class="muted small">まだありません</p>'}`;
+  }
+  return `<div class="modal-bg" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true">${body}
+    <button class="btn ghost" data-act="close-modal">閉じる</button></div></div>`;
+}
+
+/* ---------- 操作 ---------- */
+document.addEventListener('change',e=>{
+  if(e.target.id==='timerSel'){settings.timer=Number(e.target.value);store.set(KEY_SET,settings)}
+});
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act;
+  if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
+  switch(act){
+    case 'go-menu':clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
+    case 'go-ability':clearTimers();screen='ability';G=null;render();window.scrollTo(0,0);break;
+    case 'go-builder':screen='builder';builderPreset=null;render();window.scrollTo(0,0);break;
+    case 'go-rules':screen='rules';render();break;
+    case 'pick-ability':startGame(el.dataset.ab);window.scrollTo(0,0);break;
+    case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
+    case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
+    case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};builderPreset=p;saveDeck();render();break}
+    case 'clear':deck={};builderPreset=null;saveDeck();render();break;
+    case 'hand':{
+      const x=G.p.hand.find(i=>String(i.uid)===el.dataset.uid);if(!x)return;
+      G.detail=x;
+      if(G.phase==='select'){
+        const fix=()=>{if(G.sel&&blockReason(G.p,G.sel))G.sel=null};
+        if(G.burnMode){G.burnMode=false;G.pBurn=G.pBurn===x?null:x;if(G.sel===x)G.sel=null;fix();render();return}
+        if(G.pBurn===x){G.pBurn=null;fix();render();return}
+        if(blockReason(G.p,x)){render();return}
+        if(G.sel===x){commit(x);return}
+        G.sel=x;
+      }
+      else if(G.phase==='swap'){doSwap(x);return}
+      render();break;
+    }
+    case 'detail':{const x=G&&G.c.hand.find(i=>String(i.uid)===el.dataset.uid);if(x){G.detail=x;render()}break}
+    case 'mytrap':if(G.p.trap){G.detail=G.p.trap.inst;render()}break;
+    case 'commit':if(G.sel)commit(G.sel);break;
+    case 'pass':commit(null);break;
+    case 'burn':if(G&&G.phase==='select'){G.burnMode=!G.burnMode;render()}break;
+    case 'ability':useAbility();break;
+    case 'after-surikae':G.phase='swap';render();break;
+    case 'swap-cancel':G.phase='after';render();break;
+    case 'after-funbari':G.p.funbari=true;G.p.abilityUsed=true;log('踏ん張り：押されなかった');G.res=outcome(G.p,G.c,G.pPlay?def(G.pPlay):null,G.cPlay?def(G.cPlay):null);cpuAfter();resolve();break;
+    case 'after-skip':cpuAfter();resolve();break;
+    case 'next':if(G&&G.phase==='result'&&!G.over)startTurn();break;
+    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';render()}break;
+    case 'discard':G.modal=el.dataset.who;render();break;
+    case 'open-log':G.modal='log';render();break;
+    case 'close-modal':G.modal=null;render();break;
+  }
+});
+render();
+</script>
+</body>
+</html>
