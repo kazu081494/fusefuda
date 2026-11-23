@@ -50,6 +50,21 @@ Midjourney なら、さらに最後に付ける：
 
 ### Stable Diffusion で作るとき
 
+#### 家の PC での準備（休みの日にやる）
+
+- PC：NVIDIA GeForce RTX 5060 Ti（専用メモリ 16GB）・メモリ 32GB。SDXL も FLUX.1 schnell も快適に動く
+- 要る空き容量：約20GB（Forge 本体 10〜15GB ＋ SDXL Base 約7GB）。終わったら消せば戻る
+- かかる時間：1時間ほど（大半はダウンロード待ち）
+
+1. Stability Matrix を入れる：「Stability Matrix GitHub」で検索 → LykosAI のページの Releases から `StabilityMatrix-win-x64.zip` → 展開して起動。保存先は空きの多いドライブに
+2. 「パッケージを追加」から **Stable Diffusion WebUI Forge** を入れて Launch。RTX 50 番台は新しい世代なので、更新が止まり気味の Fooocus ではなく Forge を使う
+3. Model Browser で **SDXL Base 1.0**（stabilityai 公式）をダウンロード。人気の派生モデルは作った人ごとにライセンスが違うので、まずは公式を使う
+4. Forge の画面が開いたら、Claude に画面を見せて設定を一緒に決める（指示文の欄・入れたくないものの欄・大きさ・見本の梟に寄せる IP-Adapter）
+
+できるようになること：回数の制限なく作り直せる／一度に何枚も出して選べる／見本の梟やシード値で画風をそろえやすい／一部だけ描き直せる（インペイント）／絵が10〜20枚たまれば画風を覚えさせた専用モデル（LoRA）も作れる
+
+#### 指示文の書き方
+
 Stable Diffusion は「描いてほしいもの（プロンプト）」と「描いてほしくないもの（ネガティブプロンプト）」を分けて書く。
 
 - **プロンプト**：下の表の指示文 ＋ 共通の書き方（上と同じ）
