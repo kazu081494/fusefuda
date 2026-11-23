@@ -320,9 +320,10 @@ img.sil{object-fit:contain;height:auto}
 .crow .card .ccost{width:14px;height:14px;font-size:9px;top:2px;left:2px}
 .crow .card .cnum{font-size:14px;top:2px;right:3px}
 .crow .card .plain{font-size:12px}
-.crow .info{min-width:0;display:flex;flex-direction:column}
-.crow .info b{font-size:14px}
-.crow .info span{font-size:12px;color:var(--muted);line-height:1.4}
+.crow .cinfo{min-width:0;display:flex;flex-direction:column;gap:2px}
+.crow .cinfo b{font-size:15px;line-height:1.35}
+.crow .cinfo .stat-line{font-size:12px;font-weight:400;color:var(--muted)}
+.crow .cinfo .eff{font-size:13px;color:var(--fg);opacity:.88;line-height:1.5}
 .stepper{display:flex;align-items:center;gap:4px}
 .stepper button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--table-3);cursor:pointer;font-weight:700;font-size:18px;line-height:1}
 .stepper button:disabled{opacity:.3;cursor:not-allowed}
@@ -1046,7 +1047,7 @@ function builderHTML(){
   const groups=TYPES.map(t=>`<div class="group t-${t}"><h3>${TY[t].name}</h3>
     ${POOL.filter(d=>d.type===t).map(d=>{const c=deck[d.id]||0;
       return `<div class="crow"><div class="card t-${d.type}" aria-hidden="true">${silHTML(d)}<span class="ccost">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}<span class="plain">${TY[d.type].name[0]}</span></div>
-        <div class="info"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}<span class="muted" style="font-weight:400;font-size:12px">　気力${d.cost}</span></b><span>${d.eff?d.text:'効果なし'}</span></div>
+        <div class="cinfo"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}</b><span class="stat-line">${TY[d.type].name}${d.num!=null?d.num:''}・気力${d.cost}・燃やすと+${burnVal(d)}</span><span class="eff">${d.eff?d.text:'効果なし'}</span></div>
         <div class="stepper"><button data-act="dec" data-id="${d.id}" ${c?'':'disabled'} aria-label="${label(d)}を1枚減らす">−</button>
         <span class="n ${c?'':'zero'}">${c}</span>
         <button data-act="inc" data-id="${d.id}" ${c>=COPY_MAX||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`}).join('')}
