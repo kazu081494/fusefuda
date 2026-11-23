@@ -923,7 +923,7 @@ const $app=document.getElementById('app');
 const ARTS=new Set(["oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
 /* 札の影：効果の札はその札の絵、素の札は型の絵（刀・唐傘・狐） */
 /* 画像生成AIで作った絵が届いた札の ID（art/cards/<ID>.png。作り方は art/PROMPTS.md）。ここに無い札は下の影絵のまま */
-const ART_IMG=new Set([]);
+const ART_IMG=new Set(["teisatsu"]);
 const artKey=d=>d.eff||d.type;
 const silHTML=d=>ART_IMG.has(artKey(d))?`<img class="sil" src="art/cards/${artKey(d)}.png" alt="" aria-hidden="true">`
   :`<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><use href="#${ARTS.has(d.eff)?'art-'+d.eff:'sil-'+d.type}"/></svg>`;
