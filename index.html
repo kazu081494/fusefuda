@@ -314,6 +314,21 @@ details.opp-info .dl{margin-top:8px}
 .cutin b{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,10vw,44px);letter-spacing:.15em;color:#fff;text-shadow:0 0 12px rgba(255,220,140,.9),0 2px 0 #000;transform:skewY(6deg)}
 .cutin.c b{text-shadow:0 0 12px rgba(255,120,90,.9),0 2px 0 #000}
 @keyframes cutin{0%{opacity:0;clip-path:inset(0 100% 0 0)}15%{opacity:1;clip-path:inset(0 0 0 0)}80%{opacity:1;clip-path:inset(0 0 0 0)}100%{opacity:0;clip-path:inset(0 0 0 100%)}}
+.nanori{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:radial-gradient(ellipse at center,rgba(5,8,12,.88),rgba(5,8,12,.55) 70%,transparent);animation:nanori 3.2s ease both;pointer-events:none}
+.nanori span{font-size:12px;letter-spacing:.3em;color:var(--accent)}
+.nanori b{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,9vw,40px);letter-spacing:.1em;color:#fff;text-shadow:0 0 14px rgba(226,178,71,.7)}
+.nanori q{font-family:var(--font-display);font-size:15px;color:#e9edf1}
+.nanori q::before{content:"「"}.nanori q::after{content:"」"}
+@keyframes nanori{0%{opacity:0}12%{opacity:1}82%{opacity:1}100%{opacity:0}}
+.quote{font-family:var(--font-display);font-size:15px;padding:8px 12px;border-left:3px solid var(--line);color:var(--fg)}
+.quote b{display:block;font-family:var(--font-body);font-size:12px;color:var(--muted);font-weight:700}
+.prologue{position:fixed;inset:0;z-index:30;background:linear-gradient(#05070b,#0c111b 60%,#121924);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-right,0px)) max(24px,env(safe-area-inset-bottom,0px)) max(24px,env(safe-area-inset-left,0px));cursor:pointer}
+.pro-sky .moon{position:absolute;top:7%;left:auto;right:12%;width:min(70px,18vw);transform:none}
+.pro-text{position:relative;display:flex;flex-direction:column;gap:10px;max-width:30em;text-align:center}
+.pro-text p{font-family:var(--font-display);font-size:16px;line-height:1.7;color:#e9edf1;opacity:0;animation:proline 1.2s ease forwards;text-shadow:0 0 8px #000}
+.pro-text h1{font-family:var(--font-display);font-weight:800;font-size:clamp(40px,13vw,60px);letter-spacing:.12em;color:#fff;margin-top:14px;opacity:0;animation:proline 1.6s ease forwards;text-shadow:0 0 20px rgba(226,178,71,.6)}
+@keyframes proline{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pro-skip{position:absolute;bottom:max(20px,env(safe-area-inset-bottom,0px));font-size:12px;color:var(--muted)}
 .trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
 .trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
 .trapfire.theirs{box-shadow:0 0 0 2px var(--lose)}
@@ -409,7 +424,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
-  .reveal,.notice.alert,.auto,.energy .gain,.cutin,.trapfire,.yomi,.play.shake,.kessen,.stage.finale::after,.stage.finale .calls,.stage.finale .samurai,.modal.result-modal,.petal,.duel,.samurai,.calls{animation:none!important}
+  .reveal,.nanori,.pro-text p,.pro-text h1,.notice.alert,.auto,.energy .gain,.cutin,.trapfire,.yomi,.play.shake,.kessen,.stage.finale::after,.stage.finale .calls,.stage.finale .samurai,.modal.result-modal,.petal,.duel,.samurai,.calls{animation:none!important}
   .fx{display:none}
   .card,.timer i{transition:none}
 }
@@ -572,6 +587,18 @@ const OUGI={
   genwaku:{name:'幻惑',text:'このターン、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
 };
 
+/* 今宵の相手：名前と台詞のある侍。性格・型・奥義・デッキがひとまとまりになっている */
+const CHARS=[
+  {name:'赤鬼の権三',yomi:'あかおにのごんぞう',style:'kyoki',kata:'gou',ougi:'gougeki',deck:'soku',intro:'力こそすべて。受けてみよ',win:'軽い、軽いわ',lose:'……見事。次は負けぬ'},
+  {name:'柳の小夜',yomi:'やなぎのさよ',style:'shincho',kata:'yanagi',ougi:'uke',deck:'mamori',intro:'押せば引く。それだけのこと',win:'力みすぎよ',lose:'流しきれなかった……'},
+  {name:'火車の弥太',yomi:'かしゃのやた',style:'tame',kata:'homura',ougi:'gouka',deck:'kin',intro:'燃えろ燃えろ、全部燃やしてやる',win:'灰になったな',lose:'火が……消えちまった'},
+  {name:'影法師',yomi:'かげぼうし',style:'shincho',kata:'kage',ougi:'kagenui',deck:'wana',intro:'…………',win:'影は踏めぬ',lose:'……月が、明るすぎた'},
+  {name:'心眼の宗玄',yomi:'しんがんのそうげん',style:'shincho',kata:'me',ougi:'sakiyomi',deck:'kin',intro:'目に頼るから見えぬのだ',win:'読めておったよ',lose:'ほう……読みを外されたか'},
+  {name:'一閃の新之助',yomi:'いっせんのしんのすけ',style:'kyoki',kata:'gou',ougi:'issen',deck:'soku',intro:'一太刀で終わらせる',win:'ほらね',lose:'まだ……修行が足りないか'},
+  {name:'鉄扇のお蓮',yomi:'てっせんのおれん',style:'shincho',kata:'yanagi',ougi:'fudou',deck:'mamori',intro:'この扇、破れるものなら',win:'出直しておいで',lose:'やるじゃないの'},
+  {name:'狐の紺',yomi:'きつねのこん',style:'tame',kata:'kage',ougi:'genwaku',deck:'wana',intro:'化かされたこと、気づくかな',win:'こんこん、ご苦労さま',lose:'化けの皮が剥がれちゃった'},
+];
+
 /* CPUの性格（相手の欄に出る。クセを読むための手がかり） */
 const STYLES={
   kyoki:{name:'強気',desc:'気力があれば大きく攻める。守りは薄い'},
@@ -591,7 +618,7 @@ function cleanDeck(obj){
   return out;
 }
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
-let settings=Object.assign({vol:.8,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
+let settings=Object.assign({vol:.6,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
@@ -754,6 +781,17 @@ function blockReason(s,i){
 function log(m){G.log.push(`${G.turn}手目　${m}`)}
 function clearTimers(){if(!G)return;clearInterval(G.tId);clearTimeout(G.cpuT);clearTimeout(G.autoT);G.tId=null;G.autoT=null}
 
+/* ---------- 序章 ---------- */
+const PROLOGUE=['江戸の外れ、川をまたぐ古い木橋がある。','満月の夜にだけ、橋のたもとの灯籠に火がともる。','いつからか、その火を合図に腕に覚えのある侍が集まり、','一夜にひと組、橋の上で刀を交えるようになった。','決まりはひとつ。相手を岸まで押し込んだほうが勝ち。','勝った者の名は、橋の欄干に刻まれる。','だが毎夜、顔ぶれは変わる。','最強は誰だ。','月の光の下で、火花を散らせ。'];
+function prologueHTML(){
+  return `<div class="prologue" data-act="prologue-end">
+    <div class="pro-sky" aria-hidden="true"><i class="moon"></i></div>
+    <div class="pro-text">${PROLOGUE.map((l,i)=>`<p style="animation-delay:${.4+i*1.1}s">${l}</p>`).join('')}
+      <h1 style="animation-delay:${.6+PROLOGUE.length*1.1}s">月花乱舞</h1></div>
+    <p class="pro-skip">タップで進む</p>
+  </div>`;
+}
+
 /* ---------- チュートリアル ----------
    決められた手順で1試合を進めながら、遊び方を1つずつ覚える。戦績には数えず、保存もしない。
    p・c：あなたと相手の手札、pe・ce：気力（書かなければそのまま）、cpu：相手の手、
@@ -783,7 +821,7 @@ const TUT=[
 ];
 const tutStep=()=>G&&G.tut!=null?TUT[G.tut]:null;
 function startTutorial(){
-  clearSave();startGame('me','sakiyomi');G.tut=0;G.cpuDeck='チュートリアル';clearSave();applyTut();
+  clearSave();startGame('me','sakiyomi');G.tut=0;G.char=null;G.cpuDeck='チュートリアル';clearSave();applyTut();
 }
 function applyTut(){
   const t=tutStep();if(!t)return;
@@ -841,13 +879,16 @@ function resumeGame(){
 }
 function startGame(kata,ougi){
   clearTimers();
-  const pre=rnd(PRESETS);
-  G={p:newSide(deck,kata,ougi),c:newSide(pre.cards,rnd(Object.keys(KATA)),rnd(Object.keys(OUGI))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
+  // 今宵の相手：名前のある侍を1人選ぶ（前の試合と同じ人は避ける）
+  let ch=rnd(CHARS);if(G&&G.char&&CHARS.length>1)while(ch.name===G.char.name)ch=rnd(CHARS);
+  const pre=PRESETS.find(p=>p.key===ch.deck)||rnd(PRESETS);
+  G={char:ch,introAt:Date.now(),p:newSide(deck,kata,ougi),c:newSide(pre.cards,ch.kata,ch.ougi),cpuDeck:pre.name,style:ch.style,
     gauge:0,prevGauge:0,revealAt:0,finaleUntil:0,st:{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0},combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   screen='game';startTurn();
 }
 function startTurn(){
+  if(G&&G.char&&G.turn===0)setTimeout(()=>{if(G&&G.turn===1&&G.phase==='select')render()},3300);
   clearTimers();
   if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}手で決着がつかなかったので、橋の上の位置で決着`);
   G.turn++;
@@ -984,11 +1025,11 @@ document.addEventListener('pointerdown',()=>{
 function masterOf(ac){
   if(ac._out)return ac._out;
   const comp=ac.createDynamicsCompressor();comp.threshold.value=-18;comp.knee.value=6;comp.ratio.value=12;comp.attack.value=.003;comp.release.value=.2;
-  const vol=ac.createGain();vol.gain.value=VOL_BOOST*(settings.vol??.8);
+  const vol=ac.createGain();vol.gain.value=VOL_BOOST*(settings.vol??.6);
   comp.connect(vol);vol.connect(ac.destination);ac._out=comp;ac._vol=vol;return comp;
 }
-const VOL_BOOST=1.7;
-function setVolume(){if(AC&&AC._vol)AC._vol.gain.value=VOL_BOOST*(settings.vol??.8)}
+const VOL_BOOST=1.0;
+function setVolume(){if(AC&&AC._vol)AC._vol.gain.value=VOL_BOOST*(settings.vol??.6)}
 const outOf=ac=>ac._out||masterOf(ac);
 function noiseBuf(ac,sec){const n=Math.floor(ac.sampleRate*sec),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return b}
 function env(ac,node,t,peak,dur,atk=0.004){const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+atk);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);node.connect(g);g.connect(outOf(ac));return g}
@@ -1034,7 +1075,7 @@ const SFX={
 const BGM={on:false,next:0,step:0,timer:null,out:null};
 // 音階（都節：レ・ミ♭・ソ・ラ・シ♭）。0=レ3 … 12=ソ5
 const SCALE=[146.83,155.56,196,220,233.08,293.66,311.13,392,440,466.16,587.33,622.25,783.99];
-const STEP=.27;// 8分音符1つの長さ（秒）。1小節＝8つ
+const STEP=.19;// 8分音符1つの長さ（秒）。1小節＝8つ。決闘らしく速め
 // 主旋律：[音（SCALEの番号）, 長さ（8分音符いくつ）]。-1 は休み。4小節×4句をくり返す
 const MELODY=[
   // 句A
@@ -1070,27 +1111,48 @@ function rim(ac,dst,t,v){
   const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.05);const hp=ac.createBiquadFilter();hp.type='bandpass';hp.frequency.value=2400;hp.Q.value=2;const g=ac.createGain();
   g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+.05);n.connect(hp);hp.connect(g);g.connect(dst);n.start(t);
 }
-/* 8分音符1つぶんを鳴らす。step は曲の頭からの通し番号 */
+// 三味線風：ばちで弾いたような鋭い音。低い音型をくり返して刻む
+function shami(ac,dst,f,t,v){
+  const o=ac.createOscillator(),lp=ac.createBiquadFilter(),g=ac.createGain();
+  o.type='sawtooth';o.frequency.setValueAtTime(f*1.012,t);o.frequency.exponentialRampToValueAtTime(f,t+.04);
+  lp.type='lowpass';lp.Q.value=4;lp.frequency.setValueAtTime(3200,t);lp.frequency.exponentialRampToValueAtTime(500,t+.18);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+.35);
+  o.connect(lp);lp.connect(g);g.connect(dst);o.start(t);o.stop(t+.4);
+}
+// 締太鼓：高く締まった短い音
+function shime(ac,dst,t,v){
+  const o=ac.createOscillator(),g=ac.createGain();o.type='triangle';o.frequency.setValueAtTime(330,t);o.frequency.exponentialRampToValueAtTime(240,t+.06);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+.09);o.connect(g);g.connect(dst);o.start(t);o.stop(t+.1);
+}
+// 三味線の音型（16の8分音符でひと回り）。数字は SCALE の番号
+const RIFF=[0,0,1,0,3,0,2,3, 0,0,1,0,4,3,2,1];
+/* 8分音符1つぶんを鳴らす。step は曲の頭からの通し番号。
+   旋律は2つぶんで1拍としてゆったり、三味線と太鼓は8分で刻んで推進力を出す */
 function bgmStep(ac,dst,t,step){
-  const inBar=step%8,pos=step%MEL_LEN;
-  // 主旋律：この位置で始まる音があれば鳴らす
-  let acc=0;
-  for(const [d,l] of MELODY){
-    if(acc===pos&&d>=0){
-      pluck(ac,dst,SCALE[d],t,.15,Math.max(.8,l*STEP*2.2));
-      // 句Bの後半は、尺八風の音を1オクターブ下で重ねる
-      if(pos>=MEL_LEN-16&&l>=2)flute(ac,dst,SCALE[d]/2,t,l*STEP*1.1);
+  const inBar=step%8;
+  // 勝負どころ（どちらかが岸まで12歩以内）は、太鼓をさらに細かく
+  const tense=G&&G.gauge!=null&&Math.abs(G.gauge)>=GOAL-12;
+  if(step%2===0){
+    const pos=(step/2)%MEL_LEN;let acc=0;
+    for(const [d,l] of MELODY){
+      if(acc===pos&&d>=0){
+        pluck(ac,dst,SCALE[d],t,.13,Math.max(.7,l*STEP*4));
+        if(pos>=MEL_LEN-16&&l>=2)flute(ac,dst,SCALE[d]/2,t,l*STEP*2.2,.07);
+      }
+      acc+=l;if(acc>pos)break;
     }
-    acc+=l;if(acc>pos)break;
   }
-  // 琴の低い分散和音（レ・ラ・レ・ラ／句の後半はソ・レ）
-  const bass=(Math.floor(pos/16)%2===1&&pos%16>=8)?[2,5,7,5]:[0,3,5,3];
-  if(inBar%2===0)pluck(ac,dst,SCALE[bass[(inBar/2)%4]]/(inBar===0?2:1),t,inBar===0?.11:.06,1.4);
-  // 太鼓：ドン・(休)・ドン・カッ
-  if(inBar===0)drum(ac,dst,t,.32,95);
-  if(inBar===4)drum(ac,dst,t,.22,110);
-  if(inBar===6)rim(ac,dst,t,.12);
-  if(inBar===7&&step%32===31)drum(ac,dst,t,.18,130);
+  // 三味線
+  shami(ac,dst,SCALE[RIFF[step%16]],t,inBar===0?.16:.1);
+  // 太鼓：大太鼓は1拍目と3拍目、「カッ」は2拍目と4拍目。締太鼓は8分で刻む
+  if(inBar===0)drum(ac,dst,t,.34,92);
+  if(inBar===4)drum(ac,dst,t,.26,100);
+  if(inBar===2||inBar===6)rim(ac,dst,t,.13);
+  shime(ac,dst,t,inBar%2===0?.07:.04);
+  if(tense)shime(ac,dst,t+STEP/2,.05);
+  // 4小節ごとの終わりに「ドドン」
+  if(step%32===30)drum(ac,dst,t,.24,120);
+  if(step%32===31){drum(ac,dst,t,.3,105);drum(ac,dst,t+STEP/2,.3,90)}
 }
 function bgmStart(){
   if(!settings.bgm)return;const ac=audio();if(!ac||BGM.on)return;
@@ -1306,7 +1368,8 @@ const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${c
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
 function render(){
   $app.className=(screen==='game'?'fit ':'')+`back-${settings.back||'shoji'} moon-${settings.moon||'full'}`;
-  if(screen==='menu')$app.innerHTML=menuHTML();
+  if(screen==='prologue')$app.innerHTML=prologueHTML();
+  else if(screen==='menu')$app.innerHTML=menuHTML();
   else if(screen==='school')$app.innerHTML=schoolHTML();
   else if(screen==='builder')$app.innerHTML=builderHTML();
   else if(screen==='rules')$app.innerHTML=rulesHTML();
@@ -1353,11 +1416,12 @@ function menuHTML(){
         <button class="chip${settings.sound?' on':''}" data-act="snd-sfx" aria-pressed="${!!settings.sound}">効果音 ${settings.sound?'あり':'なし'}</button>
         <button class="chip${settings.sound&&settings.bgm?' on':''}" data-act="snd-bgm" aria-pressed="${!!(settings.sound&&settings.bgm)}">曲 ${settings.sound&&settings.bgm?'あり':'なし'}</button>
         <button class="chip" data-act="snd-test">音を試す</button></div>
-      <label class="row" for="volSel"><span>音量</span><input type="range" id="volSel" min="0" max="1" step="0.05" value="${settings.vol??.8}" style="flex:1"></label>
+      <label class="row" for="volSel"><span>音量</span><input type="range" id="volSel" min="0" max="1" step="0.05" value="${settings.vol??.6}" style="flex:1"></label>
       <p class="small muted" id="sndState">${sndState||'「音を試す」を押すと、刀の音と曲の一節が鳴る'}</p>
       <label class="row" for="speedSel"><span>結果のあと進む速さ</span>
       <select id="speedSel">${[['fast','はやい'],['normal','ふつう'],['slow','ゆっくり']].map(([k,n])=>`<option value="${k}" ${settings.speed===k?'selected':''}>${n}</option>`).join('')}</select></label>
     </div>
+    <button class="btn ghost" data-act="prologue">序章を読む</button>
     <button class="btn ghost" data-act="tutorial">遊び方を覚える（チュートリアル）</button>
     <button class="btn ghost" data-act="go-rules">ルールを読む</button>`;
 }
@@ -1550,7 +1614,7 @@ function gameHTML(){
       <button class="btn ghost tiny" data-act="open-log">記録</button>
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
     <section class="side" aria-label="相手">
-      <div class="side-head"><div class="who-line"><h2>相手</h2>${energyHTML(C)}</div>${sideChips(C,false)}</div>
+      <div class="side-head"><div class="who-line"><h2>${G.char?G.char.name:'相手'}</h2>${energyHTML(C)}</div>${sideChips(C,false)}</div>
       <div class="opp-hand">${oppHand}</div>
     </section>
     <section class="gauge" aria-label="橋">
@@ -1559,9 +1623,10 @@ function gameHTML(){
     </section>
     <section class="battle stage${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':''} style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
+      ${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?`<div class="nanori" aria-live="polite"><span>今宵の相手</span><b>${G.char.name}</b><q>${G.char.intro}</q></div>`:''}
       ${cutinHTML()}
       ${finale?`<div class="kessen" aria-hidden="true">${G.over.winner?'勝負あり':'引き分け'}</div>`:''}
-      <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
+      <div class="slot"><span class="who">${G.char?G.char.name:'相手'}</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
     </section>
@@ -1594,6 +1659,7 @@ function overHTML(){
       <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w==='p'?'勝ち':w==='c'?'負け':'引き分け'}</h2>
       <p class="muted small">${G.over.reason}・${G.turn}手</p>
     </div>
+    ${G.char&&w?`<p class="quote"><b>${G.char.name}</b>「${w==='p'?G.char.lose:G.char.win}」</p>`:''}
     <div class="tiles">
       <div class="tile${st.yomiP>st.yomiC?' hi':''}"><b>${st.yomiP}<small style="font-size:14px"> 回</small></b><span>読み勝ち（読まれた ${st.yomiC}回）</span></div>
       <div class="tile${st.bestCombo>=3?' hi':''}"><b>${st.bestCombo}<small style="font-size:14px"> 連</small></b><span>いちばん長く続けて読み勝った</span></div>
@@ -1606,7 +1672,7 @@ function overHTML(){
       <div class="bar" role="img" aria-label="次の段位まで${pct}%"><i style="width:${pct}%"></i></div>
       <div class="lbl"><span>${rec.w}勝 ${rec.l}敗${rec.streak>=2?`・${rec.streak}連勝中`:''}</span></div>
     </div>
-    <details class="opp-info"><summary>相手の手の内を見る</summary>
+    <details class="opp-info"><summary>${G.char?G.char.name:'相手'}の手の内を見る</summary>
       <dl class="dl">
         <dt>相手</dt><dd>${KATA[G.c.kata].name}の型・奥義「${OUGI[G.c.ougi].name}」（${G.c.ougiUsed?'使った':'使わなかった'}）<br><span class="muted small">${OUGI[G.c.ougi].text}</span></dd>
         <dt>デッキ</dt><dd>${G.cpuDeck}</dd>
@@ -1652,6 +1718,8 @@ document.addEventListener('click',e=>{
       const g=ac.createGain();g.gain.value=.7;g.connect(outOf(ac));for(let i=0;i<16;i++)bgmStep(ac,g,ac.currentTime+.6+i*STEP,i);
       setTimeout(()=>{sndState=ac.state==='running'?'音は出せる状態（鳴らなければ、端末のメディア音量を上げる）':`音が止められている（状態：${ac.state}）。Chrome などのブラウザで開くと鳴ることがある`;const el=document.getElementById('sndState');if(el)el.textContent=sndState},400);
       break}
+    case 'prologue-end':settings.seenPrologue=true;store.set(KEY_SET,settings);screen='menu';render();window.scrollTo(0,0);break;
+    case 'prologue':screen='prologue';render();break;
     case 'tutorial':bgmStart();startTutorial();window.scrollTo(0,0);break;
     case 'resume':bgmStart();resumeGame();window.scrollTo(0,0);break;
     case 'go-menu':bgmStop();clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
@@ -1698,6 +1766,7 @@ document.addEventListener('click',e=>{
     case 'close-modal':G.modal=null;render();break;
   }
 });
+if(!settings.seenPrologue)screen='prologue';
 render();
 </script>
 </body>

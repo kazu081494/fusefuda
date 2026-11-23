@@ -7,6 +7,8 @@ const {chromium}=require('playwright');
   p.on('pageerror',e=>errs.push(e.message));
   p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
   await p.goto('file://'+require('path').join(__dirname,'..','index.html'));
+  // 最初に開いたときは序章が出るので、タップして進める
+  if(await p.$('[data-act=prologue-end]'))await p.click('[data-act=prologue-end]');
   const results=[];const presets=['soku','mamori','wana','kin'];
   for(let g=0;g<25;g++){
     if(g%5===0){
