@@ -161,6 +161,10 @@ button.chip{cursor:pointer;border-color:var(--line)}
 
 .center{display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:0;overflow:auto;text-align:center}
 .verdict{display:flex;flex-direction:column;gap:0}
+.trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
+.trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
+.trapfire.theirs{box-shadow:0 0 0 2px var(--lose)}
+@keyframes trapin{0%{transform:scale(2.2) rotate(-6deg);opacity:0}100%{transform:none;opacity:1}}
 .verdict .v{font-family:var(--font-display);font-size:20px;line-height:1.25;white-space:nowrap}
 .verdict .v.win{color:var(--win)}.verdict .v.lose{color:var(--lose)}
 /* 説明は場の下に横幅いっぱいで出す（真ん中の列は狭くて見切れたため） */
@@ -244,7 +248,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
-  .reveal,.notice.alert,.auto,.energy .gain{animation:none}
+  .reveal,.notice.alert,.auto,.energy .gain,.trapfire{animation:none}
   .card,.timer i{transition:none}
 }
 </style>
@@ -397,7 +401,7 @@ function outcome(P,C,pd,cd){
     if(id==='dorobou'&&victimK==='A'){fired=true;if(isP)fx.stealFromC=3;else fx.stealFromP=3;notes.push(`${on}の気力泥棒：${vn}の気力を奪う`)}
     if(id==='machibuse'&&victimK!=='A'){fired=true;if(isP)toC+=3;else toP+=3;notes.push(`${on}の待ち伏せ：${vn}を3押した`)}
     if(id==='ashikase'&&victimK==='A'){fired=true;if(isP)fx.banC=true;else fx.banP=true;notes.push(`${on}の足かせ：次のターン、${vn}は攻撃できない`)}
-    if(fired){if(isP)fx.trapP=true;else fx.trapC=true}
+    if(fired){if(isP){fx.trapP=true;fx.trapNameP=def(t.inst).name}else{fx.trapC=true;fx.trapNameC=def(t.inst).name}}
   };
   trap(P,cd,kc,nc,true);trap(C,pd,kp,np,false);
   if(P.funbari&&toP>0){toP=0;notes.push('踏ん張り：あなたは押されない')}
@@ -809,6 +813,9 @@ function gameHTML(){
   let center='',info='';
   if(G.res&&revealed){
     const n=G.res.net;
+    // 罠が発動したら、真ん中に大きく出す
+    for(const [on,nm,who] of [[G.res.fx.trapP,G.res.fx.trapNameP,'あなた'],[G.res.fx.trapC,G.res.fx.trapNameC,'相手']])
+      if(on)center+=`<div class="trapfire ${who==='あなた'?'mine':'theirs'}">罠発動！<small>${who}の${nm}</small></div>`;
     center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n>0?`${n} 押した`:n<0?`${-n} 押された`:'動かない'}</span></div>`;
     info+=`<p class="why">${whyText()}</p>`;
     // 罠・効果・能力で押す量が変わったときは、差し引きを最後に1行で出す（上の説明と真ん中の数が食い違って見えるため）
