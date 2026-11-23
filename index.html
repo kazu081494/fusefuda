@@ -384,8 +384,8 @@ function outcome(P,C,pd,cd){
   if(kp==='A'&&pd.eff==='sutemi'&&baseC===0){toP+=2;notes.push('捨て身：押せなかったので、あなたが2押される')}
   if(kc==='A'&&cd.eff==='sutemi'&&baseP===0){toC+=2;notes.push('相手の捨て身：押せなかったので、相手が2押される')}
   // 受け手の軽減
-  if(cd&&cd.eff==='ukenagashi'&&toC>0){toC=Math.floor(toC/2);notes.push('受け流し：押す量が半分')}
-  if(pd&&pd.eff==='ukenagashi'&&toP>0){toP=Math.floor(toP/2);notes.push('受け流し：押される量が半分')}
+  if(cd&&cd.eff==='ukenagashi'&&toC>0){toC=Math.floor(toC/2);notes.push('相手の受け流し：押す量が半分')}
+  if(pd&&pd.eff==='ukenagashi'&&toP>0){toP=Math.floor(toP/2);notes.push('あなたの受け流し：押される量が半分')}
   // 罠（見切りで外された罠は発動しない）
   const trap=(owner,victimD,victimK,victimN,isP)=>{
     const t=owner.trap;if(!t||!t.active)return;
@@ -402,7 +402,7 @@ function outcome(P,C,pd,cd){
   trap(P,cd,kc,nc,true);trap(C,pd,kp,np,false);
   if(P.funbari&&toP>0){toP=0;notes.push('踏ん張り：あなたは押されない')}
   if(C.funbari&&toC>0){toC=0;notes.push('相手の踏ん張り：相手は押されない')}
-  return {toC,toP,net:toC-toP,why,notes,fx};
+  return {toC,toP,net:toC-toP,why,notes,fx,base:baseC-baseP};
 }
 
 /* ---------- 試合 ---------- */
@@ -811,7 +811,9 @@ function gameHTML(){
     const n=G.res.net;
     center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n>0?`${n} 押した`:n<0?`${-n} 押された`:'動かない'}</span></div>`;
     info+=`<p class="why">${whyText()}</p>`;
-    const lines=[...G.burnMsgs,...G.res.notes,...(ph==='result'?G.extra||[]:[])];
+    // 罠・効果・能力で押す量が変わったときは、差し引きを最後に1行で出す（上の説明と真ん中の数が食い違って見えるため）
+    const tot=G.res.net!==G.res.base?[`<b>差し引き：${n>0?`${n}押した`:n<0?`${-n}押された`:'動かない'}</b>`]:[];
+    const lines=[...G.burnMsgs,...G.res.notes,...tot,...(ph==='result'?G.extra||[]:[])];
     if(lines.length)info+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
   }
   info+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}">${n.t}</div>`).join('');
