@@ -28,6 +28,29 @@ Midjourney なら、さらに最後に付ける：
 
 うまく影絵にならないときは、指示文の先頭に `black silhouette of` を付けると安定しやすい。
 
+### Stable Diffusion で作るとき
+
+Stable Diffusion は「描いてほしいもの（プロンプト）」と「描いてほしくないもの（ネガティブプロンプト）」を分けて書く。
+
+- **プロンプト**：下の表の指示文 ＋ 共通の書き方（上と同じ）
+- **ネガティブプロンプト**（全部の札で同じ）：
+
+```
+color, colorful, gray, gradient, shading, ground shadow, text, letters, watermark, signature, frame, border, photo, realistic, 3d, blurry, multiple subjects, cropped
+```
+
+- **モデル**：商用で使えるものを選ぶ。SDXL（base 1.0）か FLUX.1 schnell がおすすめ。FLUX.1 dev は商用不可なので使わない。SD 3.5 は年間売上が一定額までなら無料で商用可。使う前に、そのモデルのライセンスのページで確かめる
+- **大きさ**：SDXL・FLUX なら 1024×1024
+- **画風をそろえるコツ**：
+  - 気に入った1枚ができたら、その「シード値」を控えておき、ほかの札でも同じシード値を使う
+  - IP-Adapter（画像を画風の見本にする機能）があれば、気に入った1枚を見本にする
+- **導入**：Fooocus か Stability Matrix を使うと、まとめて入れられて手軽。どちらも無料
+
+### ChatGPT・Gemini で作るとき
+
+指示文と共通の書き方をつなげて、そのまま貼る。
+2枚目からは、1枚目の画像を貼って「この画像と同じ画風で」と頼むと、画風がそろいやすい。
+
 ## 型の絵（素の札・舞台）
 
 | ID | 使う所 | 絵の中身 | 指示文（共通の書き方の前に置く） |
