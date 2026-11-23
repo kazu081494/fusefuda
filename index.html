@@ -56,6 +56,19 @@ p{margin:0}
 .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .btn.sub{background:var(--table-3);color:var(--fg)}
 .btn.wide{width:100%}
+.rank{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.rank b{font-family:var(--font-display);font-weight:800;font-size:28px;color:var(--accent)}
+.chip.locked{opacity:.5}
+.rankline{font-size:14px;color:var(--accent);font-weight:700}
+.rankup{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--accent) 18%,transparent);border:1px solid var(--accent)}
+.rankup b{font-family:var(--font-display);font-size:20px;color:#ffe7a3}
+.rankup span{font-size:13px}
+/* 札の裏の見た目（段位で解放） */
+.back-ichimatsu .back{background:conic-gradient(#3b2d1d 25%,#22303d 0 50%,#3b2d1d 0 75%,#22303d 0) 0 0/16px 16px}
+.back-seigaiha .back{background:radial-gradient(circle at 50% 100%,transparent 4px,rgba(241,220,171,.25) 5px 6px,transparent 7px 9px,rgba(241,220,171,.25) 10px 11px,transparent 12px) 0 0/24px 12px,radial-gradient(circle at 50% 100%,transparent 4px,rgba(241,220,171,.25) 5px 6px,transparent 7px 9px,rgba(241,220,171,.25) 10px 11px,transparent 12px) 12px 6px/24px 12px,#1d2a3a}
+.back-kin .back{background:radial-gradient(circle at 30% 25%,rgba(255,240,190,.55),transparent 40%),linear-gradient(135deg,#7a5a1c,#e2b247 45%,#8a6420);border-color:#e2b247}
+/* 舞台の月（段位で解放） */
+.moon-beni .moon{background:radial-gradient(circle at 42% 40%,#ffd9cf,#d8583c 72%);box-shadow:0 0 34px 10px rgba(216,88,60,.3)}
 .resume-sub{display:block;font-size:12px;font-weight:400;opacity:.85}
 .btn.tiny{min-height:32px;padding:3px 10px;font-size:13px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -69,6 +82,7 @@ p{margin:0}
 button.chip{cursor:pointer;border-color:var(--line)}
 .chip.warn{background:transparent;border-color:var(--accent);color:var(--accent)}
 .chip.on{background:var(--accent);color:var(--accent-ink)}
+.chip.haisui{background:var(--lose);color:var(--ink);font-weight:700}
 .chip.trap{background:transparent;border-color:var(--trap);color:#9fd0a4}
 .energy{display:inline-flex;align-items:baseline;gap:3px;font-size:12px;color:var(--accent);white-space:nowrap}
 .energy b{font-family:var(--font-display);font-weight:400;font-size:20px;line-height:1}
@@ -81,7 +95,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .title .lamp img{filter:brightness(.35)}
 .title h1{font-family:var(--font-display);font-weight:400;font-size:clamp(44px,13vw,64px);line-height:1;letter-spacing:.04em}
 .title .sub{color:var(--muted)}
-.title .yomi{font-size:12px;letter-spacing:.3em;color:var(--muted);margin-top:-2px}
+.title .reading{font-size:12px;letter-spacing:.3em;color:var(--muted);margin-top:-2px}
 .tri{font-size:13px;color:var(--muted)}
 .tri b{font-weight:700}
 .tri .a{color:var(--atk)}.tri .d{color:var(--def)}.tri .t{color:#9fd0a4}
@@ -246,6 +260,15 @@ img.sil{object-fit:contain;height:auto}
 
 .center{display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:0;overflow:visible;text-align:center}
 .verdict{display:flex;flex-direction:column;gap:0}
+.yomi{font-family:var(--font-display);font-weight:800;line-height:1.1;white-space:nowrap;display:flex;flex-direction:column;align-items:center}
+.yomi.win{font-size:24px;color:#ffe7a3;text-shadow:0 0 8px rgba(226,178,71,.9),0 0 20px rgba(226,178,71,.6),0 2px 0 #000}
+.yomi.win small{font-size:14px;color:var(--accent)}
+.yomi.lose{font-size:15px;color:var(--lose);text-shadow:0 0 6px #000}
+.yomi small{font-family:var(--font-body);font-size:11px;font-weight:700}
+.play .yomi.win{animation:yomiin .6s .45s cubic-bezier(.2,1.7,.4,1) both}
+@keyframes yomiin{0%{transform:scale(2.6);opacity:0}100%{transform:none;opacity:1}}
+.play.shake{animation:shake .45s .5s}
+@keyframes shake{20%{transform:translate(-5px,2px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(2px,0)}}
 .trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
 .trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
 .trapfire.theirs{box-shadow:0 0 0 2px var(--lose)}
@@ -341,7 +364,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
-  .reveal,.notice.alert,.auto,.energy .gain,.trapfire,.petal,.duel,.samurai,.calls{animation:none!important}
+  .reveal,.notice.alert,.auto,.energy .gain,.trapfire,.yomi,.play.shake,.petal,.duel,.samurai,.calls{animation:none!important}
   .fx{display:none}
   .card,.timer i{transition:none}
 }
@@ -423,6 +446,8 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 <script>
 'use strict';
 /* ---------- 定数 ---------- */
+/* 背水：自分の岸まで HAISUI_NEAR 歩以内に押し込まれたら、防ぎきって跳ね返すとき HAISUI_BACK 歩多く押し返す */
+const HAISUI_NEAR=10,HAISUI_BACK=10;
 const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=20,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
 const TY={A:{name:'攻撃'},D:{name:'防御'},T:{name:'罠'}};
@@ -517,7 +542,7 @@ function cleanDeck(obj){
   return out;
 }
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
-let settings=Object.assign({timer:TIMER_DEFAULT},store.get(KEY_SET,{}));
+let settings=Object.assign({timer:TIMER_DEFAULT,back:'shoji',moon:'full'},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
@@ -573,6 +598,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     else{toC=np-dn;why=`攻撃${np}が防御${dn}を上回って、差の${np-dn}押す`}
     if(toP>0&&cd.eff==='hangeki'){toP+=10;notes.push('相手の反撃：さらに10押し返された')}
     if(toP>0&&C.kata==='yanagi'){toP+=5;notes.push(`${kataOf(C,false)}：さらに5跳ね返された`)}
+    if(toP>0&&C.haisui){toP+=HAISUI_BACK;notes.push(`相手の背水：さらに${HAISUI_BACK}押し返された`)}
     if(cd.eff==='fuuji'&&toC===0){fx.banP=true;notes.push('封じ手：次のターン、あなたは攻撃できない')}
   }else if(kc==='A'&&kp==='D'){
     const wall=using(P,'uke'),dp=cd.eff==='kuzushi'&&!wall?Math.floor(np/2):np;
@@ -586,6 +612,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     else{toP=nc-dp;why=`相手の攻撃${nc}が防御${dp}を上回って、差の${nc-dp}押される`}
     if(toC>0&&pd.eff==='hangeki'){toC+=10;notes.push('反撃：さらに10押し返した')}
     if(toC>0&&P.kata==='yanagi'){toC+=5;notes.push(`${kataOf(P,true)}：さらに5跳ね返した`)}
+    if(toC>0&&P.haisui){toC+=HAISUI_BACK;notes.push(`背水：さらに${HAISUI_BACK}押し返した`)}
     if(pd.eff==='fuuji'&&toP===0){fx.banC=true;notes.push('封じ手：次のターン、相手は攻撃できない')}
   }else if(kp==='A'){toC=np;why='相手は防いでいない：そのまま押す'}
   else if(kc==='A'){toP=nc;why='あなたは防いでいない：そのまま押される'}
@@ -676,6 +703,25 @@ function blockReason(s,i){
 function log(m){G.log.push(`${G.turn}手目　${m}`)}
 function clearTimers(){if(!G)return;clearInterval(G.tId);clearTimeout(G.cpuT);clearTimeout(G.autoT);G.tId=null;G.autoT=null}
 
+/* ---------- 戦績と段位（この端末の中だけ） ----------
+   勝ち数で段位が上がり、見た目（札の裏・舞台の月）が解放される。強さは変わらない */
+const KEY_REC='fusefuda.record.v1';
+const RANKS=[[0,'見習い'],[3,'初段'],[6,'二段'],[10,'三段'],[15,'四段'],[21,'五段'],[28,'六段'],[36,'七段'],[45,'八段'],[55,'免許皆伝']];
+const BACKS=[{key:'shoji',name:'障子',rank:0},{key:'ichimatsu',name:'市松',rank:1},{key:'seigaiha',name:'青海波',rank:3},{key:'kin',name:'金箔',rank:9}];
+const MOONS=[{key:'full',name:'満月',rank:0},{key:'beni',name:'紅月',rank:5}];
+let rec=Object.assign({w:0,l:0,d:0,streak:0,best:0},store.get(KEY_REC,{}));
+const rankIdx=w=>RANKS.reduce((m,[n],i)=>w>=n?i:m,0);
+const rankName=w=>RANKS[rankIdx(w)][1];
+function recordResult(){
+  if(!G||!G.over||G.recorded)return;G.recorded=true;
+  const before=rankIdx(rec.w),w=G.over.winner;
+  if(w==='p'){rec.w++;rec.streak++;rec.best=Math.max(rec.best,rec.streak)}else if(w==='c'){rec.l++;rec.streak=0}else rec.d++;
+  store.set(KEY_REC,rec);
+  const after=rankIdx(rec.w);
+  if(after>before){const un=[...BACKS,...MOONS].filter(x=>x.rank===after).map(x=>x.name);G.rankUp={name:RANKS[after][1],unlock:un}}
+}
+const unlocked=x=>rankIdx(rec.w)>=x.rank;
+
 /* ---------- 途中の試合の保存（この端末の中だけ） ----------
    ターンの始め・奥義を使った直後・結果が出た直後に保存する。
    結果を見てから読み込み直しても、その手はやり直せない（結果のあとから続く） */
@@ -705,7 +751,7 @@ function startGame(kata,ougi){
   clearTimers();
   const pre=rnd(PRESETS);
   G={p:newSide(deck,kata,ougi),c:newSide(pre.cards,rnd(Object.keys(KATA)),rnd(Object.keys(OUGI))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
-    gauge:0,prevGauge:0,revealAt:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
+    gauge:0,prevGauge:0,revealAt:0,combo:0,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   screen='game';startTurn();
 }
@@ -717,13 +763,16 @@ function startTurn(){
     s.energy=clampE(s.energy+ENERGY_GAIN);
     s.noAtk=s.noAtkNext;s.noAtkNext=false;s.yokoku=s.yokokuNext;s.yokokuNext=false;
     s.ougiNow=false;
+    s.haisui=(s===G.p?GOAL+G.gauge:GOAL-G.gauge)<=HAISUI_NEAR;
     for(const t of s.traps)t.active=true;
   }
-  Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]});
+  Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,yomi:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]});
   if(!G.p.hand.length&&!G.p.deck.length&&!G.c.hand.length&&!G.c.deck.length)return finishByGauge('両者の札が尽きたので、橋の上の位置で決着');
   if(G.p.noAtk)G.notices.push({t:'このターン、あなたは攻撃できない'});
   if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
   if(G.p.yokoku)G.notices.push({t:'あなたの予告：攻撃の数字+10'});
+  if(G.p.haisui)G.notices.push({t:`背水：あなたは追い詰められている。防ぎきって跳ね返すと、さらに${HAISUI_BACK}押し返す`});
+  if(G.c.haisui)G.notices.push({t:`相手は背水：相手が防ぎきると、さらに${HAISUI_BACK}押し返してくる`});
   if(G.c.yokoku)G.notices.push({t:'相手の予告：相手の攻撃の数字+10'});
   G.phase='select';saveGame();render();startTimer();
   G.cpuT=setTimeout(cpuMaybeBefore,900+Math.random()*3500);
@@ -813,6 +862,14 @@ function openEff(who,inst,msgs){
     case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;op.discard.push(t);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else msgs.push('見切り：外す罠がなかった');break;
   }
 }
+/* 出した手の種類：atk・def・burn・pass・trap */
+const actOf=(pl,bu)=>bu?'burn':!pl?'pass':def(pl).type==='A'?'atk':def(pl).type==='D'?'def':'trap';
+/* 読み勝ちの判定。base はあなたから見た基本の押し込み（＋ならあなたが押した） */
+function yomiOf(pa,ca,base){
+  const win=(me,op,b)=>me==='def'&&op==='atk'&&b>0?'見切った！':me==='atk'&&['burn','pass','trap'].includes(op)&&b>0?'隙あり！':me==='burn'&&op==='def'?'肩透かし！':me==='atk'&&op==='atk'&&b>0?'競り勝ち！':me==='atk'&&op==='def'&&b>0?'押し通した！':'';
+  const p=win(pa,ca,base),c=win(ca,pa,-base);
+  return p?{who:'p',word:p}:c?{who:'c',word:c}:null;
+}
 function resolve(){
   const P=G.p,C=G.c,r=G.res,msgs=[];
   const pd=G.pPlay?def(G.pPlay):null,cd=G.cPlay?def(G.cPlay):null;
@@ -843,6 +900,10 @@ function resolve(){
     else s.discard.push(inst);
   }
   G.prevGauge=G.gauge;G.revealAt=Date.now();
+  // 読み勝ち：どちらが読み勝ったか。続けて読み勝つと連が伸びる（読まれたら0に戻る）
+  const yw=yomiOf(actOf(G.pPlay,G.pBurned),actOf(G.cPlay,G.cBurned),r.base);
+  G.yomi=yw;
+  if(yw&&yw.who==='p')G.combo=(G.combo||0)+1;else if(yw&&yw.who==='c')G.combo=0;
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
   drawN(P,1);drawN(C,1);
   for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
@@ -853,7 +914,7 @@ function resolve(){
   [...r.notes,...msgs].forEach(m=>log(m));
   if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:G.gauge>0?'相手を橋のたもとまで押し込んだ':'橋のたもとまで押し込まれた'};
   G.phase='result';
-  if(G.over)clearSave();else saveGame();
+  if(G.over){clearSave();recordResult()}else saveGame();
   if(!G.over){
     const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
     G.autoMs=Math.min(7600,3200+n*900+(alert?900:0));
@@ -864,7 +925,7 @@ function resolve(){
 function finishByGauge(reason){
   clearTimers();
   G.over={winner:G.gauge>0?'p':G.gauge<0?'c':null,reason};
-  G.phase='result';clearSave();render();
+  G.phase='result';clearSave();recordResult();render();
 }
 
 /* ---------- CPU ---------- */
@@ -971,13 +1032,24 @@ function cardHTML(i,o={}){
 const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力+${burnVal(d,s)}</b>${note?`<small>${note}</small>`:''}</span></div>`;
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
 function render(){
-  $app.className=screen==='game'?'fit':'';
+  $app.className=(screen==='game'?'fit ':'')+`back-${settings.back||'shoji'} moon-${settings.moon||'full'}`;
   if(screen==='menu')$app.innerHTML=menuHTML();
   else if(screen==='school')$app.innerHTML=schoolHTML();
   else if(screen==='builder')$app.innerHTML=builderHTML();
   else if(screen==='rules')$app.innerHTML=rulesHTML();
   else if(screen==='game')$app.innerHTML=gameHTML();
   if(screen==='game'&&G.phase==='select')tick();
+}
+function recordPanel(){
+  const i=rankIdx(rec.w),next=RANKS[i+1];
+  const chip=(x,kind)=>unlocked(x)?`<button class="chip${settings[kind]===x.key?' on':''}" data-act="look" data-kind="${kind}" data-key="${x.key}">${x.name}</button>`:`<span class="chip locked">${x.name}（${RANKS[x.rank][1]}で解放）</span>`;
+  return `<div class="panel">
+    <div class="label">段位と戦績</div>
+    <div class="rank"><b>${RANKS[i][1]}</b><span class="muted small">${next?`${next[1]}まで あと${next[0]-rec.w}勝`:'最高位'}</span></div>
+    <p class="small muted">${rec.w}勝 ${rec.l}敗${rec.d?` ${rec.d}分`:''}・連勝 ${rec.streak}（最高 ${rec.best}）</p>
+    <div class="label">札の裏</div><div class="chips">${BACKS.map(x=>chip(x,'back')).join('')}</div>
+    <div class="label">舞台の月</div><div class="chips">${MOONS.map(x=>chip(x,'moon')).join('')}</div>
+  </div>`;
 }
 function deckSummary(){
   const st=deckStats(deck);
@@ -994,11 +1066,12 @@ function deckSummary(){
 }
 function menuHTML(){
   const st=deckStats(deck),sv=readSave();
-  return `<div class="title"><div class="lamp" aria-hidden="true">${ART_IMG.has('T')?'<img src="art/cards/T.png" alt="">':'<svg viewBox="0 0 100 100"><use href="#sil-T"/></svg>'}</div><h1>月花乱舞</h1><p class="yomi">げっからんぶ</p>
+  return `<div class="title"><div class="lamp" aria-hidden="true">${ART_IMG.has('T')?'<img src="art/cards/T.png" alt="">':'<svg viewBox="0 0 100 100"><use href="#sil-T"/></svg>'}</div><h1>月花乱舞</h1><p class="reading">げっからんぶ</p>
     <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
     <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>は防ぎきれば跳ね返す。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と、気力が溜まる。</p></div>
     ${sv?`<button class="btn wide" data-act="resume">続きから<small class="resume-sub">${sv.turn}手目・${KATA[sv.p.kata].name}の型と${OUGI[sv.p.ougi].name}・${sv.gauge>0?`勝ちまで あと${GOAL-sv.gauge}歩`:sv.gauge<0?`負けまで あと${GOAL+sv.gauge}歩`:'互角'}</small></button>`:''}
     <button class="btn wide${sv?' ghost':''}" data-act="go-school" ${st.ok?'':'disabled'}>${sv?'新しく対戦する（続きは消える）':'対戦する'}</button>
+    ${recordPanel()}
     ${deckSummary()}
     <div class="panel">
       <label class="row" for="timerSel"><span>持ち時間（1手）</span>
@@ -1081,6 +1154,7 @@ function sideChips(s,isP){
     const st=t.active?'発動待ち':'次から';
     c.push(isP?`<button class="chip trap" data-act="mytrap" data-uid="${t.inst.uid}">罠：${def(t.inst).name}（${st}）</button>`:`<span class="chip trap">罠あり（${st}）</span>`);
   }
+  if(s.haisui)c.push('<span class="chip haisui">背水</span>');
   c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}">山${s.deck.length}・捨${s.discard.length}</button>`);
   return `<div class="chips">${c.join('')}</div>`;
 }
@@ -1120,7 +1194,6 @@ function gameHTML(){
   // 舞台：開けた直後だけ演出を流す（あとで描き直しても繰り返さない）
   const play=revealed&&G.res&&Date.now()-(G.revealAt||0)<1200;
   const shift=g=>`${-g*0.52}px`;
-  const actOf=(pl,bu)=>bu?'burn':!pl?'pass':def(pl).type==='A'?'atk':def(pl).type==='D'?'def':'trap';
   const pa=revealed?actOf(G.pPlay,G.pBurned):'',ca=revealed?actOf(G.cPlay,G.cBurned):'';
   let fx='';
   if(play){
@@ -1147,6 +1220,7 @@ function gameHTML(){
     // 罠が発動したら、真ん中に大きく出す
     for(const [fired,who] of [[G.res.fx.firedP,'あなた'],[G.res.fx.firedC,'相手']])
       for(const f of fired)center+=`<div class="trapfire ${who==='あなた'?'mine':'theirs'}">罠発動！<small>${who}の${f.name}</small></div>`;
+    if(G.yomi)center+=G.yomi.who==='p'?`<div class="yomi win">${G.yomi.word}${G.combo>=2?`<small>${G.combo}連</small>`:''}</div>`:`<div class="yomi lose">読まれた<small>相手の${G.yomi.word.replace('！','')}</small></div>`;
     center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n?`${Math.abs(n)}歩<small>${n>0?'押し込んだ':'押し込まれた'}</small>`:'睨み合い'}</span></div>`;
     info+=`<p class="why">${whyText()}</p>`;
     // 罠・効果・流派で押す量が変わったときは、差し引きを最後に1行で出す（上の説明と真ん中の数が食い違って見えるため）
@@ -1190,7 +1264,7 @@ function gameHTML(){
       <div class="gauge-labels"><span>相手の岸</span><span>${gTxt}</span><span>自分の岸</span></div>
       <div class="cells">${cells.join('')}</div>
     </section>
-    <section class="battle stage${play?' play':''}" style="${stageStyle}" aria-label="場">
+    <section class="battle stage${play?' play':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
@@ -1210,6 +1284,8 @@ function overHTML(){
     <h2 id="ovt" class="${w==='p'?'win':w==='c'?'lose':''}">${w?'勝負あり':'引き分け'}</h2>
     ${w?`<p class="result ${w==='p'?'win':'lose'}">あなたの${w==='p'?'勝ち':'負け'}</p>`:''}
     <p class="muted small">${G.over.reason}</p>
+    <p class="rankline">${rankName(rec.w)}・${rec.w}勝${rec.l}敗${rec.streak>=2?`・${rec.streak}連勝中`:''}</p>
+    ${G.rankUp?`<div class="rankup"><b>${G.rankUp.name}に昇段！</b>${G.rankUp.unlock.length?`<span>${G.rankUp.unlock.join('・')}を解放した</span>`:''}</div>`:''}
     <dl class="dl"><dt>手数</dt><dd>${G.turn}手</dd>
       <dt>あなた</dt><dd>${KATA[G.p.kata].name}の型・奥義「${OUGI[G.p.ougi].name}」（${G.p.ougiUsed?'使った':'使わなかった'}）</dd>
       <dt>相手</dt><dd>${KATA[G.c.kata].name}の型・奥義「${OUGI[G.c.ougi].name}」（${G.c.ougiUsed?'使った':'使わなかった'}）<br><span class="muted small">${OUGI[G.c.ougi].text}</span></dd>
@@ -1240,6 +1316,7 @@ document.addEventListener('click',e=>{
   const act=el.dataset.act;
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
+    case 'look':{const kind=el.dataset.kind,list=kind==='back'?BACKS:MOONS,x=list.find(o=>o.key===el.dataset.key);if(x&&unlocked(x)){settings[kind]=x.key;store.set(KEY_SET,settings);render()}break}
     case 'resume':resumeGame();window.scrollTo(0,0);break;
     case 'go-menu':clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
     case 'go-school':clearTimers();screen='school';G=null;render();window.scrollTo(0,0);break;
@@ -1271,7 +1348,7 @@ document.addEventListener('click',e=>{
     case 'burn':if(G&&G.phase==='select'){if(G.pBurn){G.pBurn=null;G.burnMode=false}else G.burnMode=!G.burnMode;render()}break;
     case 'ougi':useOugi();break;
     case 'next':if(G&&G.phase==='result'&&!G.over)startTurn();break;
-    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();render()}break;
+    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();recordResult();render()}break;
     case 'discard':G.modal=el.dataset.who;render();break;
     case 'open-log':G.modal='log';render();break;
     case 'close-modal':G.modal=null;render();break;
