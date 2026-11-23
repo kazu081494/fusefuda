@@ -545,7 +545,7 @@ function cleanDeck(obj){
   return out;
 }
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
-let settings=Object.assign({timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false},store.get(KEY_SET,{}));
+let settings=Object.assign({timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
@@ -919,6 +919,45 @@ const SFX={
     const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.15);const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=2500;n.connect(hp);env(ac,hp,t,.12,.14,.01);n.start(t);
   },
 };
+/* ---------- BGM（その場で作る） ----------
+   琴のようなはじく音で、都節の音階（レ・ミ♭・ソ・ラ・シ♭）の旋律を毎回少しずつ違えて弾き続ける */
+const BGM={on:false,next:0,beat:0,deg:5,timer:null,out:null};
+const SCALE=[146.83,155.56,196,220,233.08,293.66,311.13,392,440,466.16,587.33,622.25,783.99];// レ3〜ソ5
+const BEAT=.78;// 1拍の長さ（秒）
+function pluck(ac,dst,f,t,v,dur=1.8){
+  const o1=ac.createOscillator(),o2=ac.createOscillator(),lp=ac.createBiquadFilter(),g=ac.createGain();
+  o1.type='triangle';o1.frequency.value=f;o2.type='sine';o2.frequency.value=f*2.01;
+  lp.type='lowpass';lp.frequency.setValueAtTime(Math.min(6000,f*14),t);lp.frequency.exponentialRampToValueAtTime(Math.max(300,f*2),t+.35);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(v,t+.004);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+  const g2=ac.createGain();g2.gain.value=.35;o1.connect(lp);o2.connect(g2);g2.connect(lp);lp.connect(g);g.connect(dst);
+  o1.start(t);o2.start(t);o1.stop(t+dur+.05);o2.stop(t+dur+.05);
+}
+function bgmBeat(ac,dst,t,beat){
+  // 低い刻み：2拍ごとにレ、8拍の後半はラ
+  if(beat%2===0)pluck(ac,dst,beat%16>=8?110:73.42,t,.16,2.2);
+  // 旋律：となりの音へ動くことが多く、ときどき跳ぶ。句の終わり（8拍目）はレかラに落ち着く
+  const end=beat%8===7;
+  if(end){BGM.deg=Math.random()<.6?5:3;pluck(ac,dst,SCALE[BGM.deg],t,.12,3);return}
+  if(Math.random()<.78){
+    const step=Math.random()<.75?(Math.random()<.5?-1:1):(Math.random()<.5?-2:2);
+    BGM.deg=Math.max(2,Math.min(SCALE.length-1,BGM.deg+step));
+    pluck(ac,dst,SCALE[BGM.deg],t,.11);
+    // 裏拍に小さく装飾
+    if(Math.random()<.3){const d2=Math.max(2,Math.min(SCALE.length-1,BGM.deg+(Math.random()<.5?1:-1)));pluck(ac,dst,SCALE[d2],t+BEAT/2,.06,1.2)}
+  }
+  // ときどき遠くの太鼓
+  if(beat%16===0){const o=ac.createOscillator(),g=ac.createGain();o.frequency.setValueAtTime(90,t);o.frequency.exponentialRampToValueAtTime(50,t+.4);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.12,t+.005);g.gain.exponentialRampToValueAtTime(.0001,t+.6);o.connect(g);g.connect(dst);o.start(t);o.stop(t+.7)}
+}
+function bgmStart(){
+  if(!settings.bgm)return;const ac=audio();if(!ac||BGM.on)return;
+  BGM.on=true;BGM.out=ac.createGain();BGM.out.gain.setValueAtTime(.0001,ac.currentTime);BGM.out.gain.exponentialRampToValueAtTime(.8,ac.currentTime+1.5);BGM.out.connect(ac.destination);
+  BGM.next=ac.currentTime+.1;BGM.beat=0;
+  BGM.timer=setInterval(()=>{if(!BGM.on)return;while(BGM.next<ac.currentTime+1.2){bgmBeat(ac,BGM.out,BGM.next,BGM.beat++);BGM.next+=BEAT}},250);
+}
+function bgmStop(){
+  if(!BGM.on)return;BGM.on=false;clearInterval(BGM.timer);
+  try{const t=AC.currentTime,o=BGM.out;o.gain.cancelScheduledValues(t);o.gain.setValueAtTime(Math.max(.0001,o.gain.value),t);o.gain.exponentialRampToValueAtTime(.0001,t+1.2);setTimeout(()=>o.disconnect(),1500)}catch(e){}
+}
 /* 開けたときの音。演出のタイミングに合わせて鳴らす */
 function playRevealSounds(){
   const ac=audio();if(!ac||!G||!G.res)return;
@@ -1321,7 +1360,7 @@ function gameHTML(){
 
   return `<div class="topbar"><span class="turn">${G.turn}手目</span>
       ${ph==='select'&&settings.timer?`<div class="timer" id="tbox"><i id="tbar" style="width:100%"></i></div><span class="tnum" id="tnum">${settings.timer}秒</span>`:'<div class="spacer"></div>'}
-      <button class="btn ghost tiny${settings.sound?' on':''}" data-act="sound" aria-pressed="${!!settings.sound}">${settings.sound?'音あり':'音なし'}</button>
+      <button class="btn ghost tiny${settings.sound?' on':''}" data-act="sound" aria-label="音の切り替え（いま：${!settings.sound?'音なし':settings.bgm?'効果音と曲':'効果音のみ'}）">${!settings.sound?'音なし':settings.bgm?'効果音＋曲':'効果音'}</button>
       <button class="btn ghost tiny" data-act="open-log">記録</button>
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
     <section class="side" aria-label="相手">
@@ -1385,13 +1424,13 @@ document.addEventListener('click',e=>{
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
     case 'look':{const kind=el.dataset.kind,list=kind==='back'?BACKS:MOONS,x=list.find(o=>o.key===el.dataset.key);if(x&&unlocked(x)){settings[kind]=x.key;store.set(KEY_SET,settings);render()}break}
-    case 'resume':resumeGame();window.scrollTo(0,0);break;
-    case 'go-menu':clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
-    case 'go-school':clearTimers();screen='school';G=null;render();window.scrollTo(0,0);break;
+    case 'resume':bgmStart();resumeGame();window.scrollTo(0,0);break;
+    case 'go-menu':bgmStop();clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
+    case 'go-school':bgmStop();clearTimers();screen='school';G=null;render();window.scrollTo(0,0);break;
     case 'go-builder':screen='builder';builderPreset=null;render();window.scrollTo(0,0);break;
     case 'go-rules':screen='rules';render();break;
     case 'pick-kata':case 'pick-ougi':{const kind=act.slice(5);pick[kind]=el.dataset.k;settings[kind]=el.dataset.k;store.set(KEY_SET,settings);render();break}
-    case 'start-game':if(pick.kata&&pick.ougi){clearSave();startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
+    case 'start-game':if(pick.kata&&pick.ougi){clearSave();bgmStart();startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
     case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
     case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
     case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};builderPreset=p;saveDeck();render();break}
@@ -1419,7 +1458,13 @@ document.addEventListener('click',e=>{
     case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();recordResult();render()}break;
     case 'discard':G.modal=el.dataset.who;render();break;
     case 'open-log':G.modal='log';render();break;
-    case 'sound':settings.sound=!settings.sound;store.set(KEY_SET,settings);if(settings.sound){const ac=audio();if(ac)SFX.clang(ac,ac.currentTime+.02,.8)}render();break;
+    case 'sound':{
+      // 音なし → 効果音 → 効果音＋曲 → 音なし
+      if(!settings.sound){settings.sound=true;settings.bgm=false}else if(!settings.bgm){settings.bgm=true}else{settings.sound=false;settings.bgm=false}
+      store.set(KEY_SET,settings);
+      if(settings.sound){const ac=audio();if(ac&&!settings.bgm)SFX.clang(ac,ac.currentTime+.02,.8)}
+      if(settings.bgm)bgmStart();else bgmStop();
+      render();break}
     case 'close-modal':G.modal=null;render();break;
   }
 });
