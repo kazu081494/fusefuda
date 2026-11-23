@@ -15,8 +15,9 @@ const {chromium}=require('playwright');
       await p.click('[data-act=go-menu]');
     }
     await p.click('[data-act=go-school]');
-    const scs=await p.$$('[data-act=pick-school]');
-    await scs[g%5].click();
+    await (await p.$$('[data-act=pick-kata]'))[g%5].click();
+    await (await p.$$('[data-act=pick-ougi]'))[g%8].click();
+    await p.click('[data-act=start-game]');
     for(let i=0;i<120;i++){
       if(await p.$('.modal h2'))break;
       const ph=await p.evaluate(()=>G.phase);
@@ -33,12 +34,12 @@ const {chromium}=require('playwright');
         if(await p.$('[data-act=next]'))await p.click('[data-act=next]');
       }
     }
-    results.push(await p.evaluate(()=>[G.over&&G.over.winner,G.turn,G.gauge,G.p.school,G.c.school]));
+    results.push(await p.evaluate(()=>[G.over&&G.over.winner,G.turn,G.gauge,G.p.kata+'/'+G.p.ougi,G.c.kata+'/'+G.c.ougi]));
     await p.click('[data-act=go-menu]');
   }
   // 画面確認用：数手進めたところ
   await p.click('[data-act=go-school]');
-  await (await p.$$('[data-act=pick-school]'))[0].click();
+  await p.click('[data-act=start-game]');
   await p.click('[data-act=pass]');
   await p.click('[data-act=next]');
   const hs=await p.$$('[data-act=hand]:not(.off)');
