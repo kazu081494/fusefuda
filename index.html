@@ -193,6 +193,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .petal{position:absolute;top:-6%;width:7px;height:5px;border-radius:70% 0 70% 0;background:#f4c3d3;opacity:.75;animation:petal linear infinite}
 @keyframes petal{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(-18px,55cqh) rotate(200deg)}100%{transform:translate(8px,115cqh) rotate(400deg)}}
 .stage{container-type:size}
+.stage[data-act=next]{cursor:pointer}
 .center{position:relative;justify-content:flex-start}
 .duel{position:absolute;left:-6px;right:-6px;bottom:0;height:56%;transform:translateX(var(--g1));pointer-events:none}
 .play .duel{animation:gshift .5s .6s ease-in-out both}
@@ -480,6 +481,8 @@ const HAISUI_NEAR=10,HAISUI_BACK=10;
 /* 連：続けて読み勝つと連が伸び、COMBO_EVERY 連ごとに気力 +COMBO_GAIN */
 const COMBO_EVERY=3,COMBO_GAIN=5;
 const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=20,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
+/* 結果のあと次のターンへ進む速さ */
+const SPEEDS={fast:.6,normal:1,slow:1.6};
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
 const TY={A:{name:'攻撃'},D:{name:'防御'},T:{name:'罠'}};
 const TYPES=['A','D','T'];
@@ -573,7 +576,7 @@ function cleanDeck(obj){
   return out;
 }
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
-let settings=Object.assign({timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
+let settings=Object.assign({speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false,bgm:false},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
@@ -1056,7 +1059,8 @@ function resolve(){
   if(G.over){clearSave();recordResult();startFinale()}else saveGame();
   if(!G.over){
     const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
-    G.autoMs=Math.min(7600,3200+n*900+(alert?900:0));
+    // 結果を見る時間：短めを基本に、説明が多いほど少し長く。メニューの「結果のあと進む速さ」で倍率を変える
+    G.autoMs=Math.round(Math.min(3800,1600+n*450+(alert?500:0))*(SPEEDS[settings.speed]||1));
     G.autoT=setTimeout(()=>{if(G&&G.phase==='result'&&!G.over)startTurn()},G.autoMs);
   }
   render();playRevealSounds();
@@ -1222,6 +1226,8 @@ function menuHTML(){
     <div class="panel">
       <label class="row" for="timerSel"><span>持ち時間（1手）</span>
       <select id="timerSel">${TIMER_OPTIONS.map(v=>`<option value="${v}" ${settings.timer===v?'selected':''}>${v?v+'秒':'なし'}</option>`).join('')}</select></label>
+      <label class="row" for="speedSel"><span>結果のあと進む速さ</span>
+      <select id="speedSel">${[['fast','はやい'],['normal','ふつう'],['slow','ゆっくり']].map(([k,n])=>`<option value="${k}" ${settings.speed===k?'selected':''}>${n}</option>`).join('')}</select></label>
     </div>
     <button class="btn ghost" data-act="go-rules">ルールを読む</button>`;
 }
@@ -1396,7 +1402,7 @@ function gameHTML(){
       <button class="btn sub${G.burnMode||G.pBurn?' on':''}" data-act="burn">${G.burnMode||G.pBurn?'やめる':'燃やす'}</button>
       <button class="btn ghost" data-act="pass">見送る</button>
       <button class="btn" data-act="commit" ${G.pBurn||(G.sel&&!blockReason(P,G.sel))?'':'disabled'}>${G.pBurn?'燃やす':'伏せる'}</button></div>`;
-  else if(ph==='result'&&!G.over)actions=`<button class="btn wide sub" data-act="next">すぐ次へ<i class="auto" style="animation-duration:${G.autoMs}ms"></i></button>`;
+  else if(ph==='result'&&!G.over)actions=`<button class="btn wide sub" data-act="next">すぐ次へ（場をタップでも進む）<i class="auto" style="animation-duration:${G.autoMs}ms"></i></button>`;
   else actions=`<button class="btn wide sub" disabled>　</button>`;
 
   return `<div class="topbar"><span class="turn">${G.turn}手目</span>
@@ -1412,7 +1418,7 @@ function gameHTML(){
       <div class="gauge-labels"><span>相手の岸</span><span>${gTxt}</span><span>自分の岸</span></div>
       <div class="cells">${cells.join('')}</div>
     </section>
-    <section class="battle stage${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" style="${stageStyle}" aria-label="場">
+    <section class="battle stage${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':''} style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
       ${finale?`<div class="kessen" aria-hidden="true">${G.over.winner?'勝負あり':'引き分け'}</div>`:''}
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
@@ -1474,6 +1480,7 @@ function modalHTML(){
 /* ---------- 操作 ---------- */
 document.addEventListener('change',e=>{
   if(e.target.id==='timerSel'){settings.timer=Number(e.target.value);store.set(KEY_SET,settings)}
+  if(e.target.id==='speedSel'&&SPEEDS[e.target.value]){settings.speed=e.target.value;store.set(KEY_SET,settings)}
 });
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]');if(!el)return;
