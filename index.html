@@ -70,6 +70,7 @@ p{margin:0}
 /* 舞台の月（段位で解放） */
 .moon-beni .moon{background:radial-gradient(circle at 42% 40%,#ffd9cf,#d8583c 72%);box-shadow:0 0 34px 10px rgba(216,88,60,.3)}
 .resume-sub{display:block;font-size:12px;font-weight:400;opacity:.85}
+.btn.tiny.on{border-color:var(--accent);color:var(--accent)}
 .btn.tiny{min-height:32px;padding:3px 10px;font-size:13px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row > .btn{flex:1 1 auto}
@@ -544,7 +545,7 @@ function cleanDeck(obj){
   return out;
 }
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
-let settings=Object.assign({timer:TIMER_DEFAULT,back:'shoji',moon:'full'},store.get(KEY_SET,{}));
+let settings=Object.assign({timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:false},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
@@ -872,6 +873,66 @@ function yomiOf(pa,ca,base){
   const p=win(pa,ca,base),c=win(ca,pa,-base);
   return p?{who:'p',word:p}:c?{who:'c',word:c}:null;
 }
+/* ---------- 効果音（その場で作る。音のファイルは使わない） ----------
+   最初は音なし。「音」ボタンを押すと鳴る（ブラウザは押す前に音を出させてくれない） */
+let AC=null;
+function audio(){
+  if(!settings.sound)return null;
+  try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}
+}
+function noiseBuf(ac,sec){const n=Math.floor(ac.sampleRate*sec),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;return b}
+function env(ac,node,t,peak,dur,atk=0.004){const g=ac.createGain();g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+atk);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);node.connect(g);g.connect(ac.destination);return g}
+const SFX={
+  // 刀が当たる：高さのずれた金属の響きを重ね、最初に短い衝撃音
+  clang(ac,t,big=1){
+    for(const [f,a,d] of [[1870,.16,.9],[2730,.12,.7],[3920,.08,.5],[5240,.05,.35],[960,.07,.6]]){const o=ac.createOscillator();o.type='triangle';o.frequency.setValueAtTime(f*(0.98+Math.random()*.04),t);env(ac,o,t,a*big,d*(0.8+big*.4));o.start(t);o.stop(t+d*1.6)}
+    const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.08);const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=3200;bp.Q.value=.8;n.connect(bp);env(ac,bp,t,.35*big,.07,.001);n.start(t);
+  },
+  // 斬撃：風を切る音
+  slash(ac,t){
+    const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.35);const bp=ac.createBiquadFilter();bp.type='bandpass';bp.Q.value=1.4;bp.frequency.setValueAtTime(700,t);bp.frequency.exponentialRampToValueAtTime(4200,t+.22);n.connect(bp);env(ac,bp,t,.32,.3,.03);n.start(t);
+  },
+  // 押し込まれる：重い踏み込み
+  thud(ac,t){
+    const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(48,t+.25);env(ac,o,t,.5,.35,.003);o.start(t);o.stop(t+.4);
+    const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.12);const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=900;n.connect(lp);env(ac,lp,t,.25,.12,.002);n.start(t);
+  },
+  // 太鼓：勝負あり
+  taiko(ac,t,v=1){
+    const o=ac.createOscillator();o.type='sine';o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(55,t+.4);env(ac,o,t,.7*v,.7,.004);o.start(t);o.stop(t+.8);
+    const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.06);const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=1500;n.connect(lp);env(ac,lp,t,.3*v,.06,.001);n.start(t);
+  },
+  // 鈴：読み勝ち
+  bell(ac,t){
+    for(const [f,a,d] of [[1318,.14,1.1],[1976,.09,.9],[2637,.05,.6]]){const o=ac.createOscillator();o.type='sine';o.frequency.value=f;env(ac,o,t,a,d,.005);o.start(t);o.stop(t+d*1.3)}
+  },
+  // 罠：狐火のゆらめき
+  trap(ac,t){
+    [880,1175,1568,2093].forEach((f,i)=>{const o=ac.createOscillator();o.type='sine';o.frequency.value=f;env(ac,o,t+i*.06,.16,.5,.01);o.start(t+i*.06);o.stop(t+i*.06+.6)});
+  },
+  // 燃やす：火がはぜる
+  burn(ac,t){
+    const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.6);const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=1200;bp.Q.value=.6;n.connect(bp);env(ac,bp,t,.38,.55,.08);n.start(t);
+  },
+  // 唐傘が開く
+  um(ac,t){
+    const n=ac.createBufferSource();n.buffer=noiseBuf(ac,.15);const hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=2500;n.connect(hp);env(ac,hp,t,.12,.14,.01);n.start(t);
+  },
+};
+/* 開けたときの音。演出のタイミングに合わせて鳴らす */
+function playRevealSounds(){
+  const ac=audio();if(!ac||!G||!G.res)return;
+  const t=ac.currentTime+.02,r=G.res,pa=actOf(G.pPlay,G.pBurned),ca=actOf(G.cPlay,G.cBurned);
+  const atk=pa==='atk'||ca==='atk',clash=(pa==='atk'&&(ca==='atk'||ca==='def'))||(ca==='atk'&&pa==='def');
+  if(pa==='burn'||ca==='burn')SFX.burn(ac,t);
+  if(pa==='def'||ca==='def')SFX.um(ac,t+.05);
+  if(atk)SFX.slash(ac,t+.08);
+  if(clash)SFX.clang(ac,t+.3,Math.min(1.4,.7+Math.abs(r.base)/30));
+  if(r.fx.firedP.length||r.fx.firedC.length)SFX.trap(ac,t+.35);
+  if(r.net)SFX.thud(ac,t+.5);
+  if(G.yomi&&G.yomi.who==='p')SFX.bell(ac,t+.5);
+  if(G.over){SFX.taiko(ac,t+.9);SFX.taiko(ac,t+1.25,.8);SFX.taiko(ac,t+1.5,1.1)}
+}
 function resolve(){
   const P=G.p,C=G.c,r=G.res,msgs=[];
   const pd=G.pPlay?def(G.pPlay):null,cd=G.cPlay?def(G.cPlay):null;
@@ -926,7 +987,7 @@ function resolve(){
     G.autoMs=Math.min(7600,3200+n*900+(alert?900:0));
     G.autoT=setTimeout(()=>{if(G&&G.phase==='result'&&!G.over)startTurn()},G.autoMs);
   }
-  render();
+  render();playRevealSounds();
 }
 function finishByGauge(reason){
   clearTimers();
@@ -1260,6 +1321,7 @@ function gameHTML(){
 
   return `<div class="topbar"><span class="turn">${G.turn}手目</span>
       ${ph==='select'&&settings.timer?`<div class="timer" id="tbox"><i id="tbar" style="width:100%"></i></div><span class="tnum" id="tnum">${settings.timer}秒</span>`:'<div class="spacer"></div>'}
+      <button class="btn ghost tiny${settings.sound?' on':''}" data-act="sound" aria-pressed="${!!settings.sound}">${settings.sound?'音あり':'音なし'}</button>
       <button class="btn ghost tiny" data-act="open-log">記録</button>
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
     <section class="side" aria-label="相手">
@@ -1357,6 +1419,7 @@ document.addEventListener('click',e=>{
     case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();recordResult();render()}break;
     case 'discard':G.modal=el.dataset.who;render();break;
     case 'open-log':G.modal='log';render();break;
+    case 'sound':settings.sound=!settings.sound;store.set(KEY_SET,settings);if(settings.sound){const ac=audio();if(ac)SFX.clang(ac,ac.currentTime+.02,.8)}render();break;
     case 'close-modal':G.modal=null;render();break;
   }
 });
