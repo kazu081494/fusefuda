@@ -278,7 +278,7 @@ const PRESETS=[
 const ABILITIES={
   tousi:{name:'透視',when:'伏せる前',phase:'before',text:'このターン、相手の手札を全部見る'},
   baigeki:{name:'倍撃',when:'伏せる前',phase:'before',text:'このターン、自分が押す量が2倍になる'},
-  kaihou:{name:'気力解放',when:'伏せる前',phase:'before',text:'気力を5得る（上限10）'},
+  kaihou:{name:'気力解放',when:'伏せる前',phase:'before',text:'気力を5得る（上限10）。増えたぶんは開けるまで相手に見えない'},
   surikae:{name:'すり替え',when:'開けた後',phase:'after',text:'開けた自分のカードを、手札の1枚と差し替える（気力は払い直す）'},
   funbari:{name:'踏ん張り',when:'開けた後',phase:'after',text:'このターン、自分が押される量を0にする'},
 };
@@ -316,8 +316,8 @@ const label=d=>d.type==='T'?`${d.name}（罠）`:d.eff?`${d.name}（${TY[d.type]
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
 /* 燃やすと得る気力：数字ぶん（最大5）。数字の無い罠は1 */
 const burnVal=d=>d.num==null?1:Math.min(BURN_MAX,d.num);
-/* このターン使える気力（あなたが燃やす札を選んでいれば、そのぶん足す） */
-const availE=s=>s===(G&&G.p)&&G.pBurn?clampE(s.energy+burnVal(def(G.pBurn))):s.energy;
+/* このターン使える気力（気力解放の隠れた5と、あなたが燃やす札を選んでいれば、そのぶん足す） */
+const availE=s=>{const e=clampE(s.energy+(s.hiddenE||0));return s===(G&&G.p)&&G.pBurn?clampE(e+burnVal(def(G.pBurn))):e};
 
 /* ---------- 解決（純関数：状態は変えない） ----------
    P,C は両者の状態、pd,cd は出したカードの定義（見送ったなら null）
@@ -385,7 +385,7 @@ let screen='menu';let G=null;let builderPreset=null;
 function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
 function newSide(counts,ability){
   const d=[];for(const [id,c] of Object.entries(counts))for(let k=0;k<c;k++)d.push(mk(id));
-  const s={deck:shuffle(d),hand:[],discard:[],ability,abilityUsed:false,energy:ENERGY_START-ENERGY_GAIN+1,trap:null,
+  const s={deck:shuffle(d),hand:[],discard:[],ability,abilityUsed:false,energy:ENERGY_START-ENERGY_GAIN+1,hiddenE:0,trap:null,
     noAtk:false,noAtkNext:false,yokoku:false,yokokuNext:false,bai:false,seeAll:false,funbari:false,history:[]};
   drawN(s,HAND_START);return s;
 }
@@ -416,7 +416,7 @@ function startTurn(){
   for(const s of [G.p,G.c]){
     s.energy=clampE(s.energy+ENERGY_GAIN);
     s.noAtk=s.noAtkNext;s.noAtkNext=false;s.yokoku=s.yokokuNext;s.yokokuNext=false;
-    s.bai=false;s.seeAll=false;s.funbari=false;
+    s.bai=false;s.seeAll=false;s.funbari=false;s.hiddenE=0;
     if(s.trap)s.trap.active=true;
   }
   Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,pBurn:null,burnMode:false,burnMsgs:[]});
@@ -448,7 +448,7 @@ function useAbility(){
   P.abilityUsed=true;G.pUsedNow=true;
   if(a==='tousi'){P.seeAll=true;log('透視：相手の手札を見た')}
   if(a==='baigeki'){P.bai=true;log('倍撃：このターン押す量が2倍')}
-  if(a==='kaihou'){P.energy=clampE(P.energy+5);log('気力解放：気力を5得た')}
+  if(a==='kaihou'){P.hiddenE=5;log('気力解放：気力を5得た（開けるまで相手には見えない）')}
   render();
 }
 /* あなたの手を確定（null＝溜める） */
@@ -457,6 +457,8 @@ function commit(pi){
   if(pi&&blockReason(G.p,pi))return;
   clearTimers();
   const P=G.p,C=G.c;
+  // 気力解放の隠れた気力を、ここで本当の気力に足す（開けるまで相手に見えない）
+  for(const s of [P,C])if(s.hiddenE){s.energy=clampE(s.energy+s.hiddenE);s.hiddenE=0}
   const ch=cpuChoose();   // 相手はあなたの燃やす札を知らずに決める（同時）
   G.burnMsgs=[];
   const burn=(s,b,who)=>{const v=burnVal(def(b));removeFrom(s.hand,b);s.discard.push(b);s.energy=clampE(s.energy+v);G.burnMsgs.push(`${who}は「${label(def(b))}」を燃やして気力+${v}`)};
@@ -620,7 +622,7 @@ function cpuMaybeBefore(){
   C.abilityUsed=true;
   if(C.ability==='tousi')C.seeAll=true;
   if(C.ability==='baigeki')C.bai=true;
-  if(C.ability==='kaihou')C.energy=clampE(C.energy+5);
+  if(C.ability==='kaihou')C.hiddenE=5;
   G.notices.push({t:'相手が能力を使った',alert:true});log('相手が能力を使った');render();
 }
 
@@ -680,7 +682,7 @@ function abilityHTML(){
 }
 function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
-  <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.4）</h2><ol>
+  <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.5）</h2><ol>
     <li>2人が同時に手札から1枚を伏せ（または何も出さずに「見送る」）、一斉に開ける。</li>
     <li><b>気力</b>：毎ターン1溜まる（上限10）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
     <li><b>燃やす</b>：伏せるとき、手札をもう1枚燃やせる（1ターンに1枚）。その札の数字ぶん（最大5、罠は1）気力が増え、そのターンから使える。燃やした札は表向きで捨て札になり、開けるときに相手にも見える。</li>
@@ -733,7 +735,7 @@ function sideChips(s,isP){
   return `<div class="chips">${c.join('')}</div>`;
 }
 const energyHTML=s=>{
-  const plus=s===G.p&&G.pBurn?clampE(s.energy+burnVal(def(G.pBurn)))-s.energy:0;
+  const plus=s===G.p?availE(s)-s.energy:0;
   return `<span class="energy" aria-label="気力${s.energy}">気力<b>${s.energy}</b>${plus?`<span class="plus">+${plus}</span>`:''}/${ENERGY_MAX}</span>`;
 };
 function gameHTML(){
