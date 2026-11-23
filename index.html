@@ -338,6 +338,8 @@ details.opp-info .dl{margin-top:8px}
 .story .pro-text p.small{font-family:var(--font-body);font-size:13px;color:var(--muted)}
 .moon.clouded{filter:brightness(.45);box-shadow:none}
 .story-round{display:flex;flex-direction:column;gap:14px;padding-block:20px}
+.threat{margin:0;padding:10px 12px 10px 2em;border:1px solid var(--lose);border-radius:10px;background:color-mix(in srgb,var(--lose) 10%,transparent);display:flex;flex-direction:column;gap:3px;font-size:13.5px}
+.threat li::marker{color:var(--lose)}
 .lanterns{display:flex;justify-content:center;gap:10px;align-items:center}
 .lanterns i{width:16px;height:22px;border-radius:6px 6px 8px 8px;background:#2a3746;border:1px solid var(--line)}
 .lanterns i.done{background:radial-gradient(circle at 50% 40%,#fff3c4,#e2b247 60%,#a8771f);box-shadow:0 0 10px rgba(226,178,71,.7)}
@@ -886,10 +888,30 @@ function storyBegin(kata,ougi){
   story={active:true,round:0,order,kata,ougi,extra:{},rewards:null};storyRec.runs++;saveStoryRec();saveStory();
   screen='story-intro';render();
 }
+/* 何人目かで、相手の手ごわさを段階的に上げる
+   know：あなたの手札の内訳を見抜く／read：最近の出し方のクセを強く読む（ふつうは0.8）／hand：手札の上乗せ／ougi：奥義を使える回数 */
+const TIERS=[
+  {diff:0,cBonus:0},
+  {diff:.2,cBonus:3},
+  {diff:.35,cBonus:6,know:1},
+  {diff:.5,cBonus:9,know:1},
+  {diff:.7,cBonus:12,know:1,read:2},
+  {diff:1,cBonus:15,know:1,read:2.2,hand:1,ougi:2},// 月影の主
+];
+const tierOf=i=>TIERS[Math.min(i,TIERS.length-1)];
+function tierHints(t){
+  const h=[];
+  if(t.know)h.push('あなたの手札の内訳（攻撃・防御が何枚か）を見抜いてくる');
+  if(t.read)h.push('あなたの最近の出し方のクセを強く読んでくる');
+  if(t.hand)h.push('手札が1枚多い');
+  if(t.ougi>1)h.push(`奥義を${t.ougi}回使う`);
+  if(t.cBonus)h.push(`気力が${t.cBonus}多く始まる`);
+  return h;
+}
 function storyFight(){
-  const i=story.round,boss=i>=STORY_N;
+  const i=story.round,t=tierOf(i);
   clearSave();bgmStart();
-  startGame(story.kata,story.ougi,{story:true,char:storyFoe(i),extra:story.extra,diff:boss?1:Math.min(.85,i*.2),cBonus:boss?15:i*3});
+  startGame(story.kata,story.ougi,Object.assign({story:true,char:storyFoe(i),extra:story.extra},t));
 }
 /* 試合が終わったら物語を進める（勝ち抜いた人数を記録） */
 function storyAfterMatch(){
@@ -925,6 +947,7 @@ function storyScreenHTML(){
         <div><span class="sr-yomi">${foe.yomi}</span><b>${foe.name}</b><q>${foe.intro}</q>
         <p class="small muted">${KATA[foe.kata].name}の型・性格：${STYLES[foe.style].name}・奥義は秘密</p></div>
       </div>
+      ${tierHints(tierOf(i)).length?`<ul class="threat">${tierHints(tierOf(i)).map(h=>`<li>${h}</li>`).join('')}</ul>`:'<p class="small muted" style="text-align:center">肩慣らしの相手。</p>'}
       ${Object.keys(story.extra).length?`<p class="small muted">褒美の札：${Object.entries(story.extra).map(([id,c])=>label(CARDS[id])+(c>1?`×${c}`:'')).join('、')}</p>`:''}
       <button class="btn wide" data-act="story-fight">挑む</button>
       <button class="btn ghost wide" data-act="story-quit">今宵はここまでにする</button>
@@ -1005,6 +1028,7 @@ function startGame(kata,ougi,opts={}){
     gauge:0,prevGauge:0,revealAt:0,finaleUntil:0,st:{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0},combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   if(opts.cBonus)G.c.energy+=opts.cBonus;
+  G.cKnow=opts.know||0;G.cRead=opts.read||.8;if(opts.hand)drawN(G.c,opts.hand);G.c.ougiLeft=opts.ougi||1;
   screen='game';startTurn();
 }
 function startTurn(){
@@ -1391,7 +1415,7 @@ const numFor=c=>PLAIN.reduce((m,[n,k])=>k<=c?n:m,0);
 function cpuOppModel(){
   const P=G.p;
   const E=P.energy,recent=P.history.slice(-6);
-  const cnt=k=>1+recent.filter(x=>x===k).length*0.8;
+  const cnt=k=>1+recent.filter(x=>x===k).length*(G.cRead||.8);
   const hi=E,list=[];
   if(!P.noAtk&&hi>=5){
     list.push({d:{type:'A',num:numFor(hi),cost:hi,eff:null},w:cnt('A')*0.6});
@@ -1399,7 +1423,12 @@ function cpuOppModel(){
   }
   if(E>=5)list.push({d:{type:'D',num:numFor(Math.min(E,25)),cost:Math.min(E,25),eff:null},w:cnt('D')});
   list.push({d:null,w:cnt('P')*0.8});
-  const s=list.reduce((a,b)=>a+b.w,0);list.forEach(o=>o.w/=s);
+  // 手札の内訳を見抜く相手：出せない種類は読みから外し、多い種類ほど重く見る
+  if(G.cKnow){
+    const n=t=>P.hand.filter(i=>def(i).type===t&&!blockReason(P,i)).length;
+    for(const o of list)if(o.d){const k=n(o.d.type);o.w*=k?(0.6+k*.4):0}
+  }
+  const s=list.reduce((a,b)=>a+b.w,0)||1;list.forEach(o=>o.w/=s);
   return list;
 }
 /* 性格ごとのクセ。k は A・D・T（出す型）か B（燃やす） */
@@ -1463,7 +1492,7 @@ function cpuMaybeBefore(){
   if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
   if(o==='genwaku')use=P.energy>=20&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
-  C.ougiUsed=true;C.ougiNow=true;if(o==='shingan')for(const x of P.hand)G.knownByCpu.add(x.uid);ougiNow(C,P);
+  C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(o==='shingan')for(const x of P.hand)G.knownByCpu.add(x.uid);ougiNow(C,P);
   G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');saveGame();render();
 }
 
