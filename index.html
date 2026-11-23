@@ -182,6 +182,13 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .btn.sub.on{background:var(--lose);color:var(--ink)}
 .card.burn{opacity:.6;box-shadow:0 0 0 3px var(--lose)}
 .energy .plus{color:var(--lose);font-weight:700;font-size:13px;margin-left:1px}
+.energy .gain{color:var(--win);font-weight:700;font-size:13px;margin-left:2px;animation:pop .5s ease-out both}
+@keyframes pop{from{transform:scale(1.8);opacity:0}to{transform:none;opacity:1}}
+/* 燃やした札：札は薄く、上に「燃やした 気力+n」の帯 */
+.big.burnt>:not(.burnmark){opacity:.3}
+.burnmark{position:absolute;left:6%;right:6%;top:50%;transform:translateY(-50%);background:var(--lose);color:var(--ink);border-radius:8px;text-align:center;font-weight:700;font-size:12px;line-height:1.25;padding:5px 2px;display:flex;flex-direction:column;align-items:center}
+.burnmark b{font-family:var(--font-display);font-weight:400;font-size:20px;line-height:1.1}
+.burnmark small{font-size:10px;font-weight:400}
 .prompt{font-size:12.5px;color:var(--accent);font-weight:700}
 .auto{position:absolute;inset:auto 0 0 0;height:4px;background:var(--accent-ink);opacity:.35;transform-origin:left;animation:autofill linear both}
 @keyframes autofill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
@@ -237,7 +244,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
-  .reveal,.notice.alert,.auto{animation:none}
+  .reveal,.notice.alert,.auto,.energy .gain{animation:none}
   .card,.timer i{transition:none}
 }
 </style>
@@ -425,7 +432,7 @@ function startGame(ability){
   const pre=rnd(PRESETS);
   G={p:newSide(deck,ability),c:newSide(pre.cards,rnd(Object.keys(ABILITIES))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
     gauge:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),
-    pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,pBurn:null,pBurned:null,cBurned:null,burnMode:false,burnMsgs:[]};
+    pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,burnMsgs:[]};
   screen='game';startTurn();
 }
 function startTurn(){
@@ -438,7 +445,7 @@ function startTurn(){
     s.bai=false;s.seeAll=false;s.funbari=false;s.hiddenE=0;
     if(s.trap)s.trap.active=true;
   }
-  Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,pBurn:null,pBurned:null,cBurned:null,burnMode:false,burnMsgs:[]});
+  Object.assign(G,{pPlay:undefined,cPlay:undefined,sel:null,detail:null,notices:[],res:null,pUsedNow:false,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,burnMsgs:[]});
   if(!G.p.hand.length&&!G.p.deck.length&&!G.c.hand.length&&!G.c.deck.length)return finishByGauge('両者の札が尽きたので、目盛りの位置で決着');
   if(G.p.noAtk)G.notices.push({t:'このターン、あなたは攻撃できない'});
   if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
@@ -483,7 +490,7 @@ function commit(pi,bi=null){
   G.burnMsgs=[];
   // 燃やす：そのターンは何も出さない。気力は開けた後に増え、次のターンから使える
   const burn=(s,b,who)=>{const v=burnVal(def(b));removeFrom(s.hand,b);s.discard.push(b);s.burnGain=v;G.burnMsgs.push(`${who}は「${label(def(b))}」を燃やした（気力+${v}）`)};
-  G.pBurned=pi?null:bi;G.cBurned=ch.burn;
+  G.pBurned=pi?null:bi;G.cBurned=ch.burn;G.pGain=G.pBurned?burnVal(def(G.pBurned)):0;G.cGain=G.cBurned?burnVal(def(G.cBurned)):0;
   if(G.pBurned)burn(P,G.pBurned,'あなた');
   if(G.cBurned)burn(C,G.cBurned,'相手');
   G.pBurn=null;G.burnMode=false;
@@ -661,6 +668,7 @@ function cardHTML(i,o={}){
   return `<button class="card t-${d.type}${o.small?' small':''}${o.sel?' sel':''}${o.off?' off':''}${o.cls?' '+o.cls:''}"data-act="${o.act||'detail'}" data-uid="${i.uid}" aria-label="${label(d)}、気力${d.cost}${d.eff?'：'+d.short:''}">
     ${faceHTML(d)}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:''}</button>`;
 }
+const burntHTML=(d,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力+${burnVal(d)}</b>${note?`<small>${note}</small>`:''}</span></div>`;
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
 function render(){
   $app.className=screen==='game'?'fit':'';
@@ -764,8 +772,21 @@ function sideChips(s,isP){
 }
 const energyHTML=s=>{
   const plus=s===G.p?availE(s)-s.energy:0;
-  return `<span class="energy" aria-label="気力${s.energy}">気力<b>${s.energy}</b>${plus?`<span class="plus">+${plus}</span>`:''}/${ENERGY_MAX}</span>`;
+  const gain=G.phase==='result'?(s===G.p?G.pGain:G.cGain):0;
+  return `<span class="energy" aria-label="気力${s.energy}">気力<b>${s.energy}</b>${plus?`<span class="plus">+${plus}</span>`:''}${gain?`<span class="gain">燃やして+${gain}</span>`:''}/${ENERGY_MAX}</span>`;
 };
+/* 燃やしたときは、結果の説明を「燃やした」が分かる言い方にする */
+function whyText(){
+  const pd=G.pPlay?def(G.pPlay):null,cd=G.cPlay?def(G.cPlay):null,pb=!!G.pBurned,cb=!!G.cBurned;
+  const pk=pd?pd.type:'',ck=cd?cd.type:'';
+  if(pb&&cb)return '両方とも燃やした：どちらも動かない';
+  if(cb&&pk==='A')return '相手は燃やしたので守りなし：そのまま押す';
+  if(pb&&ck==='A')return 'あなたは燃やしたので守りなし：そのまま押される';
+  if(cb&&pk==='D')return 'あなたの防御は空振り（相手は燃やして気力を溜めた）';
+  if(pb&&ck==='D')return '相手の防御は空振り（あなたは燃やして気力を溜めた）';
+  if(pb||cb)return `${pb?'あなた':'相手'}は燃やして気力を溜めた：動かない`;
+  return G.res.why;
+}
 function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=['after','swap','result'].includes(ph);
   const oppHand=C.hand.map(x=>{
@@ -778,30 +799,31 @@ function gameHTML(){
   let oppSlot,meSlot;
   if(revealed){
     const cd=G.cPlay?def(G.cPlay):null,pd=G.pPlay?def(G.pPlay):null;
-    oppSlot=G.cBurned?bigHTML(def(G.cBurned),'reveal','燃やした'):!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?'<div class="big back t-T reveal"><span>罠を張った</span></div>':bigHTML(cd,'reveal');
-    meSlot=G.pBurned?bigHTML(def(G.pBurned),'reveal','燃やした'):!pd?'<div class="big empty reveal">見送った</div>':bigHTML(pd,'reveal');
+    oppSlot=G.cBurned?burntHTML(def(G.cBurned),'reveal','燃やした','守りなし'):!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?'<div class="big back t-T reveal"><span>罠を張った</span></div>':bigHTML(cd,'reveal');
+    meSlot=G.pBurned?burntHTML(def(G.pBurned),'reveal','燃やした','守りなし'):!pd?'<div class="big empty reveal">見送った</div>':bigHTML(pd,'reveal');
   }else{
     oppSlot=`<div class="big empty">${ph==='select'?'相手が選んでいる':''}</div>`;
-    meSlot=G.pBurn?bigHTML(def(G.pBurn),'dim','燃やす'):G.sel?bigHTML(def(G.sel),'dim'):'<div class="big empty">出す札か<br>燃やす札を選ぶ</div>';
+    meSlot=G.pBurn?burntHTML(def(G.pBurn),'','燃やす','次のターンから'):G.sel?bigHTML(def(G.sel),'dim'):'<div class="big empty">出す札か<br>燃やす札を選ぶ</div>';
   }
 
   let center='',info='';
   if(G.res&&revealed){
     const n=G.res.net;
     center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n>0?`${n} 押した`:n<0?`${-n} 押された`:'動かない'}</span></div>`;
-    info+=`<p class="why">${G.res.why}</p>`;
+    info+=`<p class="why">${whyText()}</p>`;
     const lines=[...G.burnMsgs,...G.res.notes,...(ph==='result'?G.extra||[]:[])];
     if(lines.length)info+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
   }
   info+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}">${n.t}</div>`).join('');
-  if(ph==='select'&&G.burnMode)info+=`<div class="notice">燃やす札をタップ。燃やすとこのターンは何も出さず、数字ぶん（最大${BURN_MAX}、罠は1）気力が増える。何を燃やしたかは開けるときに相手に見える</div>`;
-  else if(ph==='select'&&G.pBurn)info+=`<p class="hintline">「${label(def(G.pBurn))}」を燃やす（気力+${burnVal(def(G.pBurn))}）。もう一度タップで確定</p>`;
-  if(!revealed&&G.detail){const d=def(G.detail);info+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d)}（次のターンから使える）</span></div>`}
+  if(ph==='select'&&G.burnMode)info+=`<div class="notice"><b>燃やす札をタップ</b>：札の「+」の数だけ気力が増える（次のターンから使える）。このターンは何も出さないので、攻撃されたらそのまま押される</div>`;
+  else if(ph==='select'&&G.pBurn)info+=`<div class="notice">「${label(def(G.pBurn))}」を燃やして<b>気力+${burnVal(def(G.pBurn))}</b>。このターンは何も出さない。「燃やす」で確定</div>`;
+  if(!revealed&&G.detail&&G.detail!==G.pBurn){const d=def(G.detail);info+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d)}（次のターンから使える）</span></div>`}
   if(ph==='select'&&G.sel)info+='<p class="hintline">もう一度タップで伏せる</p>';
 
   const hand=P.hand.map(x=>{
     if(ph==='select'&&x===G.pBurn)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
-    const why=ph==='select'?(G.burnMode?'':blockReason(P,x)):ph==='swap'&&!swapOptions(P,G.pPlay).includes(x)?'出せない':'';
+    if(ph==='select'&&G.burnMode)return cardHTML(x,{act:'hand',tag:`+${burnVal(def(x))}`});
+    const why=ph==='select'?blockReason(P,x):ph==='swap'&&!swapOptions(P,G.pPlay).includes(x)?'出せない':'';
     return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why,tagBan:!!why});
   }).join('');
 
@@ -810,7 +832,7 @@ function gameHTML(){
       ${ab.phase==='before'&&!P.abilityUsed?`<button class="btn sub" data-act="ability">${ab.name}</button>`:''}
       <button class="btn sub${G.burnMode||G.pBurn?' on':''}" data-act="burn">${G.burnMode||G.pBurn?'やめる':'燃やす'}</button>
       <button class="btn ghost" data-act="pass">見送る</button>
-      <button class="btn" data-act="commit" ${G.pBurn||(G.sel&&!blockReason(P,G.sel))?'':'disabled'}>伏せる</button></div>`;
+      <button class="btn" data-act="commit" ${G.pBurn||(G.sel&&!blockReason(P,G.sel))?'':'disabled'}>${G.pBurn?'燃やす':'伏せる'}</button></div>`;
   else if(ph==='after'){
     const o=playerAfterOptions();
     actions=`<div class="row">
