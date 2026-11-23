@@ -57,6 +57,8 @@ p{margin:0}
 .btn.sub{background:var(--table-3);color:var(--fg)}
 .btn.wide{width:100%}
 .tut-sum{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.sound-row{gap:6px}
+.sound-row>span{margin-right:4px}
 .rank{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .rank b{font-family:var(--font-display);font-weight:800;font-size:28px;color:var(--accent)}
 .chip.locked{opacity:.5}
@@ -305,6 +307,13 @@ details.opp-info .dl{margin-top:8px}
 .tutno{display:inline-block;font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:0 7px;margin-right:6px}
 .btn.glow{box-shadow:0 0 0 2px var(--accent),0 0 14px rgba(226,178,71,.6);animation:glow 1.4s ease-in-out infinite}
 @keyframes glow{50%{box-shadow:0 0 0 2px var(--accent),0 0 4px rgba(226,178,71,.3)}}
+.cutin{position:absolute;left:-10%;right:-10%;top:30%;z-index:6;pointer-events:none;display:flex;align-items:baseline;justify-content:center;gap:10px;padding:8px 0;transform:skewY(-6deg);animation:cutin 1.5s ease-in-out both}
+.cutin.p{background:linear-gradient(90deg,transparent,rgba(30,20,4,.92) 12%,rgba(120,86,20,.95) 50%,rgba(30,20,4,.92) 88%,transparent);border-block:2px solid var(--accent)}
+.cutin.c{background:linear-gradient(90deg,transparent,rgba(30,6,4,.92) 12%,rgba(130,30,20,.95) 50%,rgba(30,6,4,.92) 88%,transparent);border-block:2px solid var(--lose)}
+.cutin .ci-who{font-size:12px;font-weight:700;color:#fff;opacity:.85;transform:skewY(6deg)}
+.cutin b{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,10vw,44px);letter-spacing:.15em;color:#fff;text-shadow:0 0 12px rgba(255,220,140,.9),0 2px 0 #000;transform:skewY(6deg)}
+.cutin.c b{text-shadow:0 0 12px rgba(255,120,90,.9),0 2px 0 #000}
+@keyframes cutin{0%{opacity:0;clip-path:inset(0 100% 0 0)}15%{opacity:1;clip-path:inset(0 0 0 0)}80%{opacity:1;clip-path:inset(0 0 0 0)}100%{opacity:0;clip-path:inset(0 0 0 100%)}}
 .trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
 .trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
 .trapfire.theirs{box-shadow:0 0 0 2px var(--lose)}
@@ -400,7 +409,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
-  .reveal,.notice.alert,.auto,.energy .gain,.trapfire,.yomi,.play.shake,.kessen,.stage.finale::after,.stage.finale .calls,.stage.finale .samurai,.modal.result-modal,.petal,.duel,.samurai,.calls{animation:none!important}
+  .reveal,.notice.alert,.auto,.energy .gain,.cutin,.trapfire,.yomi,.play.shake,.kessen,.stage.finale::after,.stage.finale .calls,.stage.finale .samurai,.modal.result-modal,.petal,.duel,.samurai,.calls{animation:none!important}
   .fx{display:none}
   .card,.timer i{transition:none}
 }
@@ -629,10 +638,10 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   }else if(kp==='A'&&kc==='D'){
     const wall=using(C,'uke'),dn=pd.eff==='kuzushi'&&!wall?Math.floor(nc/2):nc;
     if(dn!==nc)notes.push(`崩し：相手の防御${nc}を${dn}に崩した`);
-    if(pd.eff==='kantsu'||using(P,'gougeki')){toC=np;why=pd.eff==='kantsu'?'貫通：防御を無視して押す':'剛撃：防御を無視して押す'}
+    if(pd.eff==='kantsu'||using(P,'gougeki')){toC=np;why=pd.eff==='kantsu'?'貫通：防御を無視して押す':'剛撃：防御を無視して押す';if(pd.eff!=='kantsu')fx.ougiP='gougeki'}
     else if(wall||dn>=np){
       if(pd.eff==='youdou'){fx.nextAtkP=true;why='陽動：防がれたが、跳ね返されない（次のターン攻撃+10）'}
-      else{toP=np;why=wall&&dn<np?`相手の柳の受け：攻撃${np}を防ぎきって、${np}跳ね返された`:`相手の防御${dn}が攻撃${np}を防ぎきって、${np}跳ね返された`}
+      else{toP=np;if(wall&&dn<np)fx.ougiC='uke';why=wall&&dn<np?`相手の柳の受け：攻撃${np}を防ぎきって、${np}跳ね返された`:`相手の防御${dn}が攻撃${np}を防ぎきって、${np}跳ね返された`}
       if(cd.eff==='zanshin'){fx.nextAtkC=true;notes.push('相手の残心：次のターン、相手の攻撃+10')}
     }
     else{toC=np-dn;why=`攻撃${np}が防御${dn}を上回って、差の${np-dn}押す`}
@@ -643,10 +652,10 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   }else if(kc==='A'&&kp==='D'){
     const wall=using(P,'uke'),dp=cd.eff==='kuzushi'&&!wall?Math.floor(np/2):np;
     if(dp!==np)notes.push(`相手の崩し：あなたの防御${np}を${dp}に崩された`);
-    if(cd.eff==='kantsu'||using(C,'gougeki')){toP=nc;why=cd.eff==='kantsu'?'相手の貫通：防御を無視して押された':'相手の剛撃：防御を無視して押された'}
+    if(cd.eff==='kantsu'||using(C,'gougeki')){toP=nc;why=cd.eff==='kantsu'?'相手の貫通：防御を無視して押された':'相手の剛撃：防御を無視して押された';if(cd.eff!=='kantsu')fx.ougiC='gougeki'}
     else if(wall||dp>=nc){
       if(cd.eff==='youdou'){fx.nextAtkC=true;why='相手の陽動：防いだが、跳ね返せない（相手は次のターン攻撃+10）'}
-      else{toC=nc;why=wall&&dp<nc?`柳の受け：攻撃${nc}を防ぎきって、${nc}跳ね返した`:`防御${dp}が攻撃${nc}を防ぎきって、${nc}跳ね返した`}
+      else{toC=nc;if(wall&&dp<nc)fx.ougiP='uke';why=wall&&dp<nc?`柳の受け：攻撃${nc}を防ぎきって、${nc}跳ね返した`:`防御${dp}が攻撃${nc}を防ぎきって、${nc}跳ね返した`}
       if(pd.eff==='zanshin'){fx.nextAtkP=true;notes.push('残心：次のターン、あなたの攻撃+10')}
     }
     else{toP=nc-dp;why=`相手の攻撃${nc}が防御${dp}を上回って、差の${nc-dp}押される`}
@@ -701,19 +710,20 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   };
   trap(P,cd,kc,nc,true,cb);trap(C,pd,kp,np,false,pb);
   // 業火：燃やした札の気力ぶん押す（攻撃ではないので、防御や罠には関係しない）
-  if(pb&&using(P,'gouka')){const v=burnVal(pb,P);toC+=v;notes.push(`業火：燃やした炎で${v}歩押し込む`)}
-  if(cb&&using(C,'gouka')){const v=burnVal(cb,C);toP+=v;notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
+  if(pb&&using(P,'gouka')){const v=burnVal(pb,P);toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
+  if(cb&&using(C,'gouka')){const v=burnVal(cb,C);toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
   // 一閃：押し込めたら+15歩。不動：押し込まれない（いちばん最後に効く）
-  if(toC>0&&using(P,'issen')){toC+=15;notes.push('一閃：さらに15歩押し込む')}
-  if(toP>0&&using(C,'issen')){toP+=15;notes.push('相手の一閃：さらに15歩押し込まれた')}
+  if(toC>0&&using(P,'issen')){toC+=15;fx.ougiP='issen';notes.push('一閃：さらに15歩押し込む')}
+  if(toP>0&&using(C,'issen')){toP+=15;fx.ougiC='issen';notes.push('相手の一閃：さらに15歩押し込まれた')}
   if(using(P,'genwaku')||using(C,'genwaku')){
     const a=toC,b=toP,gp=using(P,'genwaku'),gc=using(C,'genwaku');
     toC=(gp?b:0)+(gc?0:a);toP=(gc?a:0)+(gp?0:b);
+    if(gp&&b>0)fx.ougiP='genwaku';if(gc&&a>0)fx.ougiC='genwaku';
     if(gp&&b>0)notes.push(`幻惑：押し込まれるはずの${b}歩を、逆に押し込んだ`);
     if(gc&&a>0)notes.push(`相手の幻惑：押し込むはずの${a}歩を、逆に押し込まれた`);
   }
-  if(toP>0&&using(P,'fudou')){toP=0;notes.push('不動：押し込まれない')}
-  if(toC>0&&using(C,'fudou')){toC=0;notes.push('相手の不動：押し込めない')}
+  if(toP>0&&using(P,'fudou')){toP=0;fx.ougiP='fudou';notes.push('不動：押し込まれない')}
+  if(toC>0&&using(C,'fudou')){toC=0;fx.ougiC='fudou';notes.push('相手の不動：押し込めない')}
   // 退き足：自分から5歩下がる（不動や幻惑でも打ち消せない）
   if(pd&&pd.eff==='hikiashi'){toP+=5;notes.push('退き足：自分から5歩下がった')}
   if(cd&&cd.eff==='hikiashi'){toC+=5;notes.push('相手の退き足：相手が自分から5歩下がった')}
@@ -808,7 +818,7 @@ const unlocked=x=>rankIdx(rec.w)>=x.rank;
    ターンの始め・奥義を使った直後・結果が出た直後に保存する。
    結果を見てから読み込み直しても、その手はやり直せない（結果のあとから続く） */
 const KEY_SAVE='fusefuda.save.v1';
-const SKIP_KEYS=new Set(['tId','cpuT','autoT','tEnd','modal']);
+const SKIP_KEYS=new Set(['tId','cpuT','autoT','tEnd','modal','cutin','cutinT']);
 function saveGame(){
   if(!G||G.over||G.tut!=null)return;
   try{localStorage.setItem(KEY_SAVE,JSON.stringify(G,(k,v)=>SKIP_KEYS.has(k)?undefined:v instanceof Set?{__set:[...v]}:v))}catch(e){}
@@ -895,6 +905,7 @@ function useOugi(){
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
   if(P.ougi==='shingan')for(const x of G.c.hand)G.knownOpp.add(x.uid);
+  if(['sakiyomi','shingan','tensei','shikabane'].includes(P.ougi)){G.cutin={who:'p',key:P.ougi,at:Date.now()};playCutinSound()}
   const m=ougiNow(P,G.c);if(m){G.notices.push({t:m});log(m);if(G.sel&&blockReason(P,G.sel))G.sel=null}
   if(P.ougi==='sakiyomi'){G.cPre=G.tut!=null?tutCpu():cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
   saveGame();render();
@@ -920,14 +931,16 @@ function commit(pi,bi=null){
     if(!using(me,'kagenui'))continue;
     const t=op.traps.shift();
     if(!t)G.openMsgs.push(`${who}の影縫い：奪う罠がなかった`);
-    else if(me.traps.length<trapMax(me)){me.traps.push({inst:t.inst,active:false});G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を奪った`)}
+    else if(me.traps.length<trapMax(me)){me.traps.push({inst:t.inst,active:false});G.kagenuiHit=me===P?'p':'c';G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を奪った`)}
     else{op.discard.push(t.inst);G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を外した（置き場が無い）`)}
   }
   G.pPlay=pi;if(pi){removeFrom(P.hand,pi);P.energy-=costOf(pi)}
+  const kh=G.kagenuiHit;G.kagenuiHit=null;
   const ci=ch.play;G.cPlay=ci;if(ci){removeFrom(C.hand,ci);C.energy-=costOf(ci)}
   G.openMsgs.forEach(m=>log(m));
   G.sel=null;G.detail=null;
   G.res=outcome(P,C,pi?def(pi):null,ci?def(ci):null,G.pBurned?def(G.pBurned):null,G.cBurned?def(G.cBurned):null);
+  if(kh==='p'&&!G.res.fx.ougiP)G.res.fx.ougiP='kagenui';if(kh==='c'&&!G.res.fx.ougiC)G.res.fx.ougiC='kagenui';
   resolve();
 }
 function openEff(who,inst,msgs){
@@ -956,7 +969,7 @@ function yomiOf(pa,ca,base){
 }
 /* ---------- 効果音（その場で作る。音のファイルは使わない） ----------
    最初は音なし。「音」ボタンを押すと鳴る（ブラウザは押す前に音を出させてくれない） */
-let AC=null;
+let AC=null,sndState='';
 function audio(){
   if(!settings.sound)return null;
   try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}catch(e){return null}
@@ -1046,6 +1059,10 @@ function bgmStop(){
   try{const t=AC.currentTime,o=BGM.out;o.gain.cancelScheduledValues(t);o.gain.setValueAtTime(Math.max(.0001,o.gain.value),t);o.gain.exponentialRampToValueAtTime(.0001,t+1.2);setTimeout(()=>o.disconnect(),1500)}catch(e){}
 }
 /* 開けたときの音。演出のタイミングに合わせて鳴らす */
+function playCutinSound(delay=0){
+  const ac=audio();if(!ac)return;const t=ac.currentTime+.02+delay;
+  SFX.taiko(ac,t,1.1);SFX.slash(ac,t+.05);SFX.bell(ac,t+.25);
+}
 function playRevealSounds(){
   const ac=audio();if(!ac||!G||!G.res)return;
   const t=ac.currentTime+.02,r=G.res,pa=actOf(G.pPlay,G.pBurned),ca=actOf(G.cPlay,G.cBurned);
@@ -1057,6 +1074,7 @@ function playRevealSounds(){
   if(r.fx.firedP.length||r.fx.firedC.length)SFX.trap(ac,t+.35);
   if(r.net)SFX.thud(ac,t+.5);
   if(G.yomi&&G.yomi.who==='p')SFX.bell(ac,t+.5);
+  if(G.cutin&&G.cutin.at>Date.now()-100)playCutinSound(.25);
   if(G.over){SFX.taiko(ac,t+.9);SFX.taiko(ac,t+1.25,.8);SFX.taiko(ac,t+1.5,1.1)}
 }
 function resolve(){
@@ -1089,6 +1107,7 @@ function resolve(){
     else s.discard.push(inst);
   }
   G.prevGauge=G.gauge;G.revealAt=Date.now();
+  if(r.fx.ougiP)G.cutin={who:'p',key:r.fx.ougiP,at:Date.now()+250};else if(r.fx.ougiC)G.cutin={who:'c',key:r.fx.ougiC,at:Date.now()+250};
   // 読み勝ち：どちらが読み勝ったか。続けて読み勝つと連が伸びる（読まれたら0に戻る）
   const yw=yomiOf(actOf(G.pPlay,G.pBurned),actOf(G.cPlay,G.cBurned),r.base);
   G.yomi=yw;
@@ -1283,6 +1302,11 @@ function menuHTML(){
     <div class="panel">
       <label class="row" for="timerSel"><span>持ち時間（1手）</span>
       <select id="timerSel">${TIMER_OPTIONS.map(v=>`<option value="${v}" ${settings.timer===v?'selected':''}>${v?v+'秒':'なし'}</option>`).join('')}</select></label>
+      <div class="row sound-row"><span>音</span>
+        <button class="chip${settings.sound?' on':''}" data-act="snd-sfx" aria-pressed="${!!settings.sound}">効果音 ${settings.sound?'あり':'なし'}</button>
+        <button class="chip${settings.sound&&settings.bgm?' on':''}" data-act="snd-bgm" aria-pressed="${!!(settings.sound&&settings.bgm)}">曲 ${settings.sound&&settings.bgm?'あり':'なし'}</button>
+        <button class="chip" data-act="snd-test">音を試す</button></div>
+      <p class="small muted" id="sndState">${sndState||'「音を試す」を押すと、刀の音と曲の一節が鳴る'}</p>
       <label class="row" for="speedSel"><span>結果のあと進む速さ</span>
       <select id="speedSel">${[['fast','はやい'],['normal','ふつう'],['slow','ゆっくり']].map(([k,n])=>`<option value="${k}" ${settings.speed===k?'selected':''}>${n}</option>`).join('')}</select></label>
     </div>
@@ -1384,6 +1408,14 @@ function whyText(){
   if(pb||cb)return `${pb?'あなた':'相手'}は燃やして気力を溜めた`;
   return G.res.why;
 }
+/* 奥義のカットイン：舞台に帯が走り「奥義 ○○」。あなたは金、相手は紅 */
+function cutinHTML(){
+  if(G&&G.cutin&&!G.cutinT){G.cutinT=setTimeout(()=>{G.cutinT=null;if(G&&G.cutin&&Date.now()-G.cutin.at>1600){G.cutin=null;render()}},1900)}
+  const c=G&&G.cutin;if(!c)return '';
+  const dt=Date.now()-c.at;if(dt>1600)return '';
+  const delay=Math.max(0,-dt);
+  return `<div class="cutin ${c.who}" style="animation-delay:${delay}ms" aria-hidden="true"><span class="ci-who">${c.who==='p'?'あなたの奥義':'相手の奥義'}</span><b>${OUGI[c.key].name}</b></div>`;
+}
 function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
   const oppHand=C.hand.map(x=>G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
@@ -1478,6 +1510,7 @@ function gameHTML(){
     </section>
     <section class="battle stage${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':''} style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
+      ${cutinHTML()}
       ${finale?`<div class="kessen" aria-hidden="true">${G.over.winner?'勝負あり':'引き分け'}</div>`:''}
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
@@ -1552,11 +1585,22 @@ document.addEventListener('change',e=>{
   if(e.target.id==='speedSel'&&SPEEDS[e.target.value]){settings.speed=e.target.value;store.set(KEY_SET,settings)}
 });
 document.addEventListener('click',e=>{
-  const el=e.target.closest('[data-act]');if(!el)return;
+  const el=e.target.closest('[data-act]');
+  // 結果が出ているあいだは、ボタンや札以外のどこをタップしても次へ
+  if(!el){if(screen==='game'&&G&&G.phase==='result'&&!G.over&&!G.modal&&!e.target.closest('button,select,a,.modal')){if(G.tut!=null)G.tut++;startTurn()}return}
   const act=el.dataset.act;
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
     case 'look':{const kind=el.dataset.kind,list=kind==='back'?BACKS:MOONS,x=list.find(o=>o.key===el.dataset.key);if(x&&unlocked(x)){settings[kind]=x.key;store.set(KEY_SET,settings);render()}break}
+    case 'snd-sfx':settings.sound=!settings.sound;if(!settings.sound)settings.bgm=false;store.set(KEY_SET,settings);if(!settings.sound)bgmStop();render();break;
+    case 'snd-bgm':if(settings.sound&&settings.bgm){settings.bgm=false}else{settings.sound=true;settings.bgm=true}store.set(KEY_SET,settings);render();break;
+    case 'snd-test':{
+      const was=settings.sound;settings.sound=true;const ac=audio();settings.sound=was;
+      if(!ac){sndState='この画面では音を出せない（ブラウザが音を止めている）。Chrome などのブラウザで開くと鳴ることがある';render();break}
+      SFX.clang(ac,ac.currentTime+.05,1);
+      const g=ac.createGain();g.gain.value=.8;g.connect(ac.destination);for(let i=0;i<6;i++)bgmBeat(ac,g,ac.currentTime+.6+i*BEAT,i);
+      setTimeout(()=>{sndState=ac.state==='running'?'音は出せる状態（鳴らなければ、端末のメディア音量を上げる）':`音が止められている（状態：${ac.state}）。Chrome などのブラウザで開くと鳴ることがある`;const el=document.getElementById('sndState');if(el)el.textContent=sndState},400);
+      break}
     case 'tutorial':bgmStart();startTutorial();window.scrollTo(0,0);break;
     case 'resume':bgmStart();resumeGame();window.scrollTo(0,0);break;
     case 'go-menu':bgmStop();clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
