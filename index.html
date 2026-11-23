@@ -448,6 +448,8 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 /* ---------- 定数 ---------- */
 /* 背水：自分の岸まで HAISUI_NEAR 歩以内に押し込まれたら、防ぎきって跳ね返すとき HAISUI_BACK 歩多く押し返す */
 const HAISUI_NEAR=10,HAISUI_BACK=10;
+/* 連：続けて読み勝つと連が伸び、COMBO_EVERY 連ごとに気力 +COMBO_GAIN */
+const COMBO_EVERY=3,COMBO_GAIN=5;
 const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=20,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
 const TY={A:{name:'攻撃'},D:{name:'防御'},T:{name:'罠'}};
@@ -751,7 +753,7 @@ function startGame(kata,ougi){
   clearTimers();
   const pre=rnd(PRESETS);
   G={p:newSide(deck,kata,ougi),c:newSide(pre.cards,rnd(Object.keys(KATA)),rnd(Object.keys(OUGI))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
-    gauge:0,prevGauge:0,revealAt:0,combo:0,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
+    gauge:0,prevGauge:0,revealAt:0,combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   screen='game';startTurn();
 }
@@ -903,7 +905,11 @@ function resolve(){
   // 読み勝ち：どちらが読み勝ったか。続けて読み勝つと連が伸びる（読まれたら0に戻る）
   const yw=yomiOf(actOf(G.pPlay,G.pBurned),actOf(G.cPlay,G.cBurned),r.base);
   G.yomi=yw;
-  if(yw&&yw.who==='p')G.combo=(G.combo||0)+1;else if(yw&&yw.who==='c')G.combo=0;
+  if(yw&&yw.who==='p'){G.combo=(G.combo||0)+1;G.cCombo=0}else if(yw&&yw.who==='c'){G.cCombo=(G.cCombo||0)+1;G.combo=0}
+  // 連のごほうび：COMBO_EVERY 連ごとに気力 +COMBO_GAIN（あなたも相手も）
+  G.comboGain=null;
+  if(yw&&yw.who==='p'&&G.combo%COMBO_EVERY===0){P.energy=clampE(P.energy+COMBO_GAIN);G.comboGain='p';msgs.push(`${G.combo}連：あなたは気力を${COMBO_GAIN}得た`)}
+  if(yw&&yw.who==='c'&&G.cCombo%COMBO_EVERY===0){C.energy=clampE(C.energy+COMBO_GAIN);G.comboGain='c';msgs.push(`相手の${G.cCombo}連：相手は気力を${COMBO_GAIN}得た`)}
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
   drawN(P,1);drawN(C,1);
   for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
@@ -1220,7 +1226,7 @@ function gameHTML(){
     // 罠が発動したら、真ん中に大きく出す
     for(const [fired,who] of [[G.res.fx.firedP,'あなた'],[G.res.fx.firedC,'相手']])
       for(const f of fired)center+=`<div class="trapfire ${who==='あなた'?'mine':'theirs'}">罠発動！<small>${who}の${f.name}</small></div>`;
-    if(G.yomi)center+=G.yomi.who==='p'?`<div class="yomi win">${G.yomi.word}${G.combo>=2?`<small>${G.combo}連</small>`:''}</div>`:`<div class="yomi lose">読まれた<small>相手の${G.yomi.word.replace('！','')}</small></div>`;
+    if(G.yomi)center+=G.yomi.who==='p'?`<div class="yomi win">${G.yomi.word}${G.combo>=2?`<small>${G.combo}連${G.comboGain==='p'?`・気力+${COMBO_GAIN}`:`（${COMBO_EVERY-G.combo%COMBO_EVERY}連先で気力+${COMBO_GAIN}）`}</small>`:''}</div>`:`<div class="yomi lose">読まれた<small>相手の${G.yomi.word.replace('！','')}${G.cCombo>=2?`・相手${G.cCombo}連${G.comboGain==='c'?`・気力+${COMBO_GAIN}`:''}`:''}</small></div>`;
     center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n?`${Math.abs(n)}歩<small>${n>0?'押し込んだ':'押し込まれた'}</small>`:'睨み合い'}</span></div>`;
     info+=`<p class="why">${whyText()}</p>`;
     // 罠・効果・流派で押す量が変わったときは、差し引きを最後に1行で出す（上の説明と真ん中の数が食い違って見えるため）
