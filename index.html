@@ -56,6 +56,7 @@ p{margin:0}
 .btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
 .btn.sub{background:var(--table-3);color:var(--fg)}
 .btn.wide{width:100%}
+.resume-sub{display:block;font-size:12px;font-weight:400;opacity:.85}
 .btn.tiny{min-height:32px;padding:3px 10px;font-size:13px}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row > .btn{flex:1 1 auto}
@@ -674,6 +675,31 @@ function blockReason(s,i){
 function log(m){G.log.push(`${G.turn}手目　${m}`)}
 function clearTimers(){if(!G)return;clearInterval(G.tId);clearTimeout(G.cpuT);clearTimeout(G.autoT);G.tId=null;G.autoT=null}
 
+/* ---------- 途中の試合の保存（この端末の中だけ） ----------
+   ターンの始め・奥義を使った直後・結果が出た直後に保存する。
+   結果を見てから読み込み直しても、その手はやり直せない（結果のあとから続く） */
+const KEY_SAVE='fusefuda.save.v1';
+const SKIP_KEYS=new Set(['tId','cpuT','autoT','tEnd','modal']);
+function saveGame(){
+  if(!G||G.over)return;
+  try{localStorage.setItem(KEY_SAVE,JSON.stringify(G,(k,v)=>SKIP_KEYS.has(k)?undefined:v instanceof Set?{__set:[...v]}:v))}catch(e){}
+}
+function clearSave(){try{localStorage.removeItem(KEY_SAVE)}catch(e){}}
+function readSave(){
+  try{const t=localStorage.getItem(KEY_SAVE);if(!t)return null;
+    const g=JSON.parse(t,(k,v)=>v&&typeof v==='object'&&Array.isArray(v.__set)?new Set(v.__set):v);
+    return g&&g.p&&g.c&&g.turn?g:null}catch(e){return null}
+}
+function resumeGame(){
+  const g=readSave();if(!g){render();return}
+  clearTimers();G=g;G.modal=null;screen='game';
+  // 札の番号が重ならないよう、保存された札の番号より先から数える
+  let mx=0;const walk=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){o.forEach(walk);return}if(typeof o.uid==='number')mx=Math.max(mx,o.uid);Object.values(o).forEach(walk)};
+  walk(G.p);walk(G.c);UID=Math.max(UID,mx);
+  if(G.phase==='result'){startTurn();return}
+  G.phase='select';G.revealAt=0;render();startTimer();
+  if(!G.cPre)G.cpuT=setTimeout(cpuMaybeBefore,900+Math.random()*3500);
+}
 function startGame(kata,ougi){
   clearTimers();
   const pre=rnd(PRESETS);
@@ -698,7 +724,7 @@ function startTurn(){
   if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
   if(G.p.yokoku)G.notices.push({t:'あなたの予告：攻撃の数字+10'});
   if(G.c.yokoku)G.notices.push({t:'相手の予告：相手の攻撃の数字+10'});
-  G.phase='select';render();startTimer();
+  G.phase='select';saveGame();render();startTimer();
   G.cpuT=setTimeout(cpuMaybeBefore,900+Math.random()*3500);
 }
 function startTimer(){
@@ -738,7 +764,7 @@ function useOugi(){
   if(P.ougi==='shingan')for(const x of G.c.hand)G.knownOpp.add(x.uid);
   const m=ougiNow(P,G.c);if(m){G.notices.push({t:m});log(m);if(G.sel&&blockReason(P,G.sel))G.sel=null}
   if(P.ougi==='sakiyomi'){G.cPre=cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
-  render();
+  saveGame();render();
 }
 /* あなたの手を確定（pi＝出す札、bi＝燃やす札。どちらも null なら見送る） */
 function commit(pi,bi=null){
@@ -826,6 +852,7 @@ function resolve(){
   [...r.notes,...msgs].forEach(m=>log(m));
   if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:G.gauge>0?'相手を橋のたもとまで押し込んだ':'橋のたもとまで押し込まれた'};
   G.phase='result';
+  if(G.over)clearSave();else saveGame();
   if(!G.over){
     const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
     G.autoMs=Math.min(7600,3200+n*900+(alert?900:0));
@@ -836,7 +863,7 @@ function resolve(){
 function finishByGauge(reason){
   clearTimers();
   G.over={winner:G.gauge>0?'p':G.gauge<0?'c':null,reason};
-  G.phase='result';render();
+  G.phase='result';clearSave();render();
 }
 
 /* ---------- CPU ---------- */
@@ -918,7 +945,7 @@ function cpuMaybeBefore(){
   if(o==='genwaku')use=P.energy>=20&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
   C.ougiUsed=true;C.ougiNow=true;if(o==='shingan')for(const x of P.hand)G.knownByCpu.add(x.uid);ougiNow(C,P);
-  G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');render();
+  G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');saveGame();render();
 }
 
 /* ---------- 描画 ---------- */
@@ -965,11 +992,12 @@ function deckSummary(){
   </div>`;
 }
 function menuHTML(){
-  const st=deckStats(deck);
+  const st=deckStats(deck),sv=readSave();
   return `<div class="title"><div class="lamp" aria-hidden="true">${ART_IMG.has('T')?'<img src="art/cards/T.png" alt="">':'<svg viewBox="0 0 100 100"><use href="#sil-T"/></svg>'}</div><h1>月花乱舞</h1><p class="yomi">げっからんぶ</p>
     <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
     <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>は防ぎきれば跳ね返す。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と、気力が溜まる。</p></div>
-    <button class="btn wide" data-act="go-school" ${st.ok?'':'disabled'}>対戦する</button>
+    ${sv?`<button class="btn wide" data-act="resume">続きから<small class="resume-sub">${sv.turn}手目・${KATA[sv.p.kata].name}の型と${OUGI[sv.p.ougi].name}・${sv.gauge>0?`勝ちまで あと${GOAL-sv.gauge}歩`:sv.gauge<0?`負けまで あと${GOAL+sv.gauge}歩`:'互角'}</small></button>`:''}
+    <button class="btn wide${sv?' ghost':''}" data-act="go-school" ${st.ok?'':'disabled'}>${sv?'新しく対戦する（続きは消える）':'対戦する'}</button>
     ${deckSummary()}
     <div class="panel">
       <label class="row" for="timerSel"><span>持ち時間（1手）</span>
@@ -1211,12 +1239,13 @@ document.addEventListener('click',e=>{
   const act=el.dataset.act;
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
+    case 'resume':resumeGame();window.scrollTo(0,0);break;
     case 'go-menu':clearTimers();screen='menu';G=null;render();window.scrollTo(0,0);break;
     case 'go-school':clearTimers();screen='school';G=null;render();window.scrollTo(0,0);break;
     case 'go-builder':screen='builder';builderPreset=null;render();window.scrollTo(0,0);break;
     case 'go-rules':screen='rules';render();break;
     case 'pick-kata':case 'pick-ougi':{const kind=act.slice(5);pick[kind]=el.dataset.k;settings[kind]=el.dataset.k;store.set(KEY_SET,settings);render();break}
-    case 'start-game':if(pick.kata&&pick.ougi){startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
+    case 'start-game':if(pick.kata&&pick.ougi){clearSave();startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
     case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
     case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
     case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};builderPreset=p;saveDeck();render();break}
@@ -1241,7 +1270,7 @@ document.addEventListener('click',e=>{
     case 'burn':if(G&&G.phase==='select'){if(G.pBurn){G.pBurn=null;G.burnMode=false}else G.burnMode=!G.burnMode;render()}break;
     case 'ougi':useOugi();break;
     case 'next':if(G&&G.phase==='result'&&!G.over)startTurn();break;
-    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';render()}break;
+    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();render()}break;
     case 'discard':G.modal=el.dataset.who;render();break;
     case 'open-log':G.modal='log';render();break;
     case 'close-modal':G.modal=null;render();break;
