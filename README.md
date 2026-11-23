@@ -13,6 +13,7 @@
 
 - `index.html` … ゲーム本体（HTML・CSS・JavaScript を1ファイルに収めている）
 - `RULES.md` … 現在のルールと、そう決めた理由。**ルールを変える前に読むこと**
+- `art/PROMPTS.md` … 札の絵を画像生成AIで作るための指示文と決まり。届いた画像は `art/raw/` に置き、`python3 tools/art.py` で `art/cards/` に変換して組み込む
 - `tools/smoke.js` … 自動で何試合か進めて、エラーが出ないか確かめるスクリプト（Playwright が要る：`node tools/smoke.js`）
 
 ネット対戦や広告を入れる段階で、1ファイルの構成から組み直す予定。

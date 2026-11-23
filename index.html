@@ -181,7 +181,8 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .play .duel{animation:gshift .5s .6s ease-in-out both}
 @keyframes gshift{from{transform:translateX(var(--g0))}to{transform:translateX(var(--g1))}}
 .samurai{position:absolute;bottom:10%;height:78%;aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
-.samurai svg{width:100%;height:100%;display:block}
+.samurai svg,.samurai img{width:100%;height:100%;display:block;object-fit:contain;object-position:bottom}
+img.sil{object-fit:contain;height:auto}
 .samurai.opp{left:12%}
 .samurai.me{right:12%;transform:scaleX(-1)}
 .play .samurai.opp.lunge{animation:lungeO .45s ease-out}
@@ -921,7 +922,11 @@ function cpuMaybeBefore(){
 const $app=document.getElementById('app');
 const ARTS=new Set(["oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
 /* 札の影：効果の札はその札の絵、素の札は型の絵（刀・唐傘・狐） */
-const silHTML=d=>`<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><use href="#${ARTS.has(d.eff)?'art-'+d.eff:'sil-'+d.type}"/></svg>`;
+/* 画像生成AIで作った絵が届いた札の ID（art/cards/<ID>.png。作り方は art/PROMPTS.md）。ここに無い札は下の影絵のまま */
+const ART_IMG=new Set([]);
+const artKey=d=>d.eff||d.type;
+const silHTML=d=>ART_IMG.has(artKey(d))?`<img class="sil" src="art/cards/${artKey(d)}.png" alt="" aria-hidden="true">`
+  :`<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><use href="#${ARTS.has(d.eff)?'art-'+d.eff:'sil-'+d.type}"/></svg>`;
 function faceHTML(d,cost=d.cost){
   return `${silHTML(d)}<span class="ccost" title="気力">${cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}`+
     (d.eff?`<span class="ctype">${TY[d.type].name}</span><span class="cname">${d.name}</span><span class="ctext">${d.short}</span>`
@@ -1098,7 +1103,7 @@ function gameHTML(){
     if(r.fx.firedC.length)fx+=`<svg class="fx flame fox opp" viewBox="0 0 100 100"><use href="#fx-flame"/></svg>`;
   }
   const n0=revealed&&G.res?G.res.net:0;
-  const sam=(side,atk,hit)=>`<div class="samurai ${side}${atk?' lunge':''}${hit?' hit':''}"><svg viewBox="0 0 60 100"><use href="#samurai"/></svg></div>`;
+  const sam=(side,atk,hit)=>`<div class="samurai ${side}${atk?' lunge':''}${hit?' hit':''}">${ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100"><use href="#samurai"/></svg>'}</div>`;
   const t=Date.now()/1000;
   const petals=[8,22,37,55,68,81,93].map((x,i)=>{const d=7+(i%3)*2.5;return `<i class="petal" style="left:${x}%;animation-duration:${d}s;animation-delay:-${((t+i*1.9)%d).toFixed(2)}s"></i>`}).join('');
   const duel=`<div class="duel" aria-hidden="true">${sam('opp',ca==='atk',n0>0)}${sam('me',pa==='atk',n0<0)}${fx}</div>`;
