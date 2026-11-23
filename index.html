@@ -109,6 +109,16 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .card>.sil{position:absolute;z-index:0;right:-10%;bottom:-8%;width:100%;aspect-ratio:1;fill:var(--shadow-ink);opacity:.92;pointer-events:none}
 .card:has(.ctext)>.sil{width:80%;right:-14%;bottom:-10%;opacity:.14}
 .card.small>.sil{width:95%}
+/* 札の飾り：金の細枠と角飾り。素の札の影は型の色でほのかに光る */
+.card::after{content:"";position:absolute;inset:3px;border:1px solid rgba(150,108,36,.45);border-radius:5px;pointer-events:none;z-index:2;
+  background:
+    linear-gradient(#a8771f,#a8771f) left top/9px 2px no-repeat,linear-gradient(#a8771f,#a8771f) left top/2px 9px no-repeat,
+    linear-gradient(#a8771f,#a8771f) right top/9px 2px no-repeat,linear-gradient(#a8771f,#a8771f) right top/2px 9px no-repeat,
+    linear-gradient(#a8771f,#a8771f) left bottom/9px 2px no-repeat,linear-gradient(#a8771f,#a8771f) left bottom/2px 9px no-repeat,
+    linear-gradient(#a8771f,#a8771f) right bottom/9px 2px no-repeat,linear-gradient(#a8771f,#a8771f) right bottom/2px 9px no-repeat}
+.card.small::after,.crow .card::after{inset:2px;background-size:6px 1.5px,1.5px 6px,6px 1.5px,1.5px 6px,6px 1.5px,1.5px 6px,6px 1.5px,1.5px 6px}
+.card:not(:has(.ctext))>.sil{filter:drop-shadow(0 0 3px color-mix(in srgb,var(--tc) 85%,transparent)) drop-shadow(0 0 9px color-mix(in srgb,var(--tc) 45%,transparent))}
+.back{box-shadow:inset 0 0 0 1px rgba(184,137,47,.35)}
 .card .tag{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--accent-ink);white-space:nowrap;line-height:1.6}
 .card .tag.ban{background:var(--ink);color:var(--paper)}
 .card.sel{transform:translateY(-7px);box-shadow:0 0 0 3px var(--accent),0 8px 14px rgba(0,0,0,.4)}
@@ -151,7 +161,59 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .gauge-labels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
 .gauge-labels b{color:var(--fg)}
 
-.battle{flex:1 1 auto;min-height:96px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
+.battle{flex:1 1 auto;min-height:96px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(104px,1.3fr) minmax(0,.85fr);gap:6px}
+/* 舞台：月夜。満月を背に、侍の影が向き合う */
+.stage{position:relative;border-radius:12px;padding:4px 6px 6px;background:linear-gradient(#0c111b 0%,#16202e 62%,#121924 100%);overflow:hidden;isolation:isolate}
+.stage>.slot,.stage>.center{position:relative;z-index:1}
+.sky{position:absolute;inset:0;z-index:0;pointer-events:none}
+.sky::after{content:"";position:absolute;left:0;right:0;bottom:0;height:13%;background:linear-gradient(#0a0e15,#06080c);border-top:1px solid rgba(241,227,176,.12)}
+.moon{position:absolute;top:9%;left:50%;width:min(48px,14%);aspect-ratio:1;transform:translateX(-50%);border-radius:50%;background:radial-gradient(circle at 42% 40%,#fffbea,#efe0ac 72%);box-shadow:0 0 34px 10px rgba(241,227,176,.22)}
+.petal{position:absolute;top:-6%;width:7px;height:5px;border-radius:70% 0 70% 0;background:#f4c3d3;opacity:.75;animation:petal linear infinite}
+@keyframes petal{0%{transform:translate(0,0) rotate(0)}50%{transform:translate(-18px,55cqh) rotate(200deg)}100%{transform:translate(8px,115cqh) rotate(400deg)}}
+.stage{container-type:size}
+.center{position:relative;justify-content:flex-start}
+.duel{position:absolute;left:-6px;right:-6px;bottom:0;height:56%;transform:translateX(var(--g1));pointer-events:none}
+.play .duel{animation:gshift .5s .6s ease-in-out both}
+@keyframes gshift{from{transform:translateX(var(--g0))}to{transform:translateX(var(--g1))}}
+.samurai{position:absolute;bottom:10%;height:78%;aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
+.samurai svg{width:100%;height:100%;display:block}
+.samurai.opp{left:12%}
+.samurai.me{right:12%;transform:scaleX(-1)}
+.play .samurai.opp.lunge{animation:lungeO .45s ease-out}
+.play .samurai.me.lunge{animation:lungeM .45s ease-out}
+.play .samurai.opp.hit{animation:hitO .5s .45s ease-out}
+.play .samurai.me.hit{animation:hitM .5s .45s ease-out}
+.play .samurai.opp.lunge.hit{animation:lungeO .45s ease-out,hitO .5s .45s ease-out}
+.play .samurai.me.lunge.hit{animation:lungeM .45s ease-out,hitM .5s .45s ease-out}
+@keyframes lungeO{45%{transform:translateX(70%)}}
+@keyframes lungeM{45%{transform:scaleX(-1) translateX(70%)}}
+@keyframes hitO{30%{transform:translateX(-30%) rotate(-8deg);filter:drop-shadow(0 0 3px #ff6b4a) drop-shadow(0 0 10px #ff6b4a)}}
+@keyframes hitM{30%{transform:scaleX(-1) translateX(-30%) rotate(-8deg);filter:drop-shadow(0 0 3px #ff6b4a) drop-shadow(0 0 10px #ff6b4a)}}
+.fx{position:absolute;pointer-events:none;opacity:0}
+.fx.slash{bottom:34%;left:20%;width:60%;aspect-ratio:2;fill:#fff;filter:drop-shadow(0 0 5px #d8e6ff) drop-shadow(0 0 12px rgba(200,220,255,.6))}
+.fx.slash.from-me{animation:slashM .55s .12s ease-out}
+.fx.slash.from-opp{animation:slashO .55s .12s ease-out}
+.fx.slash.from-me.rebound{animation:slashMB .9s .12s ease-in-out}
+.fx.slash.from-opp.rebound{animation:slashOB .9s .12s ease-in-out}
+@keyframes slashM{0%{opacity:0;transform:translateX(35%) rotate(12deg) scale(.6)}25%{opacity:1}100%{opacity:0;transform:translateX(-35%) rotate(-12deg) scale(1.15)}}
+@keyframes slashO{0%{opacity:0;transform:translateX(-35%) rotate(-12deg) scale(.6)}25%{opacity:1}100%{opacity:0;transform:translateX(35%) rotate(12deg) scale(1.15)}}
+@keyframes slashMB{0%{opacity:0;transform:translateX(35%) scale(.6)}20%{opacity:1}45%{opacity:1;transform:translateX(-20%) scale(1)}55%{transform:translateX(-20%) scaleX(-1)}100%{opacity:0;transform:translateX(45%) scaleX(-1.2)}}
+@keyframes slashOB{0%{opacity:0;transform:translateX(-35%) scale(.6)}20%{opacity:1}45%{opacity:1;transform:translateX(20%) scale(1)}55%{transform:translateX(20%) scaleX(-1)}100%{opacity:0;transform:translateX(-45%) scaleX(-1.2)}}
+.fx.um{bottom:22%;width:46%;aspect-ratio:1;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 8px rgba(120,170,255,.6));animation:um 1.3s .05s ease-out}
+.fx.um.me{right:14%}.fx.um.opp{left:14%}
+@keyframes um{0%{opacity:0;transform:scale(.3) rotate(-20deg)}25%{opacity:1;transform:scale(1.1)}35%{transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+.fx.flame{bottom:10%;width:26%;aspect-ratio:1;fill:#ff9a3c;filter:drop-shadow(0 0 6px #ff7a1a) drop-shadow(0 0 14px rgba(255,120,30,.6));animation:flame 1.3s ease-out}
+.fx.flame.me{right:4%}.fx.flame.opp{left:4%}
+.fx.flame.fox{fill:#8fe3ff;width:18%;filter:drop-shadow(0 0 6px #4fc3ff) drop-shadow(0 0 14px rgba(80,200,255,.6));animation:flame 1.3s .35s ease-out}
+.fx.flame.fox.me{right:30%}.fx.flame.fox.opp{left:30%}
+@keyframes flame{0%{opacity:0;transform:translateY(20%) scale(.4)}25%{opacity:1;transform:none}70%{opacity:.9;transform:translateY(-12%) scale(1.05)}100%{opacity:0;transform:translateY(-35%) scale(.8)}}
+.calls{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
+.calls .verdict{background:rgba(5,8,12,.72);border-radius:8px;padding:1px 8px}
+.calls .verdict .v{text-shadow:0 0 6px #000}
+.play .calls{animation:callin .4s .55s both}
+@keyframes callin{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
+.stage .slot .who{color:#c9d3df}
+.stage .big.empty{border-color:rgba(201,211,223,.35);color:#c9d3df;background:rgba(12,17,27,.55)}
 .slot{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:0}
 .slot .who{font-size:11.5px;color:var(--muted);flex:none}
 .bigwrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
@@ -171,7 +233,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .reveal{animation:flip .35s ease-out both}
 @keyframes flip{from{transform:rotateY(80deg);opacity:.2}to{transform:none;opacity:1}}
 
-.center{display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:0;overflow:auto;text-align:center}
+.center{display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:0;overflow:visible;text-align:center}
 .verdict{display:flex;flex-direction:column;gap:0}
 .trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
 .trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
@@ -261,7 +323,8 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
-  .reveal,.notice.alert,.auto,.energy .gain,.trapfire{animation:none}
+  .reveal,.notice.alert,.auto,.energy .gain,.trapfire,.petal,.duel,.samurai,.calls{animation:none!important}
+  .fx{display:none}
   .card,.timer i{transition:none}
 }
 </style>
@@ -287,6 +350,24 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   <symbol id="sil-T" viewBox="0 0 100 100">
     <path d="M18 100 C16 76 20 60 30 50 L27 20 L41 38 L48 17 L54 40 C64 42 76 50 92 58 C94 60 93 64 89 64 C78 64 68 66 62 70 C58 80 56 90 56 100 Z"/>
     <ellipse cx="58" cy="49" rx="3.4" ry="1.8" fill="var(--lamp-2)" transform="rotate(20 58 49)"/>
+  </symbol>
+  <!-- 舞台の侍（右を向いて構える） -->
+  <symbol id="samurai" viewBox="0 0 60 100">
+    <circle cx="27" cy="15" r="7"/>
+    <path d="M24 9 q4 -8 10 -6 q-2 3 -4 5 Z"/>
+    <path d="M18 24 Q27 20 37 24 L40 48 Q28 52 17 48 Z"/>
+    <path d="M17 46 L39 46 L50 97 L33 97 L28 72 L23 97 L6 97 Z"/>
+    <path d="M35 27 L48 40 L45 43 L33 33 Z"/>
+    <path d="M44 42 L47 39 L59 3 L57 2 Z"/>
+    <path d="M41 45 L50 36 L51 37 L42 46 Z"/>
+  </symbol>
+  <!-- 三日月の斬撃 -->
+  <symbol id="fx-slash" viewBox="0 0 100 50">
+    <path d="M4 44 Q50 -18 96 44 Q50 6 4 44 Z"/>
+  </symbol>
+  <!-- 炎（燃やす・狐火） -->
+  <symbol id="fx-flame" viewBox="0 0 100 100">
+    <path d="M50 97 C24 97 16 72 28 52 C35 41 33 28 40 13 C46 29 58 33 62 47 C66 40 65 32 62 25 C79 40 85 63 77 79 C71 91 62 97 50 97 Z"/>
   </symbol>
 </defs></svg>
 <div id="app"></div>
@@ -337,7 +418,7 @@ const SCHOOLS={
   yanagi:{name:'柳',kata:'防ぎきって跳ね返すとき、さらに1押す',ougi:'柳の受け',ougiText:'このターン、防御は攻撃の大きさに関係なく防ぎきって、攻撃を跳ね返す'},
   homura:{name:'炎',kata:'燃やすと、気力が1多く増える',ougi:'業火',ougiText:'このターン燃やすと、増える気力のぶんだけ相手も押す'},
   kage:{name:'影',kata:'罠を2枚まで張れる',ougi:'影縫い',ougiText:'開けたとき、相手の罠を1枚奪って自分の場に張る（次のターンから効く）'},
-  me:{name:'眼',kata:'相手が新しく引いた札が見える',ougi:'先読み',ougiText:'相手が伏せた札の種類（攻撃・防御・燃やす・見送る・罠）を見てから、自分の札を選べる'},
+  me:{name:'眼',kata:'相手の手札の内訳（攻撃・防御・罠が何枚ずつか）が見える',ougi:'先読み',ougiText:'相手が攻撃してくるかどうかを見てから、自分の札を選べる'},
 };
 
 /* CPUの性格（相手の欄に出る。クセを読むための手がかり） */
@@ -481,7 +562,7 @@ function startGame(school){
   clearTimers();
   const pre=rnd(PRESETS);
   G={p:newSide(deck,school),c:newSide(pre.cards,rnd(Object.keys(SCHOOLS))),cpuDeck:pre.name,style:rnd(Object.keys(STYLES)),
-    gauge:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),schoolInfo:false,
+    gauge:0,prevGauge:0,revealAt:0,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   screen='game';startTurn();
 }
@@ -519,13 +600,13 @@ function tick(){
   if(left<=0){clearInterval(G.tId);if(G.pBurn){log('時間切れ：選んでいた札を燃やした');commit(null,G.pBurn);return}const s=G.sel&&!blockReason(G.p,G.sel)?G.sel:null;log(s?'時間切れ：選んでいた札で確定':'時間切れ：見送った');commit(s)}
 }
 /* 相手の手の種類（先読みで見える） */
-const actKind=ch=>ch.burn?'燃やす':!ch.play?'見送る':TY[def(ch.play).type].name;
+const actKind=ch=>ch.play&&def(ch.play).type==='A'?'攻撃してくる':'攻撃してこない';
 function useOugi(){
   const P=G.p;if(G.phase!=='select'||P.ougiUsed)return;
   P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;
   const sc=SCHOOLS[P.school];log(`奥義「${sc.ougi}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
-  if(P.school==='me'){G.cPre=cpuChoose();G.notices.push({t:`先読み：相手は「${actKind(G.cPre)}」を伏せた`,alert:true})}
+  if(P.school==='me'){G.cPre=cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
   render();
 }
 /* あなたの手を確定（pi＝出す札、bi＝燃やす札。どちらも null なら見送る） */
@@ -591,10 +672,9 @@ function resolve(){
     if(def(inst).type==='T'&&s.traps.length<trapMax(s))s.traps.push({inst,active:false});
     else s.discard.push(inst);
   }
+  G.prevGauge=G.gauge;G.revealAt=Date.now();
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
-  drawN(P,1);
-  // 眼の型：相手が新しく引いた札が見える
-  if(drawN(C,1)&&P.school==='me')G.knownOpp.add(C.hand[C.hand.length-1].uid);
+  drawN(P,1);drawN(C,1);
   for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
   G.extra=msgs;
   const act=(d,b,opp)=>b?`「${label(def(b))}」を燃やした`:!d?'見送った':opp&&d.type==='T'?'罠を張った':label(d);
@@ -604,7 +684,7 @@ function resolve(){
   G.phase='result';
   if(!G.over){
     const n=r.notes.length+msgs.length,alert=G.notices.some(x=>x.alert);
-    G.autoMs=Math.min(7000,2600+n*900+(alert?900:0));
+    G.autoMs=Math.min(7600,3200+n*900+(alert?900:0));
     G.autoT=setTimeout(()=>{if(G&&G.phase==='result'&&!G.over)startTurn()},G.autoMs);
   }
   render();
@@ -639,11 +719,12 @@ function styleBias(k,d){
   return 0;
 }
 /* 相手の手：{play: 出す札, burn: 燃やす札}（どちらか一方。両方 null なら見送る）
-   peek を渡すと、それがあなたの手（先読みで種類だけ分かった状態）として決める */
+   peek を渡すと、あなたが攻撃してくるかどうかだけ分かった状態（先読み）で決める */
 function cpuChoose(peek){
   const C=G.c,P=G.p,E=C.energy;
   const model=peek===undefined?cpuOppModel()
-    :[{d:peek&&peek.type==='A'?{type:'A',num:Math.min(P.energy,5),cost:0,eff:null}:peek&&peek.type==='D'?{type:'D',num:Math.min(P.energy,4),cost:0,eff:null}:null,w:1}];
+    :peek&&peek.type==='A'?[{d:{type:'A',num:Math.min(P.energy,5),cost:0,eff:null},w:1}]
+    :(()=>{const l=cpuOppModel().filter(m=>!m.d||m.d.type!=='A'),t=l.reduce((a,b)=>a+b.w,0);return l.map(m=>({d:m.d,w:m.w/t}))})();
   const danger=G.gauge>=GOAL-3,chance=G.gauge<=-(GOAL-4);
   const evOf=(d,bd=null)=>{let ev=0;for(const m of model){const r=outcome(P,C,m.d,d,null,bd);ev+=m.w*(-r.net)*(danger&&r.toP<r.toC?1.4:1)*(chance?1.2:1)}return ev};
   const base=evOf(null),combos=[{play:null,burn:null,ev:base}];
@@ -787,6 +868,8 @@ function sideChips(s,isP){
   else{
     c.push(`<span class="chip warn" title="${STYLES[G.style].desc}">性格：${STYLES[G.style].name}</span>`);
     c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">流派？・奥義${s.ougiUsed?'済':'あり'}</span>`);
+    // 眼の型：相手の手札の内訳が見える
+    if(G.p.school==='me'){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
   }
   for(const t of s.traps){
     const st=t.active?'発動待ち':'次から';
@@ -823,9 +906,33 @@ function gameHTML(){
     oppSlot=G.cBurned?burntHTML(def(G.cBurned),C,'reveal','燃やした','守りなし'):!cd?'<div class="big empty reveal">見送った</div>':cd.type==='T'?'<div class="big back t-T reveal"><span>罠を張った</span></div>':bigHTML(cd,'reveal');
     meSlot=G.pBurned?burntHTML(def(G.pBurned),P,'reveal','燃やした','守りなし'):!pd?'<div class="big empty reveal">見送った</div>':bigHTML(pd,'reveal');
   }else{
-    oppSlot=`<div class="big empty">${G.cPre?`相手は<br><b>${actKind(G.cPre)}</b><br>を伏せた`:'相手が選んでいる'}</div>`;
+    oppSlot=`<div class="big empty">${G.cPre?`相手は<br><b>${actKind(G.cPre)}</b>`:'相手が選んでいる'}</div>`;
     meSlot=G.pBurn?burntHTML(def(G.pBurn),P,'','燃やす','次のターンから'):G.sel?bigHTML(def(G.sel),'dim'):'<div class="big empty">出す札か<br>燃やす札を選ぶ</div>';
   }
+
+  // 舞台：開けた直後だけ演出を流す（あとで描き直しても繰り返さない）
+  const play=revealed&&G.res&&Date.now()-(G.revealAt||0)<1200;
+  const shift=g=>`${-g*2.6}px`;
+  const actOf=(pl,bu)=>bu?'burn':!pl?'pass':def(pl).type==='A'?'atk':def(pl).type==='D'?'def':'trap';
+  const pa=revealed?actOf(G.pPlay,G.pBurned):'',ca=revealed?actOf(G.cPlay,G.cBurned):'';
+  let fx='';
+  if(play){
+    const r=G.res;
+    if(pa==='atk')fx+=`<svg class="fx slash from-me${ca==='def'&&r.base<0?' rebound':''}" viewBox="0 0 100 50"><use href="#fx-slash"/></svg>`;
+    if(ca==='atk')fx+=`<svg class="fx slash from-opp${pa==='def'&&r.base>0?' rebound':''}" viewBox="0 0 100 50"><use href="#fx-slash"/></svg>`;
+    if(pa==='def')fx+=`<svg class="fx um me" viewBox="0 0 100 100"><use href="#sil-D"/></svg>`;
+    if(ca==='def')fx+=`<svg class="fx um opp" viewBox="0 0 100 100"><use href="#sil-D"/></svg>`;
+    if(pa==='burn')fx+=`<svg class="fx flame me" viewBox="0 0 100 100"><use href="#fx-flame"/></svg>`;
+    if(ca==='burn')fx+=`<svg class="fx flame opp" viewBox="0 0 100 100"><use href="#fx-flame"/></svg>`;
+    if(r.fx.firedP.length)fx+=`<svg class="fx flame fox me" viewBox="0 0 100 100"><use href="#fx-flame"/></svg>`;
+    if(r.fx.firedC.length)fx+=`<svg class="fx flame fox opp" viewBox="0 0 100 100"><use href="#fx-flame"/></svg>`;
+  }
+  const n0=revealed&&G.res?G.res.net:0;
+  const sam=(side,atk,hit)=>`<div class="samurai ${side}${atk?' lunge':''}${hit?' hit':''}"><svg viewBox="0 0 60 100"><use href="#samurai"/></svg></div>`;
+  const t=Date.now()/1000;
+  const petals=[8,22,37,55,68,81,93].map((x,i)=>{const d=7+(i%3)*2.5;return `<i class="petal" style="left:${x}%;animation-duration:${d}s;animation-delay:-${((t+i*1.9)%d).toFixed(2)}s"></i>`}).join('');
+  const duel=`<div class="duel" aria-hidden="true">${sam('opp',ca==='atk',n0>0)}${sam('me',pa==='atk',n0<0)}${fx}</div>`;
+  const stageStyle=`--g0:${shift(play?G.prevGauge:G.gauge)};--g1:${shift(G.gauge)}`;
 
   let center='',info='';
   if(G.res&&revealed){
@@ -876,9 +983,10 @@ function gameHTML(){
       <div class="gauge-labels"><span>相手の陣</span><span>${gTxt}</span><span>自分の陣</span></div>
       <div class="cells">${cells.join('')}</div>
     </section>
-    <section class="battle" aria-label="場">
+    <section class="battle stage${play?' play':''}" style="${stageStyle}" aria-label="場">
+      <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
-      <div class="center">${center}</div>
+      <div class="center">${duel}<div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
     </section>
     <section class="info" aria-live="polite">${info}</section>
