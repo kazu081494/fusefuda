@@ -1,0 +1,186 @@
+<title>月花乱舞 札絵の指示帳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700;800&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+/* 夜の卓と行灯の紙。ゲーム本体と同じ世界。単一の暗いテーマ（意図的） */
+:root{
+  color-scheme:dark;
+  --bg:#18212c; --panel:#202b38; --line:#3b4b5d;
+  --fg:#e9edf1; --muted:#a3b0bd;
+  --paper:#f6e7c4; --ink:#1b120a;
+  --accent:#e2b247; --accent-ink:#231a05;
+  --ok:#7cc58a; --warn:#ee8a74;
+  --f-display:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Noto Sans JP",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.7;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;margin:0;text-wrap:balance;line-height:1.3}
+h1{font-size:30px}
+h2{font-size:21px}
+p{margin:0}
+.lead{color:var(--muted)}
+section{display:flex;flex-direction:column;gap:12px}
+.steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:6px}
+.owl{display:flex;gap:14px;align-items:center;background:var(--paper);color:var(--ink);border-radius:12px;padding:12px}
+.owl img{width:112px;height:112px;object-fit:contain;flex:none;border-radius:6px;background:#fff}
+.owl p{font-size:13.5px;line-height:1.6;min-width:0}
+.legal{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.verdict{font-weight:700;color:var(--ok)}
+.legal ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.legal .src{font-size:12.5px;color:var(--muted)}
+.legal a{color:var(--accent)}
+.group-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.count{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center}
+.item.done{opacity:.55}
+.item .name{font-family:var(--f-display);font-weight:800;font-size:17px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.item .id{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);font-weight:400}
+.item .desc{grid-column:1/-1;font-size:14px;color:var(--muted);min-width:0}
+.tag{font-family:var(--f-body);font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid currentColor}
+.tag.have{color:var(--ok)}.tag.redo{color:var(--warn)}
+.acts{display:flex;gap:6px;align-items:center}
+button{font:inherit;cursor:pointer}
+.copy{appearance:none;border:0;border-radius:9px;background:var(--accent);color:var(--accent-ink);font-weight:700;min-height:40px;padding:6px 14px;white-space:nowrap}
+.copy.ok{background:var(--ok)}
+.chk{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);white-space:nowrap}
+.chk input{width:18px;height:18px;accent-color:var(--accent)}
+pre.raw{grid-column:1/-1;margin:0;white-space:pre-wrap;font-family:var(--f-body);font-size:13px;background:var(--bg);border-radius:8px;padding:8px 10px;user-select:all}
+.base{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.base pre{margin:0;white-space:pre-wrap;font-size:13.5px;font-family:var(--f-body);color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:420px){.item{grid-template-columns:1fr}.acts{justify-content:space-between}}
+</style>
+
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>札絵の指示帳</h1>
+    <p class="lead">月花乱舞の札の絵を Gemini で作るための指示文。札ごとに「コピー」を押して、Gemini にそのまま送る。</p>
+  </header>
+
+  <section aria-labelledby="how">
+    <h2 id="how">作り方</h2>
+    <ol class="steps">
+      <li>下の見本の梟を長押しして保存する</li>
+      <li>Gemini で新しいチャットを開き、梟の画像を貼る</li>
+      <li>作りたい札の「コピー」を押し、画像と一緒に送る</li>
+      <li>できた絵を Claude のチャットに貼る（どの札か書く）</li>
+    </ol>
+    <div class="owl">
+      <img src="owl.jpg" alt="画風の見本：枝にとまる梟の切り絵風シルエット">
+      <p><b>画風の見本</b>（偵察の札）。体はほぼ黒で塗りつぶし、白い彫りは目と羽の大きな切れ込みだけ。札は小さいので、細かい模様は潰れて見えなくなる。2枚目からも、同じチャットで続けて頼んでよい。</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="legal">
+    <h2 id="legal">商用で使えるか</h2>
+    <div class="legal">
+      <p class="verdict">Gemini アプリで作った絵は、ゲームに使ってよい見込み。ただし法的な保証ではない。</p>
+      <ul>
+        <li><b>所有権：</b>Google の利用規約は、生成されたものの所有権を Google は主張しないとしている。同じような絵を Google がほかの人にも作ることはある。</li>
+        <li><b>責任は使う側：</b>使い方の責任は自分にある。他人の作品・商標・実在の人物に似せる指示は避ける。</li>
+        <li><b>著作権は弱い：</b>AIだけで作った絵は、多くの国で著作権が認められにくい。ほかの人に似た絵を使われても止めにくい。</li>
+        <li><b>目に見えない透かし：</b>画像には SynthID という電子透かしが入る。消そうとしない。AIで作ったことを隠して人が描いたと偽るのは、規約で禁止されている。</li>
+        <li><b>Gemini アプリで作る：</b>Google Labs の実験的なツール（ImageFX・Whisk・Flow など）は個人・非商用のみ、という情報がある（公式には未確認）。札の絵は Gemini アプリ本体で作る。</li>
+        <li><b>公開前に：</b>規約は変わるので、ゲームを公開する前に最新の規約を自分でも読む。</li>
+      </ul>
+      <p class="src">2026年11月に調べた内容。出典：<a href="https://policies.google.com/terms" target="_blank" rel="noopener">Google 利用規約</a>・<a href="https://policies.google.com/terms/generative-ai/use-policy" target="_blank" rel="noopener">生成AIの禁止用途ポリシー</a>・<a href="https://support.google.com/gemini/thread/410116358" target="_blank" rel="noopener">Gemini コミュニティの回答（Labs のツールについて）</a></p>
+    </div>
+  </section>
+
+  <section aria-labelledby="base">
+    <h2 id="base">どの札にも付く決まり</h2>
+    <div class="base">
+      <p style="font-size:14px">コピーする文には、最初からこの決まりが入っている。</p>
+      <pre id="rules"></pre>
+    </div>
+  </section>
+
+  <div id="groups" style="display:flex;flex-direction:column;gap:28px"></div>
+</div>
+
+<script>
+const RULES=`・体の大部分は黒く塗りつぶし、白い彫りは太いものを数本だけ
+・白い背景に黒一色。紙の写真ではなく平らな画像で、紙の縁や影は入れない
+・文字や枠は入れない。正方形で、真ん中に置いてまわりに少し余白
+・1回に1枚だけ`;
+const msg=d=>`この梟と同じ切り絵の画風で、別の絵を作ってください。\n描くもの：${d}\n${RULES}`;
+// state: have=入れ済み, redo=作り直したい, 空=まだ
+const GROUPS=[
+ ['型の絵と舞台',[
+  ['A','素の攻撃','振りかざした刀。丸い鍔と、糸を巻いた柄。斜めに構えた一振り',''],
+  ['D','素の防御','横から見た、開いた和傘（唐傘）。骨は細い白い線で',''],
+  ['T','罠（共通）','手で作る狐の影絵。とがった耳、長い鼻先、小さな白い目',''],
+  ['samurai','舞台の侍','袴をはいた侍の全身。刀を前に構えて立っている。髷を結っている。体は右向き。足先まで入れる','redo'],
+ ]],
+ ['攻撃の札',[
+  ['oiuchi','追い討ち','三日月のような弧を描く斬撃の跡が、2本並んでいる',''],
+  ['kantsu','貫通','長い槍が、丸い輪（盾）を突き抜けている',''],
+  ['sutemi','捨て身','折れた刀。刃が途中で折れて、切っ先が飛んでいく',''],
+  ['rengeki','連撃','斜めに走る3本の斬撃の跡。爪痕のように並ぶ',''],
+  ['teisatsu','偵察','枝にとまる梟（見本）','have'],
+  ['yokoku','予告','矢の柄に、折りたたんだ手紙が結んである（矢文）',''],
+  ['iai','居合','鞘から半分抜いた刀と、その上を走る鋭い一筋の光',''],
+  ['kuzushi','崩し','城の石垣の石が割れて、かけらが崩れ落ちている',''],
+  ['hikeshi','火消し','水が跳ねる木の手桶。江戸の火消しの雰囲気',''],
+  ['youdou','陽動','羽を広げた蝶',''],
+  ['senkou','線香花火','吊り下がった線香花火。丸い火の玉から細い火花が散っている',''],
+ ]],
+ ['防御の札',[
+  ['hangeki','反撃','振り下ろされた刀を受け流して、切り返す侍',''],
+  ['ukenagashi','受け流し','風に揺れて垂れ下がる柳の枝',''],
+  ['meisou','瞑想','正面から見た、座禅を組む僧',''],
+  ['kakuran','撹乱','4つの刃をもつ手裏剣。真ん中に白い穴',''],
+  ['fuuji','封じ手','古い和錠（錠前）。白い鍵穴',''],
+  ['mikiri','見切り','鋭い片目。アーモンド形で、白い虹彩と黒い瞳',''],
+  ['zanshin','残心','長い和弓を引く射手。弓道の構えを横から',''],
+  ['kamae','構え','刀を中段に構える侍。横から',''],
+  ['hikiashi','退き足','後ろへ下がっていく2つの足跡と、草鞋',''],
+  ['tessen','鉄扇','開いた鉄扇。骨は細い白い線で',''],
+ ]],
+ ['罠の札',[
+  ['otoshiana','落とし穴','地面に掘られた落とし穴。中に鋭い竹槍が並ぶ。横から',''],
+  ['kaeshi','返し罠','鋭い歯のとらばさみが、口を開けて今にも閉じそうな姿','redo'],
+  ['dorobou','気力泥棒','大きな風呂敷包みを背負って、忍び足で歩く盗人',''],
+  ['machibuse','待ち伏せ','背の高い草むらの奥から、白い目が2つのぞいている',''],
+  ['ashikase','足かせ','重い鉄球と、鎖と、足かせの輪',''],
+  ['naruko','鳴子','縄に吊るされた鳴子。木の板に竹の棒が並ぶ',''],
+  ['kagemusha','影武者','同じ姿の侍が2人。手前に1人、その後ろに影のような分身',''],
+  ['kitsunebi','狐火','狐の影のまわりに浮かぶ、いくつもの狐火（炎）',''],
+ ]],
+];
+const KEY='fudae.done.v1';
+let done={};try{done=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}};
+document.getElementById('rules').textContent=RULES;
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function render(){
+  document.getElementById('groups').innerHTML=GROUPS.map(([g,items])=>{
+    const n=items.filter(([id,,,st])=>st==='have'||done[id]).length;
+    return `<section><div class="group-h"><h2>${g}</h2><span class="count">${n} / ${items.length} 枚</span></div><div class="list">`+
+    items.map(([id,name,desc,st])=>{
+      const isDone=st==='have'||done[id];
+      const tag=st==='have'?'<span class="tag have">入れ済み・見本</span>':st==='redo'?'<span class="tag redo">仮の絵・作り直したい</span>':'';
+      return `<div class="item${isDone&&st!=='redo'?' done':''}" id="it-${id}">
+        <div class="name">${esc(name)} <span class="id">${id}</span> ${tag}</div>
+        <div class="acts">${st==='have'?'':`<label class="chk"><input type="checkbox" id="ck-${id}" data-id="${id}" ${done[id]?'checked':''}>作った</label><button class="copy" data-id="${id}" aria-label="${esc(name)}の指示文をコピー">コピー</button>`}</div>
+        <p class="desc">描くもの：${esc(desc)}</p>
+        <pre class="raw" id="raw-${id}" hidden>${esc(msg(desc))}</pre>
+      </div>`}).join('')+`</div></section>`}).join('');
+}
+render();
+const find=id=>GROUPS.flatMap(g=>g[1]).find(x=>x[0]===id);
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('.copy');if(!b)return;
+  const it=find(b.dataset.id),text=msg(it[2]);
+  try{await navigator.clipboard.writeText(text);b.textContent='コピーした';b.classList.add('ok');setTimeout(()=>{b.textContent='コピー';b.classList.remove('ok')},1600)}
+  catch(err){const pre=document.getElementById('raw-'+it[0]);pre.hidden=false;const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='選んだ文を長押しでコピー'}
+});
+document.addEventListener('change',e=>{
+  const c=e.target.closest('input[data-id]');if(!c)return;
+  if(c.checked)done[c.dataset.id]=1;else delete done[c.dataset.id];save();render();
+});
+</script>

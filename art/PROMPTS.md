@@ -1,5 +1,7 @@
 # 札の絵：画像生成AIへの指示文
 
+スマホでコピーして使うページ：https://claude.ai/artifact/12uwuDLo14grvScQF3YhtV （元のファイルは `art/page/`）
+
 月花乱舞の札の絵を、画像生成AI（Midjourney・DALL·E・Stable Diffusion など）で作るための指示文と決まり。
 できた画像は、このチャットに貼るか `art/raw/` に置けば、組み込みは Claude がやる（背景を透明にして、小さく変換して、札に差し込む）。
 
