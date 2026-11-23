@@ -139,7 +139,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .gauge-labels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
 .gauge-labels b{color:var(--fg)}
 
-.battle{flex:1 1 auto;min-height:150px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:8px}
+.battle{flex:1 1 auto;min-height:96px;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px}
 .slot{display:flex;flex-direction:column;align-items:center;gap:3px;min-height:0}
 .slot .who{font-size:11.5px;color:var(--muted);flex:none}
 .bigwrap{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
@@ -161,9 +161,12 @@ button.chip{cursor:pointer;border-color:var(--line)}
 
 .center{display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:0;overflow:auto;text-align:center}
 .verdict{display:flex;flex-direction:column;gap:0}
-.verdict .v{font-family:var(--font-display);font-size:22px;line-height:1.25}
+.verdict .v{font-family:var(--font-display);font-size:20px;line-height:1.25;white-space:nowrap}
 .verdict .v.win{color:var(--win)}.verdict .v.lose{color:var(--lose)}
-.verdict .why{font-size:11.5px;color:var(--muted);line-height:1.4}
+/* 説明は場の下に横幅いっぱいで出す（真ん中の列は狭くて見切れたため） */
+.info{flex:none;display:flex;flex-direction:column;gap:4px;max-height:40%;overflow:auto}
+.info:empty{display:none}
+.info .why{font-size:12.5px;font-weight:700;line-height:1.45}
 .msgs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}
 .notice{font-size:11.5px;line-height:1.4;padding:5px 7px;border-radius:7px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);text-align:left}
 .notice.alert{font-weight:700;animation:pulse 1.2s ease-in-out 2}
@@ -226,6 +229,13 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .rules ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
 select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
 
+/* 背の低い画面：手札を少し低くして一画面に収める */
+@media (max-height:720px){
+  .hand .card{aspect-ratio:5/7;padding-top:19px}
+  .hand .card .ctext{font-size:9px;line-height:1.25}
+  .opp-hand{grid-template-columns:repeat(7,30px)}
+  .gauge .cell{height:13px}
+}
 @media (prefers-reduced-motion: reduce){
   .reveal,.notice.alert,.auto{animation:none}
   .card,.timer i{transition:none}
@@ -341,14 +351,14 @@ function outcome(P,C,pd,cd){
     else why=`攻撃どうし：同じ${np}で相打ち`;
   }else if(kp==='A'&&kc==='D'){
     if(pd.eff==='kantsu'){toC=np;why='貫通：防御を無視'}
-    else if(nc>=np){toP=nc;why=`防御${nc}が攻撃${np}を防ぎきって、${nc}押し返す`}
-    else{toC=np-nc;why=`攻撃${np} − 防御${nc}`}
+    else if(nc>=np){toP=nc;why=`相手の防御${nc}が攻撃${np}を防ぎきって、${nc}押し返される`}
+    else{toC=np-nc;why=`攻撃${np}が防御${nc}を上回って、差の${np-nc}押す`}
     if(cd.eff==='hangeki'&&toP>0){toP+=2;notes.push('反撃：さらに2押し返した')}
     if(cd.eff==='fuuji'&&toC===0){fx.banP=true;notes.push('封じ手：次のターン、あなたは攻撃できない')}
   }else if(kc==='A'&&kp==='D'){
     if(cd.eff==='kantsu'){toP=nc;why='相手の貫通：防御を無視'}
     else if(np>=nc){toC=np;why=`防御${np}が攻撃${nc}を防ぎきって、${np}押し返す`}
-    else{toP=nc-np;why=`攻撃${nc} − 防御${np}`}
+    else{toP=nc-np;why=`相手の攻撃${nc}が防御${np}を上回って、差の${nc-np}押される`}
     if(pd.eff==='hangeki'&&toC>0){toC+=2;notes.push('反撃：さらに2押し返した')}
     if(pd.eff==='fuuji'&&toP===0){fx.banC=true;notes.push('封じ手：次のターン、相手は攻撃できない')}
   }else if(kp==='A'){toC=np;why='相手は防いでいない：そのまま押す'}
@@ -699,7 +709,8 @@ function rulesHTML(){
     <li>2人が同時に手札から1枚を伏せ（または何も出さずに「見送る」）、一斉に開ける。</li>
     <li><b>気力</b>：毎ターン1溜まる（上限10）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
     <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字ぶん（最大5、罠は1）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
-    <li><b>攻撃</b>は右上の数字ぶん、目盛りを相手側へ押す。相手が<b>防御</b>していたら、防御の数字ぶん減る。防御が攻撃以上なら防ぎきって、<b>防御の数字ぶん押し返す</b>。</li>
+    <li><b>攻撃</b>は右上の数字ぶん、目盛りを相手側へ押す。</li>
+    <li>攻撃と<b>防御</b>がぶつかったら：攻撃のほうが大きければ、<b>差だけ押す</b>（攻撃5対防御3なら2押す）。防御が攻撃以上なら防ぎきって、<b>防御の数字ぶん押し返す</b>（防御3対攻撃2なら3押し返す）。</li>
     <li>読み合いの目安：攻撃は「燃やす・見送る」に強く、防御は攻撃に強く、燃やすは防御に強い（相手の気力は無駄になり、自分は溜まる）。気力の量は見えているので、そこから相手の手を読む。</li>
     <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで動かない。</li>
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
@@ -774,18 +785,19 @@ function gameHTML(){
     meSlot=G.pBurn?bigHTML(def(G.pBurn),'dim','燃やす'):G.sel?bigHTML(def(G.sel),'dim'):'<div class="big empty">出す札か<br>燃やす札を選ぶ</div>';
   }
 
-  let center='';
+  let center='',info='';
   if(G.res&&revealed){
     const n=G.res.net;
-    center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n>0?`${n} 押した`:n<0?`${-n} 押された`:'動かない'}</span><span class="why">${G.res.why}</span></div>`;
+    center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n>0?`${n} 押した`:n<0?`${-n} 押された`:'動かない'}</span></div>`;
+    info+=`<p class="why">${G.res.why}</p>`;
     const lines=[...G.burnMsgs,...G.res.notes,...(ph==='result'?G.extra||[]:[])];
-    if(lines.length)center+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
+    if(lines.length)info+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
   }
-  center+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}">${n.t}</div>`).join('');
-  if(ph==='select'&&G.burnMode)center+=`<div class="notice">燃やす札をタップ。燃やすとこのターンは何も出さず、数字ぶん（最大${BURN_MAX}、罠は1）気力が増える。何を燃やしたかは開けるときに相手に見える</div>`;
-  else if(ph==='select'&&G.pBurn)center+=`<p class="hintline">「${label(def(G.pBurn))}」を燃やす（気力+${burnVal(def(G.pBurn))}）。もう一度タップで確定</p>`;
-  if(!revealed&&G.detail){const d=def(G.detail);center+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d)}（次のターンから使える）</span></div>`}
-  if(ph==='select'&&G.sel)center+='<p class="hintline">もう一度タップで伏せる</p>';
+  info+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}">${n.t}</div>`).join('');
+  if(ph==='select'&&G.burnMode)info+=`<div class="notice">燃やす札をタップ。燃やすとこのターンは何も出さず、数字ぶん（最大${BURN_MAX}、罠は1）気力が増える。何を燃やしたかは開けるときに相手に見える</div>`;
+  else if(ph==='select'&&G.pBurn)info+=`<p class="hintline">「${label(def(G.pBurn))}」を燃やす（気力+${burnVal(def(G.pBurn))}）。もう一度タップで確定</p>`;
+  if(!revealed&&G.detail){const d=def(G.detail);info+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d)}（次のターンから使える）</span></div>`}
+  if(ph==='select'&&G.sel)info+='<p class="hintline">もう一度タップで伏せる</p>';
 
   const hand=P.hand.map(x=>{
     if(ph==='select'&&x===G.pBurn)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
@@ -826,6 +838,7 @@ function gameHTML(){
       <div class="center">${center}</div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
     </section>
+    <section class="info" aria-live="polite">${info}</section>
     <section class="side" aria-label="あなた">
       <div class="side-head"><div class="who-line"><h2>あなた</h2>${energyHTML(P)}</div>${sideChips(P,true)}</div>
       <div class="hand">${hand}</div>
