@@ -567,7 +567,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 const HAISUI_NEAR=10,HAISUI_BACK=10;
 /* 連：続けて読み勝つと連が伸び、COMBO_EVERY 連ごとに気力 +COMBO_GAIN */
 const COMBO_EVERY=3,COMBO_GAIN=5;
-const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=20,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
+const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1;
 /* 結果のあと次のターンへ進む速さ */
 const SPEEDS={fast:.6,normal:1,slow:1.6};
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
@@ -617,11 +617,11 @@ for(const t of TYPES){
   for(const e of EFFECTS){if(e[2]!==t)continue;const d={id:e[0],eff:e[0],name:e[1],type:e[2],num:e[3],cost:e[4],short:e[5],text:e[6]};CARDS[d.id]=d;POOL.push(d);}
 }
 const PRESETS=[
-  {key:'boss',name:'月影の主',hidden:true,desc:'',cards:{A30:2,A24:2,D30:2,D24:2,iai:2,kuzushi:2,hangeki:2,kamae:2,kaeshi:2,kagemusha:2}},
-  {key:'soku',name:'速攻',desc:'重い攻撃で一気に押す。居合で大振りを返し、崩しで守りを割る',cards:{A30:1,A24:2,A18:2,A13:2,oiuchi:2,kantsu:1,kuzushi:2,iai:2,D8:2,meisou:2,senkou:2}},
-  {key:'mamori',name:'守りの城',desc:'受け止めて跳ね返す。構えで空振りの損を消し、残心で反撃につなぐ',cards:{D30:1,D24:1,D18:2,hangeki:2,ukenagashi:2,okuribi:1,zanshin:2,kamae:2,tessen:2,A18:2,A13:1,kaeshi:2}},
-  {key:'wana',name:'罠師',desc:'罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:2,kaeshi:1,dorobou:2,machibuse:2,ashikase:1,naruko:2,kagemusha:2,kitsunebi:2,A18:2,A13:2,meisou:2}},
-  {key:'kin',name:'均衡',desc:'攻守と罠を少しずつ。陽動と火消しで読みを外す',cards:{A24:2,A13:2,D18:2,D8:1,hikeshi:2,youdou:2,yokoku:1,hiuchi:1,hangeki:1,kakuran:1,mikiri:1,meisou:1,hikiashi:1,otoshiana:1,machibuse:1}},
+  {key:'boss',name:'月影の主',hidden:true,desc:'',cards:{A30:2,A24:2,A18:2,D30:2,D24:2,D18:2,iai:2,kuzushi:2,hangeki:2,kamae:2,kaeshi:2,kagemusha:2,mikiri:2,meisou:2,tessen:2}},
+  {key:'soku',name:'速攻',desc:'重い攻撃で一気に押す。居合で大振りを返し、崩しで守りを割る',cards:{A30:2,A24:3,A18:2,A13:3,oiuchi:2,kantsu:1,rengeki:2,kuzushi:2,iai:2,yokoku:2,D13:1,D8:2,meisou:2,senkou:2,hiuchi:2}},
+  {key:'mamori',name:'守りの城',desc:'受け止めて跳ね返す。構えで空振りの損を消し、残心で反撃につなぐ',cards:{D30:2,D24:2,D18:2,D13:2,hangeki:2,ukenagashi:2,okuribi:1,zanshin:2,kamae:2,tessen:2,meisou:2,mikiri:1,hikiashi:2,A24:1,A18:2,A13:1,kaeshi:2}},
+  {key:'wana',name:'罠師',desc:'罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:2,kaeshi:2,dorobou:2,machibuse:2,ashikase:2,naruko:2,kagemusha:2,kitsunebi:2,A24:2,A18:2,A13:2,D13:2,D8:2,meisou:2,hikiashi:2}},
+  {key:'kin',name:'均衡',desc:'攻守と罠を少しずつ。陽動と火消しで読みを外す',cards:{A24:2,A18:2,A13:2,D18:2,D13:2,D8:1,hikeshi:2,youdou:2,yokoku:1,senkou:2,teisatsu:1,hiuchi:2,okuribi:1,hangeki:1,kakuran:1,mikiri:2,meisou:1,hikiashi:1,otoshiana:1,machibuse:1}},
 ];
 /* 流派：型（いつも効く。中身は相手に秘密だが、戦い方ににじみ出る）と奥義（1試合に1回、伏せる前に使う） */
 /* 型：いつも効く小さな特性。相手にも見えている（戦い方の色） */
@@ -678,14 +678,18 @@ function cleanDeck(obj){
   for(const [id,c] of Object.entries(obj)){if(CARDS[id]&&Number.isInteger(c)&&c>0)out[id]=Math.min(c,COPY_MAX);}
   return out;
 }
-let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[3].cards};
+let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[4].cards};
+(function padDeck(){let n=Object.values(deck).reduce((a,b)=>a+b,0);if(!n||n>=DECK_SIZE)return;
+  const fill=['A13','D13','A18','D18','A8','D8','A24','D24','A4','D4','A30','D30'];
+  for(let k=0;n<DECK_SIZE&&k<99;k++){const id=fill[k%fill.length];if((deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;n++}}
+  store.set(KEY_DECK,deck)})();
 let settings=Object.assign({vol:.6,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:true,bgm:true},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
 function deckStats(counts){
   let n=0,cost=0;const by={A:0,D:0,T:0};
   for(const [id,c] of Object.entries(counts)){n+=c;cost+=CARDS[id].cost*c;by[CARDS[id].type]+=c;}
-  const errs=[];if(n!==DECK_SIZE)errs.push(`20枚ちょうどにする（今${n}枚）`);
+  const errs=[];if(n!==DECK_SIZE)errs.push(`${DECK_SIZE}枚ちょうどにする（今${n}枚）`);
   return {n,avg:n?cost/n:0,by,errs,ok:errs.length===0};
 }
 
@@ -1591,7 +1595,7 @@ function deckSummary(){
   return `<div class="panel">
     <div class="label">あなたのデッキ</div>
     <div class="stats">
-      <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / 20枚</span>
+      <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / ${DECK_SIZE}枚</span>
       <span class="small muted">平均の気力 ${st.avg.toFixed(1)}</span>
       <span class="small muted">攻撃 ${st.by.A}・防御 ${st.by.D}・罠 ${st.by.T}</span>
     </div>
@@ -1652,7 +1656,7 @@ function rulesHTML(){
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
     <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。20手で決着がつかなければ、押し込んでいる側の勝ち。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
-    <li>デッキは20枚、同じカードは3枚まで。強いカードは気力で縛られるので、数字の上限は無い。</li>
+    <li>デッキは30枚、同じカードは3枚まで。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li>試合の前に<b>型</b>と<b>奥義</b>を1つずつ選ぶ。型はいつも効く小さな特性で、相手にも見えている。奥義は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。相手の型や戦い方、状況から、どの奥義をいつ使ってくるかを読む。</li>
     <li>相手（CPU）には性格（強気・慎重・溜め屋）があり、相手の欄に出ている。クセを読んで裏をかく。</li>
     <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカード（無ければ見送る）で確定する。</li>
@@ -1676,7 +1680,7 @@ function builderHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">メニューへ戻る</button></div>
   <div class="sticky">
     <div class="stats">
-      <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / 20枚</span>
+      <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / ${DECK_SIZE}枚</span>
       <span class="small muted">平均の気力 ${st.avg.toFixed(1)}</span>
       <span class="small muted">攻撃 ${st.by.A}・防御 ${st.by.D}・罠 ${st.by.T}</span>
     </div>
