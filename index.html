@@ -786,7 +786,7 @@ const KATA={
   yanagi:{name:'柳',text:'防ぎきって跳ね返すとき、さらに5歩押し込む'},
   homura:{name:'炎',text:'燃やすと、気力が5多く増える'},
   kage:{name:'影',text:'罠を2枚まで張れる。自分の罠が墓地に行くたびに気力+5'},
-  me:{name:'眼',text:'相手の手札の内訳（攻撃・防御・罠が何枚ずつか）が見える'},
+  me:{name:'眼',text:'相手の手札の内訳（攻撃・防御・罠が何枚ずつか）が見える。読み勝ちしたら、さらに5押す'},
 };
 /* 奥義：1試合に1回、伏せる前に使う大技。型とは別に選び、相手には秘密（使ったことだけ知らされる） */
 const OUGI={
@@ -877,6 +877,7 @@ const burnVal=(d,s)=>{const v=d.eff in BURN_SPECIAL?BURN_SPECIAL[d.eff]:(d.baseC
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
 /* 何ターンか続く奥義（使ったターンを含む） */
+const ME_YOMI=5;  // 眼の型：読み勝ちしたら、さらに5押す
 const KAGE_SWAP=5;  // 影の型：罠が墓地に行くたびに気力+5（発動・張り替え・外された、どれでも）
 function graveTrap(s,inst,msgs){s.discard.push(inst);if(s.kata==='kage'){s.energy=clampE(s.energy+KAGE_SWAP);if(msgs)msgs.push(`影の型：${s===G.p?'あなた':'相手'}の罠が墓地へ行き、気力+${KAGE_SWAP}`)}}
 const OUGI_TURNS={genwaku:3,fudou:3},OUGI_FROM=3;  // 奥義は3手目から使える
@@ -1628,6 +1629,9 @@ function resolve(){
   // 読み勝ち：どちらが読み勝ったか。続けて読み勝つと連が伸びる（読まれたら0に戻る）
   const yw=yomiOf(actOf(G.pPlay,G.pBurned),actOf(G.cPlay,G.cBurned),r.base);
   G.yomi=yw;
+  // 眼の型：読み勝ちしたら、さらに5押す（不動の相手は押せない）
+  if(yw&&yw.who==='p'&&P.kata==='me'&&G.tut==null&&!using(C,'fudou')){r.net+=ME_YOMI;r.notes.push(`眼の型：読み勝ちで、さらに${ME_YOMI}押す`)}
+  if(yw&&yw.who==='c'&&C.kata==='me'&&!using(P,'fudou')){r.net-=ME_YOMI;r.notes.push(`相手の眼の型：読み勝ちされて、さらに${ME_YOMI}押された`)}
   if(yw&&yw.who==='p'){G.combo=(G.combo||0)+1;G.cCombo=0}else if(yw&&yw.who==='c'){G.cCombo=(G.cCombo||0)+1;G.combo=0}
   // 連のごほうび：COMBO_EVERY 連ごとに気力 +COMBO_GAIN（あなたも相手も）
   G.comboGain=null;
@@ -1710,7 +1714,7 @@ const isOpen=()=>!!(G&&G.open&&G.tut==null);
 const OPEN_TXT={
   card:{teisatsu:['相手の罠を見る。無ければ山札の上2枚','開けたとき、相手が伏せている罠を見る（発動するまで見える）。罠が無ければ、相手の山札の上から2枚を見る（引かれるまで見える）'],
         mikiri:['罠を外す。無ければ山札から大きい攻撃を探す','開けたとき、相手が張っている罠を発動させずに捨てさせる。罠が無ければ、自分の山札から一番数字の大きい攻撃の札を探して手札に加える']},
-  kata:{me:'相手が次に引く札（山札の一番上）がいつも見える'},
+  kata:{me:'相手が次に引く札（山札の一番上）がいつも見える。読み勝ちしたら、さらに5押す'},
   ougi:{shingan:'このターンと次のターン、相手の伏せた罠と、相手の山札の上から3枚が見える'},
 };
 const BASE_TXT={card:{},kata:{},ougi:{}};
