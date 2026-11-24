@@ -212,7 +212,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .gauge-labels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
 .gauge-labels b{color:var(--fg)}
 
-.battle{flex:1 1 auto;min-height:96px;display:grid;grid-template-columns:minmax(0,.85fr) minmax(104px,1.3fr) minmax(0,.85fr);gap:6px}
+.battle{flex:1 1 auto;min-height:96px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(92px,.7fr) minmax(0,1.15fr);gap:6px}
 /* 舞台：月夜。満月を背に、侍の影が向き合う */
 .stage{position:relative;border-radius:12px;padding:4px 6px 6px;background:linear-gradient(#0c111b 0%,#16202e 62%,#121924 100%);overflow:hidden;isolation:isolate}
 .stage>.slot,.stage>.center{position:relative;z-index:1}
@@ -285,7 +285,11 @@ img.sil{object-fit:contain;height:auto}
 .big.back.t-T{border-color:var(--trap);position:relative;overflow:hidden}
 .big.back.t-T img{position:absolute;inset:10% 8% 24%;width:84%;height:66%;object-fit:contain;filter:brightness(.25) drop-shadow(0 0 2px #9fd0a4) drop-shadow(0 0 10px rgba(110,190,120,.55))}
 .big.back.t-T span{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);white-space:nowrap}
-.big.dim{opacity:.55}
+.big.card:has(.ctext){aspect-ratio:auto;width:min(100cqw,190px);height:min(100cqh,280px);overflow:hidden}
+.big.card:has(.ctext) .ctext{flex:1;overflow:hidden}
+.big.dim{opacity:.93;box-shadow:0 0 0 2px var(--accent)}
+.big.card .ctext{font-size:11px;line-height:1.38;color:var(--ink)}
+.big.card:has(.ctext)>.sil{opacity:.35}
 .reveal{animation:flip .35s ease-out both}
 @keyframes flip{from{transform:rotateY(80deg);opacity:.2}to{transform:none;opacity:1}}
 
@@ -510,6 +514,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 
 /* 背の低い画面：手札を少し低くして一画面に収める */
 @media (max-height:720px){
+  .big.card .ctext{font-size:10px;line-height:1.32}
   .opp-hand{grid-template-columns:repeat(7,30px)}
   .opp-hand.open{grid-template-columns:repeat(7,minmax(0,36px))}
   .gauge .cell{height:13px}
@@ -643,7 +648,7 @@ const EFFECTS=[
   ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る（上限50）'],
   ['kakuran','撹乱','D',4,5,'相手の手札を1枚捨てさせる（相手は1枚引く）','開けたとき、相手は手札を1枚ランダムに捨てて、1枚引く'],
   ['fuuji','封じ手','D',8,10,'防ぎきったら、次のターン相手は攻撃できない','相手の攻撃を1も通さなかったら、次のターン相手は攻撃カードを出せない'],
-  ['mikiri','見切り','D',4,10,'罠を外す。無ければ手札の内訳を見る','開けたとき、相手が張っている罠を発動させずに捨てさせる。罠が無ければ、次の手番のあいだ相手の手札の内訳（攻撃・防御・罠の枚数）が見える'],
+  ['mikiri','見切り','D',4,10,'罠を外す。無ければ手札の内訳を見る','開けたとき、相手の罠を発動させずに捨てさせる。罠が無ければ、次の手番のあいだ相手の手札の内訳（攻・防・罠の枚数）が見える'],
   ['zanshin','残心','D',8,10,'防ぎきったら、次の攻撃+10','相手の攻撃を防ぎきったら、次のターン自分の攻撃の数字+10'],
   ['kamae','構え','D',13,15,'相手が攻撃しなければ、気力が戻る','相手が攻撃してこなかったら、払った気力が戻る'],
   ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を20得る','開けたとき、自分から5歩下がって気力を20得る（上限50）。不動や幻惑でも打ち消せない'],
@@ -1674,9 +1679,9 @@ const ART_IMG=new Set(["teisatsu","kaeshi","samurai","D","T"]);  // 斬撃の絵
 const artKey=d=>d.eff||d.type;
 const silHTML=d=>ART_IMG.has(artKey(d))?`<img class="sil" src="art/cards/${artKey(d)}.png" alt="" aria-hidden="true">`
   :`<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><use href="#${ARTS.has(d.eff)?'art-'+d.eff:'sil-'+d.type}"/></svg>`;
-function faceHTML(d,cost=d.cost){
+function faceHTML(d,cost=d.cost,full=false){
   return `${silHTML(d)}<span class="ccost" title="気力">${cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}`+
-    (d.eff?`<span class="ctype">${TY[d.type].name}</span><span class="cname">${d.name}</span><span class="ctext">${d.short}</span>`
+    (d.eff?`<span class="ctype">${TY[d.type].name}</span><span class="cname">${d.name}</span><span class="ctext">${full?d.text:d.short}</span>`
           :`<span class="plain">${TY[d.type].name}</span>`);
 }
 function cardHTML(i,o={}){
@@ -1685,7 +1690,7 @@ function cardHTML(i,o={}){
     ${faceHTML(d,costOf(i))}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:i.free?'<span class="tag ban">屍</span>':''}</button>`;
 }
 const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力+${burnVal(d,s)}</b>${note?`<small>${note}</small>`:''}</span></div>`;
-const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
+const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d,d.cost,true)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
 /* 画面の大きさに合わせて全体を拡大する（1〜1.6倍）。幅360px・縦700pxが等倍 */
 function fitZoom(){
   const w=innerWidth,h=innerHeight;
@@ -1932,7 +1937,8 @@ function gameHTML(){
   if(ph==='select'&&G.turn===1&&!G.pMull&&G.tut==null&&!G.pUsedNow&&!G.burnMode)info+=`<div class="notice mull"><span>最初の手札が気に入らなければ、1回だけ引き直せる（手札を山札に戻して混ぜ、${HAND_START}枚引く）</span><button class="btn tiny" data-act="mulligan">引き直す</button></div>`;
   if(ph==='select'&&G.burnMode)info+=`<div class="notice"><b>燃やす札をタップ</b>：札の「+」の数だけ気力が増える（次のターンから使える）。このターンは何も出さないので、攻撃されたらそのまま押される</div>`;
   else if(ph==='select'&&G.pBurn)info+=`<div class="notice">「${label(def(G.pBurn))}」を燃やして<b>気力+${burnVal(def(G.pBurn),P)}</b>。このターンは何も出さない。「燃やす」で確定</div>`;
-  if(!revealed&&G.detail&&G.detail!==G.pBurn){const d=def(G.detail);info+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d,P)}（次のターンから使える）</span></div>`}
+  if(!revealed&&G.detail&&G.detail===G.sel&&!G.burnMode){info+=`<p class="hintline">燃やすと気力+${burnVal(def(G.detail),P)}（次のターンから使える）</p>`}
+  else if(!revealed&&G.detail&&G.detail!==G.pBurn){const d=def(G.detail);info+=`<div class="detail"><b>${label(d)}　気力${d.cost}</b>${d.eff?d.text:'効果なし'}<br><span class="muted">燃やすと気力+${burnVal(d,P)}（次のターンから使える）</span></div>`}
   if(ph==='select'&&G.sel)info+='<p class="hintline">もう一度タップで伏せる</p>';
 
   const hand=P.hand.map(x=>{
