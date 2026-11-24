@@ -426,6 +426,10 @@ details.opp-info .dl{margin-top:8px}
 .tab.on small{color:#fff;opacity:.85}
 .group{scroll-margin-top:150px}
 .ougi-grid.kata-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.pile{display:flex;flex-direction:column;gap:6px}
+.pile-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.pile-h b{font-size:16px}
+.pile-h span{font-size:12px;color:var(--muted)}
 .kgroup{display:flex;align-items:center;gap:6px;margin:10px 0 2px;font-size:15px;color:var(--fg)}
 .kgroup .mon{width:24px;height:24px;color:var(--muted)}
 .kgroup small{font-size:12px;font-weight:400;color:var(--muted)}
@@ -986,7 +990,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
 let screen='menu';let G=null;let builderPreset=null;let builderTab='A',builderKata='all';
 
 function mill(s,n){let k=0;while(k<n&&s.deck.length){s.discard.push(s.deck.pop());k++}return k}
-function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
+function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<(s.handMax||HAND_MAX)){s.hand.push(s.deck.pop());k++}return k}
 function newSide(counts,kata,ougi){
   const d=[];for(const [id,c] of Object.entries(counts))for(let k=0;k<c;k++){const x=mk(id);if(isOff(id,kata))x.off=true;d.push(x)}
   const s={deck:shuffle(d),hand:[],discard:[],kata,ougi,ougiUsed:false,ougiNow:false,energy:ENERGY_START-ENERGY_GAIN,burnGain:0,traps:[],
@@ -1089,11 +1093,11 @@ const TIERS=[
 const tierOf=i=>TIERS[Math.min(i,TIERS.length-1)];
 function tierHints(t){
   const h=[];
-  if(t.know)h.push('あなたの手札の内訳（攻撃・防御が何枚か）を見抜いてくる');
+  if(t.know&&!settings.openHand)h.push('あなたの手札の内訳（攻撃・防御が何枚か）を見抜いてくる');
   if(t.read)h.push('あなたの最近の出し方のクセを強く読んでくる');
   if(t.hand)h.push('手札が1枚多い');
   if(t.ougi>1)h.push(`奥義を${t.ougi}回使う`);
-  if(t.cBonus)h.push(`気力が${t.cBonus}多く始まる`);
+  const cb=(t.cBonus||0)+(t.know&&settings.openHand?5:0);if(cb)h.push(`気力が${cb}多く始まる`);
   return h;
 }
 function storyFight(){
@@ -1221,10 +1225,11 @@ function startGame(kata,ougi,opts={}){
     gauge:0,prevGauge:0,revealAt:0,finaleUntil:0,st:{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0},combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   if(opts.cBonus)G.c.energy+=opts.cBonus;
+  if(opts.know&&settings.openHand)G.c.energy+=5;
   G.open=!!settings.openHand;G.knownTrap=new Set();G.knownDeck=new Set();applyOpenTexts(G.open);
   // 相手の引き直し：攻撃の札が1枚も無ければ引き直す
   if(!G.c.hand.some(x=>def(x).type==='A')){G.c.deck.push(...G.c.hand);G.c.hand=[];shuffle(G.c.deck);drawN(G.c,HAND_START);G.cMull=true}
-  G.cKnow=opts.know||0;G.cRead=opts.read||.8;if(opts.hand)drawN(G.c,opts.hand);G.c.ougiLeft=opts.ougi||1;
+  G.cKnow=opts.know||0;G.cRead=opts.read||.8;if(opts.hand){G.c.handMax=HAND_MAX+opts.hand;drawN(G.c,opts.hand)}G.c.ougiLeft=opts.ougi||1;
   screen='game';startTurn();
 }
 function startTurn(){
@@ -1596,7 +1601,7 @@ function resolve(){
   if(yw&&yw.who==='p'&&G.combo%COMBO_EVERY===0){P.energy=clampE(P.energy+COMBO_GAIN);G.comboGain='p';msgs.push(`${G.combo}連：あなたは気力を${COMBO_GAIN}得た`)}
   if(yw&&yw.who==='c'&&G.cCombo%COMBO_EVERY===0){C.energy=clampE(C.energy+COMBO_GAIN);G.comboGain='c';msgs.push(`相手の${G.cCombo}連：相手は気力を${COMBO_GAIN}得た`)}
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
-  {const np=P.hand.length<HAND_MAX&&!P.deck.length,nc=C.hand.length<HAND_MAX&&!C.deck.length;drawN(P,HAND_MAX);drawN(C,HAND_MAX);
+  {const np=P.hand.length<HAND_MAX&&!P.deck.length,nc=C.hand.length<(C.handMax||HAND_MAX)&&!C.deck.length;drawN(P,HAND_MAX);drawN(C,C.handMax||HAND_MAX);
    if(np){G.gauge-=DECKOUT;msgs.push(`山札切れ：あなたは引けずに${DECKOUT}歩押された`)}
    if(nc){G.gauge+=DECKOUT;msgs.push(`山札切れ：相手は引けずに${DECKOUT}歩押された`)}
    G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge))}
@@ -1939,7 +1944,7 @@ function sideChips(s,isP){
     c.push(isP?`<button class="chip trap${w}" data-act="mytrap" data-uid="${t.inst.uid}" title="${tt}" aria-label="罠：${def(t.inst).name}（${tt}）">罠:${def(t.inst).name}</button>`:`<span class="chip trap${w}" title="${tt}" aria-label="罠（${tt}）">${trapSeen(t)?'罠:'+label(def(t.inst)):'罠あり'}</span>`);
   }
   if(s.haisui)c.push('<span class="chip haisui">背水</span>');
-  c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}" aria-label="山${s.deck.length}枚・捨て札${s.discard.length}枚">山${s.deck.length}</button>`);
+  c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}" aria-label="山札${s.deck.length}枚・墓地${s.discard.length}枚">山${s.deck.length}・墓${s.discard.length}</button>`);
   return `<div class="chips">${c.join('')}</div>`;
 }
 const energyHTML=s=>{
@@ -2134,8 +2139,15 @@ function modalHTML(){
     body=`<h3>記録</h3>${G.log.length?`<ol class="loglist" reversed>${[...G.log].reverse().map(l=>`<li>${l}</li>`).join('')}</ol>`:'<p class="muted small">まだありません</p>'}`;
   }else{
     const s=G.modal==='p'?G.p:G.c;
-    body=`<h3>${G.modal==='p'?'あなた':'相手'}の捨て札（${s.discard.length}枚）・山札 ${s.deck.length}枚</h3>
-    ${s.discard.length?`<div class="mini-list">${s.discard.map(x=>cardHTML(x,{act:'noop'})).join('')}</div>`:'<p class="muted small">まだありません</p>'}`;
+    const who=G.modal==='p'?'あなた':'相手';
+    // 山札は順番を隠して、残っている札の名前と枚数だけ
+    const cnt={};for(const x of s.deck){const n=label(def(x));cnt[n]=(cnt[n]||0)+1}
+    const deckList=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([n,c])=>`<span class="chip">${n}${c>1?`×${c}`:''}</span>`).join('');
+    body=`<h3>${who}の山札と墓地</h3>
+    <div class="pile"><div class="pile-h"><b>山札</b><span>残り${s.deck.length}枚（これから引く札。順番は分からない）</span></div>
+      ${s.deck.length?`<div class="chips">${deckList}</div>`:'<p class="muted small">もう無い（引けないターンは5歩押される）</p>'}</div>
+    <div class="pile"><div class="pile-h"><b>墓地（捨て札）</b><span>${s.discard.length}枚（出した札・燃やした札）</span></div>
+      ${s.discard.length?`<div class="mini-list">${[...s.discard].reverse().map(x=>cardHTML(x,{act:'noop'})).join('')}</div>`:'<p class="muted small">まだありません</p>'}</div>`;
   }
   return `<div class="modal-bg" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true">${body}
     <button class="btn ghost" data-act="close-modal">閉じる</button></div></div>`;
