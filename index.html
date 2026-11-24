@@ -426,6 +426,8 @@ details.opp-info .dl{margin-top:8px}
 .tab.on small{color:#fff;opacity:.85}
 .group{scroll-margin-top:150px}
 .ougi-grid.kata-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.modal-top{position:sticky;top:-18px;z-index:2;margin:-18px -18px 0;padding:10px 18px;background:var(--table-2);border-bottom:1px solid var(--line);display:flex;justify-content:flex-end}
+.modal-top .btn{min-height:38px;padding:6px 18px}
 .pile{display:flex;flex-direction:column;gap:6px}
 .pile-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .pile-h b{font-size:16px}
@@ -2149,8 +2151,8 @@ function modalHTML(){
     <div class="pile"><div class="pile-h"><b>墓地（捨て札）</b><span>${s.discard.length}枚（出した札・燃やした札）</span></div>
       ${s.discard.length?`<div class="mini-list">${[...s.discard].reverse().map(x=>cardHTML(x,{act:'noop'})).join('')}</div>`:'<p class="muted small">まだありません</p>'}</div>`;
   }
-  return `<div class="modal-bg" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true">${body}
-    <button class="btn ghost" data-act="close-modal">閉じる</button></div></div>`;
+  return `<div class="modal-bg" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-top"><button class="btn ghost" data-act="close-modal">閉じる</button></div>${body}</div></div>`;
 }
 
 /* ---------- 操作 ---------- */
