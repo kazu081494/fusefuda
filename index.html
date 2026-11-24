@@ -666,7 +666,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 const HAISUI_NEAR=10,HAISUI_BACK=10;
 /* 連：続けて読み勝つと連が伸び、COMBO_EVERY 連ごとに気力 +COMBO_GAIN */
 const COMBO_EVERY=3,COMBO_GAIN=5;
-const GOAL=40,ENERGY_START=20,ENERGY_GAIN=0,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=4,HAND_MAX=4,TURN_LIMIT=60,TRAP_MAX=1,DECKOUT=5;
+const GOAL=40,ENERGY_START=20,ENERGY_GAIN=0,BURN_MAX=25,ENERGY_MAX=Infinity,DECK_SIZE=30,COPY_MAX=3,HAND_START=4,HAND_MAX=4,TURN_LIMIT=60,TRAP_MAX=1,DECKOUT=5;
 /* 結果のあと次のターンへ進む速さ */
 const SPEEDS={fast:.6,normal:1,slow:1.6};
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
@@ -686,26 +686,26 @@ const EFFECTS=[
   ['kuzushi','崩し','A',13,15,'相手の防御の数字を半分にする','相手が防御していたら、防御の数字を半分（切り捨て）にしてから比べる'],
   ['hikeshi','火消し','A',8,10,'相手が燃やしていたら、気力を消して+10','相手が燃やしていたら、増えるはずの気力を消して、さらに10歩押し込む'],
   ['youdou','陽動','A',4,5,'防がれても跳ね返されない。次の攻撃+10','防がれても跳ね返されない。防がれたら、次のターン自分の攻撃の数字+10'],
-  ['senkou','線香花火','A',4,0,'燃やすと気力+15、相手を5押す','燃やすと気力が15増え、さらに相手を5歩押し込む。出せばふつうの攻撃4'],
+  ['senkou','線香花火','A',4,0,'燃やすと気力+5、相手を5押す','燃やすと気力が5増え、さらに相手を5歩押し込む（相手が防御していたら止められる）。出せばふつうの攻撃4'],
   ['mizuzeme','水攻め','A',8,10,'押せたら、相手の山札を3枚捨てさせる','押せたら、相手の山札を上から3枚捨てさせる。山札が尽きると、引けない1枚ごとに5歩押される'],
   ['yakiuchi','焼き討ち','A',13,15,'押せたら、相手の手札を1枚燃やす','押せたら、相手の手札を1枚ランダムに捨てさせる（相手は引き直せない）'],
   ['kanashibari','金縛り','A',8,10,'押せたら、次のターン相手は防御できない','押せたら、次のターン相手は防御の札を出せない'],
-  ['hiya','火矢','A',8,10,'燃やすと気力-10、相手を15押す','燃やすと、気力は増えずに10減るが、相手を15歩押し込む（防御や罠では止められない）。出せばふつうの攻撃8'],
-  ['houroku','焙烙玉','A',13,15,'燃やすと気力-20、相手を25押す','燃やすと、気力は増えずに20減るが、相手を25歩押し込む（防御や罠では止められない）。出せばふつうの攻撃13'],
+  ['hiya','火矢','A',8,10,'燃やすと気力-10、相手を10押す','燃やすと、気力は増えずに10減るが、相手を10歩押し込む（相手が防御していたら止められる）。出せばふつうの攻撃8'],
+  ['houroku','焙烙玉','A',13,15,'燃やすと気力-15、相手を20押す','燃やすと、気力は増えずに15減るが、相手を20歩押し込む（相手が防御していたら止められる）。出せばふつうの攻撃13'],
   ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
   ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
-  ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る（上限50）'],
+  ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る'],
   ['kakuran','撹乱','D',4,5,'相手の手札を1枚捨てさせる（相手は1枚引く）','開けたとき、相手は手札を1枚ランダムに捨てて、1枚引く'],
   ['fuuji','封じ手','D',8,10,'防ぎきったら、次のターン相手は攻撃できない','相手の攻撃を1も通さなかったら、次のターン相手は攻撃カードを出せない'],
   ['mikiri','見切り','D',4,10,'罠を外す。無ければ手札の内訳を見る','開けたとき、相手の罠を発動させずに捨てさせる。罠が無ければ、次の手番のあいだ相手の手札の内訳（攻・防・罠の枚数）が見える'],
   ['zanshin','残心','D',8,10,'防ぎきったら、次の攻撃+10','相手の攻撃を防ぎきったら、次のターン自分の攻撃の数字+10'],
   ['kamae','構え','D',13,15,'相手が攻撃しなければ、気力が戻る','相手が攻撃してこなかったら、払った気力が戻る'],
-  ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を20得る','開けたとき、自分から5歩下がって気力を20得る（上限50）。不動や幻惑でも打ち消せない'],
+  ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を20得る','開けたとき、自分から5歩下がって気力を20得る。不動や幻惑でも打ち消せない'],
   ['tessen','鉄扇','D',18,15,'効果なし（数字のわりに安い）','効果は無いが、防御18を気力15で出せる'],
   ['katanagari','刀狩り','D',8,10,'相手の手札の一番大きい攻撃を捨てさせる','開けたとき、相手の手札で一番数字の大きい攻撃の札を捨てさせる'],
   ['sekisho','関所','D',8,10,'次のターン、相手は気力20以上の札を出せない','開けたとき、次のターン相手は気力20以上の札を出せない'],
-  ['noroshi','狼煙','D',4,5,'燃やすと気力+10、次の攻撃+10','燃やすと気力が10増え、次のターン自分の攻撃の数字が10増える。出せばふつうの防御4'],
-  ['hiuchi','火打石','D',4,0,'燃やすと気力+15','燃やすと気力が15増える。出せばふつうの防御4'],
+  ['noroshi','狼煙','D',4,5,'燃やすと気力+5、次の攻撃+10','燃やすと気力が5増え、次のターン自分の攻撃の数字が10増える。出せばふつうの防御4'],
+  ['hiuchi','火打石','D',4,0,'燃やすと気力+10','気力0の札なのに、燃やすと気力が10増える。出せばふつうの防御4'],
   ['okuribi','送り火','D',8,10,'燃やすと、相手の気力を5減らす','燃やすと気力が10増え、さらに相手の気力を5減らす。出せばふつうの防御8'],
   ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','相手が攻撃してきたら、押される量を15減らして捨てる'],
   ['kaeshi','返し罠','T',null,15,'相手が18以上で攻撃したら、跳ね返す','相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
@@ -755,7 +755,7 @@ const KATA={
 const OUGI={
   gougeki:{name:'剛撃',text:'このターンの攻撃は、防御を無視して押し込む（跳ね返されない）'},
   uke:{name:'柳の受け',text:'このターン、防御は攻撃の大きさに関係なく防ぎきって、攻撃を跳ね返す'},
-  gouka:{name:'業火',text:'このターン燃やすと、増える気力のぶんだけ相手も押し込む'},
+  gouka:{name:'業火',text:'このターン燃やすと、増える気力の半分（最大20）だけ相手も押し込む'},
   kagenui:{name:'影縫い',text:'開けたとき、相手の罠を1枚奪って自分の場に張る（次のターンから効く）'},
   sakiyomi:{name:'先読み',text:'相手が攻撃してくるかどうかを見てから、自分の札を選べる'},
   fudou:{name:'不動',text:'このターン、押し込まれない'},
@@ -828,7 +828,9 @@ const sgn=v=>(v>=0?'+':'')+v;
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
 const burnBlock=(s,i)=>{const v=burnVal(def(i),s);return v<0&&s.energy<-v?'気力不足':''};
 /* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
-const burnVal=(d,s)=>(d.eff==='hiya'?-10:d.eff==='houroku'?-20:d.eff==='senkou'?15:d.eff==='hiuchi'?15:d.eff==='noroshi'?10:d.num==null?5:Math.min(BURN_MAX,Math.ceil(d.num/5)*5))+(s&&s.kata==='homura'?5:0);
+const BURN_PUSH={senkou:5,hiya:10,houroku:20};
+const BURN_SPECIAL={hiya:-10,houroku:-15,senkou:5,hiuchi:10};
+const burnVal=(d,s)=>{const v=d.eff in BURN_SPECIAL?BURN_SPECIAL[d.eff]:d.cost;return v+(v>=0&&s&&s.kata==='homura'?5:0)};
 /* 罠を置ける数：影の型なら2 */
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
@@ -900,9 +902,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   if(kp==='A'&&pd.eff==='hikeshi'&&cb){toC+=10;fx.douseC=true;notes.push('火消し：相手の燃やした気力を消して、さらに10押す')}
   if(kc==='A'&&cd.eff==='hikeshi'&&pb){toP+=10;fx.douseP=true;notes.push('相手の火消し：燃やした気力を消され、さらに10押された')}
   // 線香花火：燃やすと相手を5歩押し込む
-  if(pb&&pb.eff==='senkou'){toC+=5;notes.push('線香花火：燃やした火花で5押す')}
-  if(cb&&cb.eff==='senkou'){toP+=5;notes.push('相手の線香花火：火花で5押された')}
-  for(const [b,isP] of [[pb,true],[cb,false]]){if(!b)continue;const v=b.eff==='hiya'?15:b.eff==='houroku'?25:0;if(v){if(isP)toC+=v;else toP+=v;notes.push(`${isP?'':'相手の'}${b.name}：${v}押す`)}}
+  // 燃やした炎で押す札（線香花火・火矢・焙烙玉）。相手が防御していたら止められる
+  for(const [b,isP,ok] of [[pb,true,kc],[cb,false,kp]]){if(!b)continue;const v=BURN_PUSH[b.eff]||0;if(!v)continue;if(ok==='D'){notes.push(`${isP?'':'相手の'}${b.name}：防御に止められた`);continue}if(isP)toC+=v;else toP+=v;notes.push(`${isP?'':'相手の'}${b.name}：${v}押す`)}
   // 構え：相手が攻撃してこなかったら、気力が戻る
   if(kp==='D'&&pd.eff==='kamae'&&kc!=='A'){fx.refundP=true;notes.push('構え：相手が攻撃してこなかったので、気力が戻る')}
   if(kc==='D'&&cd.eff==='kamae'&&kp!=='A'){fx.refundC=true;notes.push('相手の構え：あなたが攻撃しなかったので、相手の気力が戻る')}
@@ -930,8 +931,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   };
   trap(P,cd,kc,nc,true,cb);trap(C,pd,kp,np,false,pb);
   // 業火：燃やした札の気力ぶん押す（攻撃ではないので、防御や罠には関係しない）
-  if(pb&&using(P,'gouka')&&burnVal(pb,P)>0){const v=burnVal(pb,P);toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
-  if(cb&&using(C,'gouka')&&burnVal(cb,C)>0){const v=burnVal(cb,C);toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
+  if(pb&&using(P,'gouka')&&burnVal(pb,P)>0){const v=Math.min(20,Math.ceil(burnVal(pb,P)/2));toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
+  if(cb&&using(C,'gouka')&&burnVal(cb,C)>0){const v=Math.min(20,Math.ceil(burnVal(cb,C)/2));toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
   // 一閃：押し込めたら+15歩。不動：押し込まれない（いちばん最後に効く）
   if(toC>0&&using(P,'issen')){const g=P.kata==='gou'&&toC>=5?5:0;toC+=15-g;fx.ougiP='issen';notes.push(g?'一閃：剛の5と合わせて15歩押し込む':'一閃：さらに15歩押し込む')}
   if(toP>0&&using(C,'issen')){const g=C.kata==='gou'&&toP>=5?5:0;toP+=15-g;fx.ougiC='issen';notes.push(g?'相手の一閃：剛の5と合わせて15歩押し込まれた':'相手の一閃：さらに15歩押し込まれた')}
@@ -1002,7 +1003,7 @@ const TUT=[
   {say:'相手の気力は35。大きな攻撃が来そうだ。「防御18」で受けよう。防御の数字が攻撃以上なら防ぎきって、<b>相手の攻撃の数字をそのまま跳ね返す</b>（攻撃13なら13歩）。',
    p:['D18','A8','A4'],pe:25,c:['A13','D4'],ce:35,cpu:{play:'A13'},allow:['D18'],
    after:'防御18が攻撃13を防ぎきって、攻撃の数字13をそのまま跳ね返した。防御の数字（18）ではなく、<b>相手の攻撃の数字ぶん</b>押し返す。大きな攻撃を読んで防ぐほど、大きく跳ね返せる。「見切った！」は読み勝ちの合図。'},
-  {say:'相手は守りを固めていそうだ。今攻撃すると跳ね返される。札を出す代わりに<b>燃やして</b>、気力を溜めよう。燃やすと、そのターンは何もしない代わりに、札の数字に応じて気力が増える。下の「燃やす」→「攻撃24」→ もう一度「燃やす」。',
+  {say:'相手は守りを固めていそうだ。今攻撃すると跳ね返される。札を出す代わりに<b>燃やして</b>、気力を溜めよう。燃やすと、そのターンは何もしない代わりに、その札の気力（左上の数）と同じだけ気力が増える。下の「燃やす」→「攻撃24」→ もう一度「燃やす」。',
    p:['A24','A8','D8'],c:['D24','A4'],ce:30,cpu:{play:'D24'},allow:[],burn:['A24'],
    after:'こちらは攻撃しなかったので、相手の防御は空振り（相手は気力を払い損）。こちらは押されずに、気力が25増えた（次のターンから使える）。ただし<b>燃やしたターンに攻撃されると、守りが無いのでそのまま押し込まれる</b>。相手が攻めてこないと読めたときに、気力を溜める手。'},
   {say:'<b>罠</b>は伏せて場に残り、張った次のターンから効く。「落とし穴」を2回タップして張ろう。',
@@ -1835,8 +1836,8 @@ function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
   <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.7）</h2><ol>
     <li>2人が同時に、手札から1枚を伏せるか、1枚を燃やして、一斉に開ける。見送ることはできない（出せる札も燃やせる札も無いときだけ、何もせずに終わる）。</li>
-    <li><b>気力</b>：はじめは20。毎ターン自然には増えず、<b>札を燃やしたときだけ増える</b>（上限50）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
-    <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字を5の倍数に切り上げたぶん（最大25、罠は5）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
+    <li><b>気力</b>：はじめは20。毎ターン自然には増えず、<b>札を燃やしたときだけ増える</b>（上限は無い）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
+    <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、その札の気力（左上の数）と同じだけ気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
     <li>2人は<b>橋</b>の上で向き合っている。<b>攻撃</b>は右上の数字の歩数だけ、相手を押し込む。</li>
     <li>攻撃と<b>防御</b>がぶつかったら：攻撃のほうが大きければ、<b>差だけ押す</b>（攻撃24対防御13なら11歩押し込む）。防御が攻撃以上なら防ぎきって、<b>攻撃をそのまま跳ね返す</b>（攻撃13対防御24なら、13跳ね返す）。防御の数字は「ここまでなら受け止められる」壁の高さ。</li>
     <li>読み合いの目安：攻撃は守っていない相手（燃やす・罠を張る）に強く、防御は攻撃に強い。燃やす・見送るは、相手が攻めてこないと読めたときに、気力や札を溜める手（攻撃されるとそのまま押し込まれる）。相手の防御を空振りさせれば、相手は気力を払い損。気力の量は見えているので、そこから相手の手を読む。</li>
@@ -1908,7 +1909,7 @@ function sideChips(s,isP){
 }
 const energyHTML=s=>{
   const gain=G.phase==='result'?(s===G.p?G.pGain:G.cGain):0;
-  return `<span class="energy" aria-label="気力${s.energy}">気力<b>${s.energy}</b>${gain?`<span class="gain">燃やして${sgn(gain)}</span>`:''}/${ENERGY_MAX}</span>`;
+  return `<span class="energy" aria-label="気力${s.energy}">気力<b>${s.energy}</b>${gain?`<span class="gain">燃やして${sgn(gain)}</span>`:''}</span>`;
 };
 /* 燃やしたときは、結果の説明を「燃やした」が分かる言い方にする */
 function whyText(){
@@ -1986,7 +1987,7 @@ function gameHTML(){
     if(lines.length)info+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;}
   }
   if(ph!=='result'||G.tut!=null)info+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}${n.coach?' coach':''}">${n.t}</div>`).join('');
-  if(ph==='select'&&using(P,'gouka'))info+=`<div class="notice">業火：このターン燃やすと、増える気力のぶん相手も押す</div>`;
+  if(ph==='select'&&using(P,'gouka'))info+=`<div class="notice">業火：このターン燃やすと、増える気力の半分（最大20）だけ相手も押す</div>`;
   if(G.oppInfo){const kt=KATA[C.kata];info+=`<div class="detail"><b>${G.char?G.char.name:'相手'}　性格：${STYLES[G.style].name}</b>${STYLES[G.style].desc}<br><b>${kt.name}の型</b>${kt.text}<br><b>奥義</b>${C.ougiUsed?`使用済み（${OUGI[C.ougi].name}）`:'秘密（1回だけ使える）'}<br><span class="muted">山${C.deck.length}・捨${C.discard.length}</span></div>`}
   if(ph==='select'&&G.schoolInfo){info+=`<div class="detail"><b>${KATA[P.kata].name}の型</b>${KATA[P.kata].text}<br><b>奥義「${OUGI[P.ougi].name}」</b>${OUGI[P.ougi].text}</div>`}
   if(ph==='select'&&G.turn===1&&!G.pMull&&G.tut==null&&!G.pUsedNow&&!G.burnMode)info+=`<div class="notice mull"><span>最初の手札が気に入らなければ、1回だけ引き直せる（手札を山札に戻して混ぜ、${HAND_START}枚引く）</span><button class="btn tiny" data-act="mulligan">引き直す</button></div>`;
@@ -2004,7 +2005,7 @@ function gameHTML(){
       <small>燃やすと気力+${burnVal(d,mine?P:C)}${mine&&G.sel===G.detail?'・もう一度タップで伏せる':mine?'':'（相手の札）'}・場をタップで閉じる</small></div></div>`}
   const hand=P.hand.map(x=>{
     if(ph==='select'&&x===G.pBurn)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
-    if(ph==='select'&&G.burnMode)return tutStep()&&!(tutStep().burn||[]).includes(x.id)?cardHTML(x,{act:'hand',off:true,tag:'いまは使わない',tagBan:true}):(()=>{const v=burnVal(def(x),P),bb=burnBlock(P,x),push=def(x).eff==='hiya'?15:def(x).eff==='houroku'?25:def(x).eff==='senkou'?5:0;return cardHTML(x,{act:'hand',off:!!bb,badge:`<span class="bbadge${v<0?' neg':''}"><small>気力</small>${v>0?'+':''}${v}${push?`<small>${push}押す</small>`:''}</span>`,tag:bb||'',tagBan:!!bb})})();
+    if(ph==='select'&&G.burnMode)return tutStep()&&!(tutStep().burn||[]).includes(x.id)?cardHTML(x,{act:'hand',off:true,tag:'いまは使わない',tagBan:true}):(()=>{const v=burnVal(def(x),P),bb=burnBlock(P,x),push=BURN_PUSH[def(x).eff]||0;return cardHTML(x,{act:'hand',off:!!bb,badge:`<span class="bbadge${v<0?' neg':''}"><small>気力</small>${v>0?'+':''}${v}${push?`<small>${push}押す</small>`:''}</span>`,tag:bb||'',tagBan:!!bb})})();
     const why=ph==='select'?blockReason(P,x):'';
     return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why,tagBan:!!why});
   }).join('');
