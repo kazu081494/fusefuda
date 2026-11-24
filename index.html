@@ -286,14 +286,15 @@ img.sil{object-fit:contain;height:auto}
 .big.back.t-T img{position:absolute;inset:10% 8% 24%;width:84%;height:66%;object-fit:contain;filter:brightness(.25) drop-shadow(0 0 2px #9fd0a4) drop-shadow(0 0 10px rgba(110,190,120,.55))}
 .big.back.t-T span{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);white-space:nowrap}
 .me-side{position:relative}
-.zoom{position:absolute;left:0;right:0;bottom:calc(100% + 6px);z-index:8;display:flex;justify-content:center;pointer-events:none;animation:zin .15s ease-out}
+/* 拡大した札：画面の右上に重ねて出す */
+.zoom{position:fixed;top:calc(env(safe-area-inset-top,0px) + 50px);right:max(8px,env(safe-area-inset-right,0px));width:min(66vw,300px);z-index:8;pointer-events:none;animation:zin .15s ease-out}
 @keyframes zin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.zcard{width:min(100%,330px);background:radial-gradient(120% 85% at 50% 38%,var(--lamp-1),var(--lamp-2) 60%,var(--lamp-3));color:var(--ink);border-radius:12px;border-top:6px solid var(--tc);padding:10px 14px 10px;box-shadow:0 10px 28px rgba(0,0,0,.6),0 0 0 2px var(--accent);display:flex;flex-direction:column;gap:6px}
+.zcard{width:100%;background:radial-gradient(120% 85% at 50% 38%,var(--lamp-1),var(--lamp-2) 60%,var(--lamp-3));color:var(--ink);border-radius:12px;border-top:6px solid var(--tc);padding:10px 14px 10px;box-shadow:0 10px 28px rgba(0,0,0,.6),0 0 0 2px var(--accent);display:flex;flex-direction:column;gap:6px}
 .zhead{display:flex;align-items:center;gap:8px}
 .zhead .ccost{position:static;flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
 .zhead b{font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1.2}
 .ztype{font-size:12px;font-weight:700;color:var(--tc);white-space:nowrap}
-.zcard p{margin:0;font-size:15px;line-height:1.6}
+.zcard p{margin:0;font-size:14px;line-height:1.55}
 .zcard small{font-size:12px;color:var(--ink-muted)}
 .zk{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-muted)}
 .zk .mon{width:18px;height:18px;color:var(--ink-muted)}
@@ -1996,12 +1997,12 @@ function gameHTML(){
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
     </section>
     <section class="info" aria-live="polite">${info}</section>
-    <section class="side me-side" aria-label="あなた">${zoom}
+    <section class="side me-side" aria-label="あなた">
       <div class="side-head"><div class="who-line">${energyHTML(P)}</div>${sideChips(P,true)}</div>
       <div class="hand${P.hand.length>=6?' many':''}${P.hand.length>=7?' lots':''}" style="--n:${Math.max(5,P.hand.length)}">${hand}</div>
       <div class="actions">${actions}</div>
     </section>
-    ${G.over&&!finale?overHTML():''}${G.modal?modalHTML():''}`;
+    ${zoom}${G.over&&!finale?overHTML():''}${G.modal?modalHTML():''}`;
 }
 function overHTML(){
   if(G.tut!=null)return `<div class="modal-bg"><div class="modal result-modal" role="dialog" aria-modal="true" aria-labelledby="ovt">
