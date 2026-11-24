@@ -785,7 +785,7 @@ const KATA={
   gou:{name:'剛',text:'攻撃で押し込めたら、さらに5歩押し込む'},
   yanagi:{name:'柳',text:'防ぎきって跳ね返すとき、さらに5歩押し込む'},
   homura:{name:'炎',text:'燃やすと、気力が5多く増える'},
-  kage:{name:'影',text:'罠を2枚まで張れる。罠を張り替えると気力+5'},
+  kage:{name:'影',text:'罠を2枚まで張れる。自分の罠が墓地に行くたびに気力+5'},
   me:{name:'眼',text:'相手の手札の内訳（攻撃・防御・罠が何枚ずつか）が見える'},
 };
 /* 奥義：1試合に1回、伏せる前に使う大技。型とは別に選び、相手には秘密（使ったことだけ知らされる） */
@@ -877,7 +877,8 @@ const burnVal=(d,s)=>{const v=d.eff in BURN_SPECIAL?BURN_SPECIAL[d.eff]:(d.baseC
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
 /* 何ターンか続く奥義（使ったターンを含む） */
-const KAGE_SWAP=5;  // 影の型：罠を張り替えると気力+5
+const KAGE_SWAP=5;  // 影の型：罠が墓地に行くたびに気力+5（発動・張り替え・外された、どれでも）
+function graveTrap(s,inst,msgs){s.discard.push(inst);if(s.kata==='kage'){s.energy=clampE(s.energy+KAGE_SWAP);if(msgs)msgs.push(`影の型：${s===G.p?'あなた':'相手'}の罠が墓地へ行き、気力+${KAGE_SWAP}`)}}
 const OUGI_TURNS={genwaku:3,fudou:3},OUGI_FROM=3;  // 奥義は3手目から使える
 const using=(s,k)=>s.ougi===k&&(s.ougiNow||(OUGI_TURNS[k]&&s.genwakuUntil>=G.turn));
 const ougiReady=()=>G.tut!=null||G.turn>=OUGI_FROM;
@@ -1357,7 +1358,7 @@ function commit(pi,bi=null){
     const t=op.traps.shift();
     if(!t)G.openMsgs.push(`${who}の影縫い：奪う罠がなかった`);
     else if(me.traps.length<trapMax(me)){me.traps.push({inst:t.inst,active:false});G.kagenuiHit=me===P?'p':'c';G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を奪った`)}
-    else{op.discard.push(t.inst);G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を外した（置き場が無い）`)}
+    else{graveTrap(op,t.inst,G.openMsgs);G.openMsgs.push(`${who}の影縫い：罠「${def(t.inst).name}」を外した（置き場が無い）`)}
   }
   G.pPlay=pi;if(pi){removeFrom(P.hand,pi);P.energy-=costOf(pi)}
   const kh=G.kagenuiHit;G.kagenuiHit=null;
@@ -1388,7 +1389,7 @@ function openEff(who,inst,msgs){
     case 'meisou':me.energy=clampE(me.energy+15);msgs.push(`瞑想：${mn}は気力を15得た`);break;
     case 'hikiashi':me.energy=clampE(me.energy+20);msgs.push(`退き足：${mn}は気力を20得た`);break;
     case 'yokoku':me.yokokuNext=true;msgs.push(`予告：次のターン、${mn}の攻撃の数字+10`);break;
-    case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;op.discard.push(t);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else if(isOpen()){const as=me.deck.filter(x=>def(x).type==='A');if(as.length){const best=as.reduce((a,b)=>def(b).num>def(a).num?b:a);removeFrom(me.deck,best);if(me.hand.length<HAND_MAX){me.hand.push(best);msgs.push(`見切り：罠は無い。${mn}は山札から「${label(def(best))}」を手札に加えた`)}else{me.deck.push(best);msgs.push('見切り：罠は無い。手札がいっぱいで探せなかった')}}else msgs.push('見切り：罠も、山札の攻撃の札も無い')}
+    case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;graveTrap(op,t,msgs);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else if(isOpen()){const as=me.deck.filter(x=>def(x).type==='A');if(as.length){const best=as.reduce((a,b)=>def(b).num>def(a).num?b:a);removeFrom(me.deck,best);if(me.hand.length<HAND_MAX){me.hand.push(best);msgs.push(`見切り：罠は無い。${mn}は山札から「${label(def(best))}」を手札に加えた`)}else{me.deck.push(best);msgs.push('見切り：罠は無い。手札がいっぱいで探せなかった')}}else msgs.push('見切り：罠も、山札の攻撃の札も無い')}
     else{me.mixUntil=G.turn+1;const n=t=>op.hand.filter(i=>def(i).type===t).length;msgs.push(who==='p'?`見切り：罠は無い。相手の手札は 攻${n('A')}・防${n('D')}・罠${n('T')}（次の手番も見える）`:'見切り：罠が無いので、相手に手札の内訳を見られた')}break;
   }
 }
@@ -1580,7 +1581,7 @@ function resolve(){
   const pd=G.pPlay?def(G.pPlay):null,cd=G.cPlay?def(G.cPlay):null;
   P.history.push(kind(pd));C.history.push(kind(cd));
   // 発動した罠を捨てる
-  for(const [s,fired] of [[P,r.fx.firedP],[C,r.fx.firedC]])for(const f of fired){const t=s.traps.find(t=>t.inst.uid===f.uid);if(t){removeFrom(s.traps,t);s.discard.push(t.inst)}}
+  for(const [s,fired] of [[P,r.fx.firedP],[C,r.fx.firedC]])for(const f of fired){const t=s.traps.find(t=>t.inst.uid===f.uid);if(t){removeFrom(s.traps,t);graveTrap(s,t.inst,msgs)}}
   if(r.fx.stealFromP){const k=Math.min(P.energy,r.fx.stealFromP);P.energy-=k;C.energy=clampE(C.energy+k)}
   if(r.fx.stealFromC){const k=Math.min(C.energy,r.fx.stealFromC);C.energy-=k;P.energy=clampE(P.energy+k)}
   // 火消し・鳴子：燃やした気力を消す／もらう
@@ -1617,9 +1618,9 @@ function resolve(){
     if(!inst)continue;
     const firedNow=(s===P?r.fx.firedP:r.fx.firedC).some(f=>f.uid==='now');
     if(def(inst).type==='T'&&!firedNow){
-      if(s.traps.length>=trapMax(s)){const old=s.traps.shift();s.discard.push(old.inst);const w=s===P?'あなた':'相手';msgs.push(`${w}は罠を張り替えた（「${def(old.inst).name}」は墓地へ）`);
-        if(s.kata==='kage'){s.energy=clampE(s.energy+KAGE_SWAP);msgs.push(`影の型：張り替えで気力+${KAGE_SWAP}`)}}
+      if(s.traps.length>=trapMax(s)){const old=s.traps.shift();const w=s===P?'あなた':'相手';msgs.push(`${w}は罠を張り替えた（「${def(old.inst).name}」は墓地へ）`);graveTrap(s,old.inst,msgs)}
       s.traps.push({inst,active:true})}
+    else if(def(inst).type==='T')graveTrap(s,inst,msgs);
     else s.discard.push(inst);
   }
   G.prevGauge=G.gauge;G.revealAt=Date.now();
