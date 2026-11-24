@@ -176,6 +176,8 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .side-head .who-line{display:flex;align-items:center;gap:10px}
 .side-head h2{font-size:14px;font-weight:700}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
+.opp-hand.open{grid-template-columns:repeat(7,minmax(0,46px))}
+.openrule{display:flex;flex-direction:column;gap:4px}
 
 .gauge{display:flex;flex-direction:column;gap:3px;flex:none}
 .cells{display:grid;grid-template-columns:repeat(17,minmax(0,1fr));gap:2px;padding:3px 0;border-block:3px solid #5a3d24;background:#1a120b;border-radius:2px}
@@ -1056,6 +1058,7 @@ function startGame(kata,ougi,opts={}){
     gauge:0,prevGauge:0,revealAt:0,finaleUntil:0,st:{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0},combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   if(opts.cBonus)G.c.energy+=opts.cBonus;
+  G.open=!!settings.openHand;
   G.cKnow=opts.know||0;G.cRead=opts.read||.8;if(opts.hand)drawN(G.c,opts.hand);G.c.ougiLeft=opts.ougi||1;
   screen='game';startTurn();
 }
@@ -1474,7 +1477,17 @@ function styleBias(k,d){
   return 0;
 }
 /* 心眼：見たあなたの札は覚えておき、手を読むのに使う（見えていない札のぶんは、いつもの読みで補う） */
+const isOpen=()=>!!(G&&G.open&&G.tut==null);
+/* 手札公開ルール：CPU はあなたの手札を全部知っている。出しそうな種類（攻・防・罠・見送る）の重みは読みのまま使い、その種類の中で実際の札に配る */
+function openModel(){
+  const P=G.p,base=cpuOppModel(),wt={A:0,D:0,T:0,P:0};
+  for(const m of base)wt[m.d?m.d.type:'P']+=m.w;
+  const list=[{d:null,w:wt.P}];
+  for(const t of ['A','D','T']){const cs=P.hand.filter(i=>def(i).type===t&&!blockReason(P,i));for(const i of cs)list.push({d:def(i),w:wt[t]/cs.length})}
+  const sum=list.reduce((a,b)=>a+b.w,0)||1;list.forEach(o=>o.w/=sum);return list;
+}
 function seenModel(){
+  if(isOpen())return openModel();
   const P=G.p,known=P.hand.filter(i=>G.knownByCpu.has(i.uid));
   if(!known.length)return cpuOppModel();
   const unk=(P.hand.length-known.length)/P.hand.length;
@@ -1614,6 +1627,9 @@ function menuHTML(){
     ${recordPanel()}
     ${deckSummary()}
     <div class="panel">
+      <div class="openrule"><div class="row"><span>手札公開ルール（お試し）</span>
+        <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
+        <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える</p></div>
       <label class="row" for="timerSel"><span>持ち時間（1手）</span>
       <select id="timerSel">${TIMER_OPTIONS.map(v=>`<option value="${v}" ${settings.timer===v?'selected':''}>${v?v+'秒':'なし'}</option>`).join('')}</select></label>
       <div class="row sound-row"><span>音</span>
@@ -1700,7 +1716,8 @@ function sideChips(s,isP){
     c.push(`<span class="chip" title="${kt.text}">${monHTML('kata',s.kata)}${kt.name}の型</span>`);
     c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">奥義${s.ougiUsed?'：使用済み':'：？'}</span>`);
     // 眼の型：相手の手札の内訳が見える
-    if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
+    if(isOpen())c.push(`<span class="chip on">手札公開ルール</span>`);
+    else if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
   }
   for(const t of s.traps){
     const st=t.active?'発動待ち':'次から';
@@ -1736,7 +1753,7 @@ function cutinHTML(){
 }
 function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
-  const oppHand=C.hand.map(x=>G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
+  const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
   const STEP=5,E8=GOAL/STEP,at=Math.round(G.gauge/STEP);
   const cells=[];for(let k=E8;k>=-E8;k--)cells.push(`<div class="cell${k===at?' on':''}${k===E8?' goal-p':''}${k===-E8?' goal-c':''}${k===0?' mid':''}"></div>`);
   const gTxt=G.gauge>0?`勝ちまで あと <b>${GOAL-G.gauge}</b> 歩`:G.gauge<0?`負けまで あと <b>${GOAL+G.gauge}</b> 歩`:'互角';
@@ -1820,7 +1837,7 @@ function gameHTML(){
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
     <section class="side" aria-label="相手">
       <div class="side-head"><div class="who-line"><h2>${G.char?G.char.name:'相手'}</h2>${energyHTML(C)}</div>${sideChips(C,false)}</div>
-      <div class="opp-hand">${oppHand}</div>
+      <div class="opp-hand${isOpen()?' open':''}">${oppHand}</div>
     </section>
     <section class="gauge" aria-label="橋">
       <div class="gauge-labels"><span>相手の岸</span><span>${gTxt}</span><span>自分の岸</span></div>
@@ -1915,6 +1932,7 @@ document.addEventListener('click',e=>{
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
     case 'look':{const kind=el.dataset.kind,list=kind==='back'?BACKS:MOONS,x=list.find(o=>o.key===el.dataset.key);if(x&&unlocked(x)){settings[kind]=x.key;store.set(KEY_SET,settings);render()}break}
+    case 'open-hand':settings.openHand=!settings.openHand;store.set(KEY_SET,settings);render();break;
     case 'snd-sfx':settings.sound=!settings.sound;if(!settings.sound)settings.bgm=false;store.set(KEY_SET,settings);if(!settings.sound)bgmStop();render();break;
     case 'snd-bgm':if(settings.sound&&settings.bgm){settings.bgm=false}else{settings.sound=true;settings.bgm=true}store.set(KEY_SET,settings);render();break;
     case 'snd-test':{
