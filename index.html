@@ -201,6 +201,10 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .hand .ctext{padding-bottom:6px}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
 .opp-hand.open{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+/* 相手の見えている手札は、自分の手札のすぐ上に並べる（選ぶときに目線を動かさずに見られる） */
+.opp-row{flex:none;display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:10px;background:color-mix(in srgb,var(--lose) 12%,var(--table-2));border:1px solid color-mix(in srgb,var(--lose) 45%,transparent)}
+.opp-row .opp-hand{flex:1}
+.opp-lbl{flex:none;font-size:11px;line-height:1.25;font-weight:700;color:var(--lose);text-align:center}
 /* 開けたら、相手の札を大きく前に出す（自分の札は小さめに） */
 .battle.rev{grid-template-columns:minmax(0,1.3fr) minmax(96px,1fr) minmax(0,.75fr)}
 .battle.rev .slot:first-of-type .big.card,.battle.rev .slot:first-of-type .big.back{box-shadow:0 0 0 3px var(--lose),0 0 18px rgba(238,138,116,.55)}
@@ -1993,7 +1997,6 @@ function gameHTML(){
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
     <section class="side" aria-label="相手">
       <div class="side-head"><div class="who-line"><button class="oname" data-act="opp-info" aria-expanded="${!!G.oppInfo}">${monHTML('kata',C.kata)}<h2>${G.char?G.char.name:'相手'}</h2><i aria-hidden="true">${G.oppInfo?'▲':'▼'}</i></button>${energyHTML(C)}</div>${sideChips(C,false)}</div>
-      ${oppHand?`<div class="opp-hand${isOpen()?' open':''}">${oppHand}</div>`:''}
     </section>
     <section class="gauge" aria-label="橋">
       <div class="cells">${cells.join('')}</div>${zoom}
@@ -2009,6 +2012,7 @@ function gameHTML(){
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
       <div class="info" aria-live="polite">${info}</div>
     </section>
+    ${oppHand?`<section class="opp-row" aria-label="相手の手札"><span class="opp-lbl">相手の<br>手札</span><div class="opp-hand${isOpen()?' open':''}">${oppHand}</div></section>`:''}
     <section class="side me-side" aria-label="あなた">
       <div class="side-head"><div class="who-line">${energyHTML(P)}</div>${sideChips(P,true)}</div>
       <div class="hand${P.hand.length>=6?' many':''}${P.hand.length>=7?' lots':''}" style="--n:${Math.max(5,P.hand.length)}">${hand}</div>
