@@ -2007,7 +2007,8 @@ function cutinHTML(){
 }
 function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
-  const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true}):G.p.shinganUntil>=G.turn?cardHTML(x,{small:true,tag:'心眼'}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'').join('');
+  const oppOff=x=>ph==='select'&&!!blockReason(C,x);  // 相手が出せない札（気力不足など）は暗く
+  const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true,off:oppOff(x)}):G.p.shinganUntil>=G.turn?cardHTML(x,{small:true,tag:'心眼',off:oppOff(x)}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'').join('');
   const STEP=5,E8=GOAL/STEP,at=Math.round(G.gauge/STEP);
   const cells=[];for(let k=E8;k>=-E8;k--)cells.push(`<div class="cell${k===at?' on':''}${at>0&&k>0&&k<at?' gain':''}${at<0&&k<0&&k>at?' loss':''}${k===E8?' goal-p':''}${k===-E8?' goal-c':''}${k===0?' mid':''}"></div>`);
   const gTxt=G.gauge>0?`勝ちまで あと <b>${GOAL-G.gauge}</b> 歩`:G.gauge<0?`負けまで あと <b>${GOAL+G.gauge}</b> 歩`:'互角';
