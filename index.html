@@ -741,8 +741,8 @@ const EFFECTS=[
   ['noroshi','狼煙','D',4,5,'燃やすと気力+5、次の攻撃+10','燃やすと気力が5増え、次のターン自分の攻撃の数字が10増える。出せばふつうの防御4'],
   ['yobimodoshi','口寄せ','D',8,10,'墓地の一番大きい攻撃を手札に戻す','開けたとき、自分の墓地から一番数字の大きい攻撃の札を1枚、手札に戻す'],
   ['kuyou','供養','D',4,0,'燃やすと気力+10、墓地3枚を山札に戻す','燃やすと気力が10増え、自分の墓地の札を3枚、山札の下に戻す（山札切れを防げる）。出せばふつうの防御4'],
-  ['hiuchi','火打石','D',4,0,'燃やすと気力+10','気力0の札なのに、燃やすと気力が10増える。出せばふつうの防御4'],
-  ['okuribi','送り火','D',8,10,'燃やすと、相手の気力を5減らす','燃やすと気力が10増え、さらに相手の気力を5減らす。出せばふつうの防御8'],
+  ['hiuchi','火打石','D',4,0,'燃やすと、相手の気力を10減らす','燃やすと、相手の気力を10減らす（自分の気力はこの札の気力ぶん＝0増える）。出せばふつうの防御4'],
+  ['okuribi','送り火','D',8,10,'燃やすと、相手の手札を1枚燃やす','燃やすと気力が10増え、さらに相手の手札を1枚ランダムに燃やす（墓地へ。相手は引き直せない）。出せばふつうの防御8'],
   ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','相手が攻撃してきたら、押される量を15減らして捨てる'],
   ['kaeshi','返し罠','T',null,15,'相手が18以上で攻撃したら、跳ね返す','相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
   ['dorobou','気力泥棒','T',null,5,'相手が攻撃したら、気力を15奪う','相手が攻撃してきたら、相手の気力を15まで奪って自分のものにする'],
@@ -871,7 +871,7 @@ const burnBlock=(s,i)=>{const v=burnVal(def(i),s);return v<0&&s.energy<-v?'気�
 const numFor0=x=>def(x).num||0;
 const shizanBonus=s=>Math.floor((s.discard||[]).length/5)*5;
 const BURN_PUSH={senkou:5,hiya:10,houroku:20};
-const BURN_SPECIAL={hiya:-10,houroku:-15,senkou:5,hiuchi:10,kuyou:10};
+const BURN_SPECIAL={hiya:-10,houroku:-15,senkou:5,kuyou:10};
 const burnVal=(d,s)=>{const v=d.eff in BURN_SPECIAL?BURN_SPECIAL[d.eff]:(d.baseCost??d.cost);return v+(v>=0&&s&&s.kata==='homura'?5:0)};
 /* 罠を置ける数：影の型なら2 */
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
@@ -1588,12 +1588,13 @@ function resolve(){
   if(r.fx.narukoP&&C.burnGain>0){P.energy=clampE(P.energy+C.burnGain);C.burnGain=0;G.cGain=0}
   if(r.fx.narukoC&&P.burnGain>0){C.energy=clampE(C.energy+P.burnGain);P.burnGain=0;G.pGain=0}
   for(const s of [P,C])if(s.burnGain){s.energy=clampE(s.energy+s.burnGain);s.burnGain=0}
-  // 燃やしたときの効果：火打石は1枚引く、送り火は相手の気力を5減らす
+  // 燃やしたときの効果：火打石は相手の気力を10減らす、送り火は相手の手札を1枚燃やす
   for(const [me,op,b,who] of [[P,C,G.pBurned,'あなた'],[C,P,G.cBurned,'相手']]){
     if(!b)continue;const e=def(b).eff;
         if(e==='kuyou'){const pool=me.discard.filter(x=>x!==b);shuffle(pool);const back=pool.slice(0,3);back.forEach(x=>removeFrom(me.discard,x));me.deck.unshift(...back);msgs.push(`供養：${who}は墓地の札を${back.length}枚、山札の下に戻した`)}
         if(e==='noroshi'){me.yokokuNext=true;msgs.push(`狼煙：次のターン、${who}の攻撃+10`)}
-    if(e==='okuribi'){const k=Math.min(op.energy,5);op.energy-=k;msgs.push(`送り火：${who==='あなた'?'相手':'あなた'}の気力を${k}減らした`)}
+    if(e==='hiuchi'){const k=Math.min(op.energy,10);op.energy-=k;msgs.push(`火打石：${who==='あなた'?'相手':'あなた'}の気力を${k}減らした`)}
+    if(e==='okuribi'&&op.hand.length){const x=rnd(op.hand);removeFrom(op.hand,x);op.discard.push(x);op.noRefill=true;msgs.push(`送り火：${who==='あなた'?'相手':'あなた'}の「${label(def(x))}」が燃えた`)}
   }
   if(r.fx.refundP&&G.pPlay)P.energy=clampE(P.energy+costOf(G.pPlay));
   if(r.fx.refundC&&G.cPlay)C.energy=clampE(C.energy+costOf(G.cPlay));
@@ -1608,7 +1609,7 @@ function resolve(){
   if(r.fx.noDefP){P.noDefNext=true;msgs.push('金縛り：次のターン、あなたは防御できない')}
   if(r.fx.noDefC){C.noDefNext=true;msgs.push('金縛り：次のターン、相手は防御できない')}
   for(const [s,n,w] of [[P,r.fx.millP,'あなた'],[C,r.fx.millC,'相手']])if(n){const k=mill(s,n);msgs.push(`${w}の山札を${k}枚捨てた（残り${s.deck.length}枚）`)}
-  for(const [s,on,w] of [[P,r.fx.discP,'あなた'],[C,r.fx.discC,'相手']])if(on&&s.hand.length){const x=rnd(s.hand);removeFrom(s.hand,x);s.discard.push(x);msgs.push(`焼き討ち：${w}の手札「${label(def(x))}」が燃えた`)}
+  for(const [s,on,w] of [[P,r.fx.discP,'あなた'],[C,r.fx.discC,'相手']])if(on&&s.hand.length){const x=rnd(s.hand);removeFrom(s.hand,x);s.discard.push(x);s.noRefill=true;msgs.push(`焼き討ち：${w}の手札「${label(def(x))}」が燃えた`)}
   openEff('p',G.pPlay,msgs);openEff('c',G.cPlay,msgs);
   // 出した札の行き先：罠は場へ（置き場が無ければ捨て札）、それ以外は捨て札へ
   for(const [s,inst] of [[P,G.pPlay],[C,G.cPlay]]){
@@ -1633,7 +1634,7 @@ function resolve(){
   if(yw&&yw.who==='p'&&G.combo%COMBO_EVERY===0){P.energy=clampE(P.energy+COMBO_GAIN);G.comboGain='p';msgs.push(`${G.combo}連：あなたは気力を${COMBO_GAIN}得た`)}
   if(yw&&yw.who==='c'&&G.cCombo%COMBO_EVERY===0){C.energy=clampE(C.energy+COMBO_GAIN);G.comboGain='c';msgs.push(`相手の${G.cCombo}連：相手は気力を${COMBO_GAIN}得た`)}
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
-  {const np=P.hand.length<HAND_MAX&&!P.deck.length,nc=C.hand.length<(C.handMax||HAND_MAX)&&!C.deck.length;drawN(P,HAND_MAX);drawN(C,C.handMax||HAND_MAX);
+  {const np=P.hand.length<HAND_MAX&&!P.deck.length,nc=C.hand.length<(C.handMax||HAND_MAX)&&!C.deck.length;for(const x of [P,C]){const mx=(x.handMax||HAND_MAX)-(x.noRefill?1:0);drawN(x,Math.max(0,mx-x.hand.length));x.noRefill=false}
    if(np){G.gauge-=DECKOUT;msgs.push(`山札切れ：あなたは引けずに${DECKOUT}歩押された`)}
    if(nc){G.gauge+=DECKOUT;msgs.push(`山札切れ：相手は引けずに${DECKOUT}歩押された`)}
    G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge))}
@@ -2112,7 +2113,7 @@ function gameHTML(){
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center"><div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
-      <div class="info" aria-live="polite">${info}</div>
+      <div class="info" aria-live="polite">${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?'':info}</div>
     </section>
     ${oppHand?`<section class="opp-row" aria-label="相手の手札"><span class="opp-lbl">相手の<br>手札</span><div class="opp-hand${isOpen()?' open':''}">${oppHand}</div></section>`:''}
     <section class="side me-side" aria-label="あなた">
