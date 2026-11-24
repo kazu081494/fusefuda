@@ -17,7 +17,6 @@ const {chromium}=require('playwright');
       await p.click('[data-act=go-menu]');
     }
     await p.click('[data-act=go-school]');
-    await p.click('[data-act=pick-kata]:not([disabled])');  // 型はデッキの型だけ選べる
     await (await p.$$('[data-act=pick-ougi]'))[g%11].click();
     await p.click('[data-act=start-game]');
     for(let i=0;i<120;i++){

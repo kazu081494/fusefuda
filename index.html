@@ -440,8 +440,10 @@ details.opp-info .dl{margin-top:8px}
 .verdict .v{font-family:var(--font-display);font-size:min(20px,15cqw);line-height:1.25;white-space:nowrap}
 .verdict .v.win{color:var(--win)}.verdict .v.lose{color:var(--lose)}
 /* 説明は場の下に横幅いっぱいで出す（真ん中の列は狭くて見切れたため） */
-/* 説明は舞台の下の決まった高さの欄に出す（出ても消えても高さが変わらないので、舞台や手札が縮まない。長いときは欄の中で流す） */
-.info{flex:none;height:62px;display:flex;flex-direction:column;gap:3px;overflow:auto;padding:2px 2px}
+/* お知らせは舞台の下に重ねて出す（結果の実況は出さないので、札や「競り勝ち！」は隠さない） */
+.info{position:absolute;left:4px;right:4px;bottom:4px;z-index:5;display:flex;flex-direction:column;gap:4px;max-height:45%;overflow:auto;text-align:left}
+.info:empty{display:none}
+.info>p,.info>ul{background:rgba(6,9,14,.88);border-radius:8px;padding:5px 8px}
 .info .msgs{font-size:11.5px;line-height:1.35}
 .info .why{font-size:12.5px;font-weight:700;line-height:1.45}
 .msgs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}
@@ -509,6 +511,8 @@ details.opp-info .dl{margin-top:8px}
 .abil:disabled{opacity:.38;cursor:not-allowed}
 .abil.picked{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .abil.picked b::before{content:"✓ ";color:var(--accent)}
+.kataline{display:flex;align-items:center;gap:6px}
+.kataline .mon{width:26px;height:26px;color:var(--accent);flex:none}
 .pickh{font-size:15px;margin-top:6px}
 .startbar{position:sticky;bottom:0;padding:10px 0 14px;background:linear-gradient(transparent,var(--table) 30%)}
 .abil .k{display:inline-block;font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-right:6px}
@@ -1799,13 +1803,12 @@ function schoolHTML(){
   pick.kata=settings.deckKata;
   const opt=(kind,k,o)=>`<button class="abil has-mon${pick[kind]===k?' picked':''}" ${kind==='kata'&&k!==settings.deckKata?'disabled':''} data-act="pick-${kind}" data-k="${k}" aria-pressed="${pick[kind]===k}">${monHTML(kind,k)}<b>${o.name}</b><span class="t">${o.text}</span></button>`;
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
-    <h2 style="font-size:20px">型と奥義を選ぶ</h2>${pickFor==='story'?'<p class="small" style="color:var(--accent)">物語：型は今宵のあいだ変えられない。奥義は相手を見てから選び直せる</p>':''}
-    <p class="small muted"><b>型</b>はいつも効く小さな特性で、相手にも見えている。<b>奥義</b>は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。型と奥義は自由に組み合わせられる。相手（CPU）も1つずつ選んでいる。</p>
-    <h3 class="pickh">型（相手に見える）</h3><p class="small muted">型はデッキの型（${KATA[settings.deckKata].name}）で戦う。変えるときは「デッキを組む」で型を選び直す</p>
-    ${Object.entries(KATA).map(([k,o])=>opt('kata',k,o)).join('')}
-    <h3 class="pickh">奥義（相手には秘密）</h3>
+    <h2 style="font-size:20px">奥義を選ぶ</h2>
+    <p class="small kataline">${monHTML('kata',settings.deckKata)}<span>型は<b>${KATA[settings.deckKata].name}</b>（デッキの型）：${KATA[settings.deckKata].text}</span></p>
+    ${pickFor==='story'?'<p class="small" style="color:var(--accent)">物語：奥義は相手を見てから選び直せる</p>':''}
+    <p class="small muted">奥義は1試合に1回、伏せる前に使う大技。相手には秘密で、使ったことだけ知らされる。</p>
     ${Object.entries(OUGI).map(([k,o])=>opt('ougi',k,o)).join('')}
-    <div class="startbar"><button class="btn wide" data-act="${pickFor==='story'?'story-start':'start-game'}" ${pick.kata&&pick.ougi?'':'disabled'}>${pick.kata&&pick.ougi?`${KATA[pick.kata].name}の型・${OUGI[pick.ougi].name}で${pickFor==='story'?'今宵に挑む':'対戦'}する`:'型と奥義を1つずつ選ぶ'}</button></div>`;
+    <div class="startbar"><button class="btn wide" data-act="${pickFor==='story'?'story-start':'start-game'}" ${pick.kata&&pick.ougi?'':'disabled'}>${pick.kata&&pick.ougi?`${OUGI[pick.ougi].name}で${pickFor==='story'?'今宵に挑む':'対戦する'}`:'奥義を1つ選ぶ'}</button></div>`;
 }
 function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
@@ -1952,13 +1955,13 @@ function gameHTML(){
       for(const f of fired)center+=`<div class="trapfire ${who==='あなた'?'mine':'theirs'}">罠発動！<small>${who}の${f.name}</small></div>`;
     if(G.yomi)center+=G.yomi.who==='p'?`<div class="yomi win">${G.yomi.word}${G.combo>=2?`<small>${G.combo}連${G.comboGain==='p'?`・気力+${COMBO_GAIN}`:`（${COMBO_EVERY-G.combo%COMBO_EVERY}連先で気力+${COMBO_GAIN}）`}</small>`:''}</div>`:`<div class="yomi lose">読まれた<small>相手の${G.yomi.word.replace('！','')}${G.cCombo>=2?`・相手${G.cCombo}連${G.comboGain==='c'?`・気力+${COMBO_GAIN}`:''}`:''}</small></div>`;
     center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n?`${Math.abs(n)}歩<small>${n>0?'押し込んだ':'押し込まれた'}</small>`:'睨み合い'}</span></div>`;
-    info+=`<p class="why">${whyText()}</p>`;
+    if(G.tut!=null){info+=`<p class="why">${whyText()}</p>`;
     // 罠・効果・流派で押す量が変わったときは、差し引きを最後に1行で出す（上の説明と真ん中の数が食い違って見えるため）
     const tot=G.res.net!==G.res.base?[`<b>差し引き：${n>0?`${n}歩 押し込んだ`:n<0?`${-n}歩 押し込まれた`:'睨み合い'}</b>`]:[];
     const lines=[...G.openMsgs,...G.res.notes,...tot,...G.extra||[]];
-    if(lines.length)info+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;
+    if(lines.length)info+=`<ul class="msgs">${lines.map(m=>`<li>${m}</li>`).join('')}</ul>`;}
   }
-  info+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}${n.coach?' coach':''}">${n.t}</div>`).join('');
+  if(ph!=='result'||G.tut!=null)info+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}${n.coach?' coach':''}">${n.t}</div>`).join('');
   if(ph==='select'&&using(P,'gouka'))info+=`<div class="notice">業火：このターン燃やすと、増える気力のぶん相手も押す</div>`;
   if(G.oppInfo){const kt=KATA[C.kata];info+=`<div class="detail"><b>${G.char?G.char.name:'相手'}　性格：${STYLES[G.style].name}</b>${STYLES[G.style].desc}<br><b>${kt.name}の型</b>${kt.text}<br><b>奥義</b>${C.ougiUsed?`使用済み（${OUGI[C.ougi].name}）`:'秘密（1回だけ使える）'}<br><span class="muted">山${C.deck.length}・捨${C.discard.length}</span></div>`}
   if(ph==='select'&&G.schoolInfo){info+=`<div class="detail"><b>${KATA[P.kata].name}の型</b>${KATA[P.kata].text}<br><b>奥義「${OUGI[P.ougi].name}」</b>${OUGI[P.ougi].text}</div>`}
@@ -2011,8 +2014,8 @@ function gameHTML(){
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
+      <div class="info" aria-live="polite">${info}</div>
     </section>
-    <section class="info" aria-live="polite">${info}</section>
     ${oppHand?`<section class="opp-row" aria-label="相手の手札"><span class="opp-lbl">相手の<br>手札</span><div class="opp-hand${isOpen()?' open':''}">${oppHand}</div></section>`:''}
     <section class="side me-side" aria-label="あなた">
       <div class="side-head"><div class="who-line">${energyHTML(P)}</div>${sideChips(P,true)}</div>
