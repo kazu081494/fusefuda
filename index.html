@@ -649,7 +649,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 const HAISUI_NEAR=10,HAISUI_BACK=10;
 /* 連：続けて読み勝つと連が伸び、COMBO_EVERY 連ごとに気力 +COMBO_GAIN */
 const COMBO_EVERY=3,COMBO_GAIN=5;
-const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=20,TRAP_MAX=1,DECKOUT=5;
+const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=60,TRAP_MAX=1,DECKOUT=5;
 /* 結果のあと次のターンへ進む速さ */
 const SPEEDS={fast:.6,normal:1,slow:1.6};
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
@@ -1176,7 +1176,7 @@ function startGame(kata,ougi,opts={}){
 function startTurn(){
   if(G&&G.char&&G.turn===0)setTimeout(()=>{if(G&&G.turn===1&&G.phase==='select')render()},3300);
   clearTimers();
-  if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}手で決着がつかなかったので、橋の上の位置で決着`);
+  if(G.turn>=TURN_LIMIT)return finishByGauge(`${TURN_LIMIT}手たっても決着がつかなかったので、橋の上の位置で決着`);
   G.turn++;
   for(const s of [G.p,G.c]){
     s.energy=clampE(s.energy+ENERGY_GAIN);
@@ -1820,7 +1820,7 @@ function rulesHTML(){
     <li><b>見送る</b>：何も出さない代わりに、札を1枚多く引ける（手札は7枚まで）。</li>
     <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで睨み合い。防御どうしも睨み合い。</li>
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
-    <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。20手で決着がつかなければ、押し込んでいる側の勝ち。</li>
+    <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。お互いの札（手札と山札）が尽きたら、押し込んでいる側の勝ち。山札が尽きて引けないターンは5歩押される。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
     <li>デッキは30枚。デッキには型があり、効果の札はその型の札なら3枚まで、ほかの型の札は1枚まで（素の札は3枚まで）。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li>試合の前に<b>型</b>と<b>奥義</b>を1つずつ選ぶ。型はいつも効く小さな特性で、相手にも見えている。奥義は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。相手の型や戦い方、状況から、どの奥義をいつ使ってくるかを読む。</li>
