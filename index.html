@@ -617,15 +617,15 @@ const EFFECTS=[
   ['sekisho','関所','D',8,10,'次のターン、相手は気力20以上の札を出せない','開けたとき、次のターン相手は気力20以上の札を出せない'],
   ['hiuchi','火打石','D',4,0,'燃やすと気力+10、札を1枚引く','燃やすと気力が10増え、さらに札を1枚引く（燃やしても手札が減らない）。出せばふつうの防御4'],
   ['okuribi','送り火','D',8,10,'燃やすと、相手の気力を5減らす','燃やすと気力が10増え、さらに相手の気力を5減らす。出せばふつうの防御8'],
-  ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','張った次のターンから効く。相手が攻撃してきたら、押される量を15減らして捨てる'],
-  ['kaeshi','返し罠','T',null,15,'相手が18以上で攻撃したら、跳ね返す','張った次のターンから効く。相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
-  ['dorobou','気力泥棒','T',null,5,'相手が攻撃したら、気力を15奪う','張った次のターンから効く。相手が攻撃してきたら、相手の気力を15まで奪って自分のものにする'],
-  ['machibuse','待ち伏せ','T',null,10,'相手が攻撃しなかったら、15押す','張った次のターンから効く。相手が攻撃以外（防御・燃やす・見送る・罠を張る）をしたら、相手を15押す'],
-  ['ashikase','足かせ','T',null,10,'相手が攻撃したら、次のターン攻撃させない','張った次のターンから効く。相手が攻撃してきたら、次のターン相手は攻撃カードを出せない'],
-  ['naruko','鳴子','T',null,5,'相手が燃やしたら、その気力をもらう','張った次のターンから効く。相手が燃やしたら、相手が増やすはずの気力を自分がもらう'],
-  ['kagemusha','影武者','T',null,10,'相手が攻撃したら、押し込まれない','張った次のターンから効く。相手が攻撃してきたら、押し込まれる歩数を0にする'],
-  ['hyourou','兵糧攻め','T',null,5,'相手が攻撃も防御もしなかったら、山札を4枚捨てさせる','張った次のターンから効く。相手が攻撃も防御もしなかったら（見送る・燃やす・罠）、相手の山札を上から4枚捨てさせる'],
-  ['kitsunebi','狐火','T',null,10,'相手が防御したら、気力-10して5押す','張った次のターンから効く。相手が防御したら、相手の気力を10減らして、5歩押し込む'],
+  ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','相手が攻撃してきたら、押される量を15減らして捨てる'],
+  ['kaeshi','返し罠','T',null,15,'相手が18以上で攻撃したら、跳ね返す','相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
+  ['dorobou','気力泥棒','T',null,5,'相手が攻撃したら、気力を15奪う','相手が攻撃してきたら、相手の気力を15まで奪って自分のものにする'],
+  ['machibuse','待ち伏せ','T',null,10,'相手が攻撃しなかったら、15押す','相手が攻撃以外（防御・燃やす・見送る・罠を張る）をしたら、相手を15押す'],
+  ['ashikase','足かせ','T',null,10,'相手が攻撃したら、次のターン攻撃させない','相手が攻撃してきたら、次のターン相手は攻撃カードを出せない'],
+  ['naruko','鳴子','T',null,5,'相手が燃やしたら、その気力をもらう','相手が燃やしたら、相手が増やすはずの気力を自分がもらう'],
+  ['kagemusha','影武者','T',null,10,'相手が攻撃したら、押し込まれない','相手が攻撃してきたら、押し込まれる歩数を0にする'],
+  ['hyourou','兵糧攻め','T',null,5,'相手が攻撃も防御もしなかったら、山札を4枚捨てさせる','相手が攻撃も防御もしなかったら（見送る・燃やす・罠）、相手の山札を上から4枚捨てさせる'],
+  ['kitsunebi','狐火','T',null,10,'相手が防御したら、気力-10して5押す','相手が防御したら、相手の気力を10減らして、5歩押し込む'],
 ];
 /* 素の札の数字と気力 */
 const PLAIN=[[4,5],[8,10],[13,15],[18,20],[24,25],[30,35]];
@@ -659,7 +659,7 @@ const OUGI={
   sakiyomi:{name:'先読み',text:'相手が攻撃してくるかどうかを見てから、自分の札を選べる'},
   fudou:{name:'不動',text:'このターン、押し込まれない'},
   issen:{name:'一閃',text:'このターン、押し込めたら、さらに15歩押し込む（剛の型の上乗せとは重ならない）'},
-  shingan:{name:'心眼',text:'相手の今の手札を全部見る。見た札は、相手が出すか捨てるまで見えたまま'},
+  shingan:{name:'心眼',text:'このターンと次のターン、相手の手札が全部見える'},
   tensei:{name:'転生',text:'手札の攻撃をすべて防御に、防御をすべて攻撃に変える。効果のある札も、数字の近い素の札になる（反撃（防御13）は攻撃13に）'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
   genwaku:{name:'幻惑',text:'このターン、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
@@ -1152,7 +1152,7 @@ function useOugi(){
   P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
-  if(P.ougi==='shingan'){if(isOpen()){P.shinganOpen=true;G.notices.push({t:'心眼：相手の伏せた罠と、山札の上から3枚が見える',alert:true})}else for(const x of G.c.hand)G.knownOpp.add(x.uid)}
+  if(P.ougi==='shingan'){P.shinganUntil=G.turn+1;G.notices.push({t:isOpen()?'心眼：このターンと次のターン、相手の伏せた罠と山札の上から3枚が見える':'心眼：このターンと次のターン、相手の手札が全部見える',alert:true})}
   if(['sakiyomi','shingan','tensei','shikabane'].includes(P.ougi)){G.cutin={who:'p',key:P.ougi,at:Date.now()};playCutinSound()}
   const m=ougiNow(P,G.c);if(m){G.notices.push({t:m});log(m);if(G.sel&&blockReason(P,G.sel))G.sel=null}
   if(P.ougi==='sakiyomi'){G.cPre=G.tut!=null?tutCpu():cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
@@ -1527,7 +1527,7 @@ const OPEN_TXT={
   card:{teisatsu:['相手の罠を見る。無ければ山札の上2枚','開けたとき、相手が伏せている罠を見る（発動するまで見える）。罠が無ければ、相手の山札の上から2枚を見る（引かれるまで見える）'],
         mikiri:['罠を外す。無ければ山札から大きい攻撃を探す','開けたとき、相手が張っている罠を発動させずに捨てさせる。罠が無ければ、自分の山札から一番数字の大きい攻撃の札を探して手札に加える']},
   kata:{me:'相手が次に引く札（山札の一番上）がいつも見える'},
-  ougi:{shingan:'この試合のあいだ、相手の伏せた罠と、相手の山札の上から3枚がずっと見える'},
+  ougi:{shingan:'このターンと次のターン、相手の伏せた罠と、相手の山札の上から3枚が見える'},
 };
 const BASE_TXT={card:{},kata:{},ougi:{}};
 for(const k in OPEN_TXT.card)BASE_TXT.card[k]=[CARDS[k].short,CARDS[k].text];
@@ -1540,9 +1540,9 @@ function applyOpenTexts(on){on=!!on;if(openTxtOn===on)return;openTxtOn=on;const 
   for(const k in src.ougi)OUGI[k].text=src.ougi[k];}
 applyOpenTexts(settings.openHand);
 /* 公開ルールで見えている相手の山札：眼の型は一番上、心眼は上から3枚、偵察で見た札 */
-function oppDeckSeen(){const C=G.c,n=Math.max(G.p.kata==='me'?1:0,G.p.shinganOpen?3:0),out=[];
+function oppDeckSeen(){const C=G.c,n=Math.max(G.p.kata==='me'?1:0,(G.p.shinganUntil>=G.turn)?3:0),out=[];
   for(let k=0;k<C.deck.length;k++){const x=C.deck[C.deck.length-1-k];if(k<n||G.knownDeck.has(x.uid))out.push({x,k})}return out}
-const trapSeen=t=>isOpen()&&(G.p.shinganOpen||G.knownTrap.has(t.inst.uid));
+const trapSeen=t=>isOpen()&&((G.p.shinganUntil>=G.turn)||G.knownTrap.has(t.inst.uid));
 /* 手札公開ルール：CPU はあなたの手札を全部知っている。出しそうな種類（攻・防・罠・見送る）の重みは読みのまま使い、その種類の中で実際の札に配る */
 function openModel(){
   const P=G.p,base=cpuOppModel(),wt={A:0,D:0,T:0,P:0};
@@ -1553,7 +1553,7 @@ function openModel(){
 }
 function seenModel(){
   if(isOpen())return openModel();
-  const P=G.p,known=P.hand.filter(i=>G.knownByCpu.has(i.uid));
+  const P=G.p,known=P.hand.filter(i=>G.knownByCpu.has(i.uid)||G.c.shinganUntil>=G.turn);
   if(!known.length)return cpuOppModel();
   const unk=(P.hand.length-known.length)/P.hand.length;
   const o=[...known.filter(i=>!blockReason(P,i)).map(i=>def(i)),null];
@@ -1604,7 +1604,7 @@ function cpuMaybeBefore(){
   if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
   if(o==='genwaku')use=P.energy>=20&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
-  C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(o==='shingan')for(const x of P.hand)G.knownByCpu.add(x.uid);ougiNow(C,P);
+  C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(o==='shingan')C.shinganUntil=G.turn+1;ougiNow(C,P);
   G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');saveGame();render();
 }
 
@@ -1818,7 +1818,7 @@ function cutinHTML(){
 }
 function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
-  const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
+  const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true}):G.p.shinganUntil>=G.turn?cardHTML(x,{small:true,tag:'心眼'}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
   const STEP=5,E8=GOAL/STEP,at=Math.round(G.gauge/STEP);
   const cells=[];for(let k=E8;k>=-E8;k--)cells.push(`<div class="cell${k===at?' on':''}${k===E8?' goal-p':''}${k===-E8?' goal-c':''}${k===0?' mid':''}"></div>`);
   const gTxt=G.gauge>0?`勝ちまで あと <b>${GOAL-G.gauge}</b> 歩`:G.gauge<0?`負けまで あと <b>${GOAL+G.gauge}</b> 歩`:'互角';
