@@ -351,6 +351,12 @@ details.opp-info .dl{margin-top:8px}
 .lanterns i.now{border-color:var(--accent);box-shadow:0 0 0 2px rgba(226,178,71,.4)}
 .lanterns i.boss{width:22px;height:30px}
 .lanterns i.boss.now{border-color:#8fb6ff;box-shadow:0 0 12px rgba(143,182,255,.6)}
+.tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.tab{appearance:none;border:1px solid var(--line);background:var(--table-2);color:var(--fg);border-radius:10px;min-height:42px;padding:4px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border-bottom:3px solid var(--tc)}
+.tab small{font-weight:400;font-size:12px;color:var(--muted)}
+.tab.on{background:var(--tc);border-color:var(--tc);color:#fff}
+.tab.on small{color:#fff;opacity:.85}
+.group{scroll-margin-top:150px}
 .ougi-grid.kata-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 .kmark{display:flex;width:fit-content;align-items:center;gap:2px;margin-bottom:2px;padding:0 6px 0 1px;border-radius:999px;border:1px solid var(--line)}
 .kmark .mon{width:16px;height:16px;color:var(--muted)}
@@ -866,7 +872,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
 }
 
 /* ---------- 試合 ---------- */
-let screen='menu';let G=null;let builderPreset=null;
+let screen='menu';let G=null;let builderPreset=null;let builderTab='A';
 
 function mill(s,n){let k=0;while(k<n&&s.deck.length){s.discard.push(s.deck.pop());k++}return k}
 function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
@@ -1772,7 +1778,7 @@ function rulesHTML(){
 }
 function builderHTML(){
   const st=deckStats(deck);
-  const groups=TYPES.map(t=>`<div class="group t-${t}"><h3>${TY[t].name}</h3>
+  const groups=TYPES.filter(t=>t===builderTab).map(t=>`<div class="group t-${t}">
     ${POOL.filter(d=>d.type===t).map(d=>{const c=deck[d.id]||0;
       return `<div class="crow"><div class="card t-${d.type}" aria-hidden="true">${silHTML(d)}<span class="ccost">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}<span class="plain">${TY[d.type].name[0]}</span></div>
         <div class="cinfo"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}</b><span class="stat-line">${KATA_OF[d.id]?`<span class="kmark${KATA_OF[d.id]===settings.deckKata?' own':''}">${monHTML('kata',KATA_OF[d.id])}${KATA[KATA_OF[d.id]].name}・${copyMax(d.id)}枚まで</span>`:''}${TY[d.type].name}${d.num!=null?d.num:''}・気力${d.cost}・燃やすと+${burnVal(d)}</span><span class="eff">${d.eff?d.text:'効果なし'}</span></div>
@@ -1788,6 +1794,7 @@ function builderHTML(){
       <span class="small muted">攻撃 ${st.by.A}・防御 ${st.by.D}・罠 ${st.by.T}</span>
     </div>
     <p class="small" style="color:${st.ok?'var(--win)':'var(--lose)'}">${st.ok?'このデッキで対戦できます（自動で保存）':st.errs.join('／')}</p>
+    <div class="tabs" role="tablist">${TYPES.map(t=>`<button class="tab t-${t}${builderTab===t?' on':''}" role="tab" aria-selected="${builderTab===t}" data-act="btab" data-t="${t}">${TY[t].name}<small>${st.by[t]}枚</small></button>`).join('')}</div>
   </div>
   <div class="panel"><div class="label">デッキの型（対戦ではこの型で戦う）</div>
     <div class="ougi-grid kata-grid">${Object.entries(KATA).map(([k,o])=>`<button class="og${settings.deckKata===k?' on':''}" data-act="deck-kata" data-k="${k}" aria-pressed="${settings.deckKata===k}">${monHTML('kata',k)}<span>${o.name}</span></button>`).join('')}</div>
@@ -2056,6 +2063,7 @@ document.addEventListener('click',e=>{
     case 'start-game':if(pick.kata&&pick.ougi){clearSave();bgmStart();startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
     case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<copyMax(id)){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
     case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
+    case 'btab':if(TY[el.dataset.t]){builderTab=el.dataset.t;render();const g=document.querySelector('.group');if(g&&g.getBoundingClientRect().top<0)g.scrollIntoView({block:'start'})}break;
     case 'deck-kata':if(KATA[el.dataset.k]){settings.deckKata=el.dataset.k;pick.kata=el.dataset.k;settings.kata=el.dataset.k;store.set(KEY_SET,settings);render()}break;
     case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};settings.deckKata=p.kata;pick.kata=p.kata;settings.kata=p.kata;store.set(KEY_SET,settings);builderPreset=p;saveDeck();render();break}
     case 'clear':deck={};builderPreset=null;saveDeck();render();break;
