@@ -785,7 +785,7 @@ const KATA={
   gou:{name:'剛',text:'攻撃で押し込めたら、さらに5歩押し込む'},
   yanagi:{name:'柳',text:'防ぎきって跳ね返すとき、さらに5歩押し込む'},
   homura:{name:'炎',text:'燃やすと、気力が5多く増える'},
-  kage:{name:'影',text:'罠を2枚まで張れる'},
+  kage:{name:'影',text:'罠を2枚まで張れる。罠を張り替えると気力+5'},
   me:{name:'眼',text:'相手の手札の内訳（攻撃・防御・罠が何枚ずつか）が見える'},
 };
 /* 奥義：1試合に1回、伏せる前に使う大技。型とは別に選び、相手には秘密（使ったことだけ知らされる） */
@@ -795,12 +795,12 @@ const OUGI={
   gouka:{name:'業火',text:'このターン燃やすと、増える気力の半分（最大20）だけ相手も押し込む'},
   kagenui:{name:'影縫い',text:'開けたとき、相手の罠を1枚奪って自分の場に張る（次のターンから効く）'},
   sakiyomi:{name:'先読み',text:'相手が攻撃してくるかどうかを見てから、自分の札を選べる'},
-  fudou:{name:'不動',text:'このターン、押し込まれない'},
+  fudou:{name:'不動',text:'使ったターンから3ターンのあいだ、押し込まれない'},
   issen:{name:'一閃',text:'このターン、押し込めたら、さらに10歩押し込む（剛の型の上乗せとは重ならない）'},
   shingan:{name:'心眼',text:'このターンと次のターン、相手の手札が全部見える'},
   tensei:{name:'転生',text:'手札の攻撃をすべて防御に、防御をすべて攻撃に変える。効果のある札も、数字の近い素の札になる（反撃（防御13）は攻撃13に）'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
-  genwaku:{name:'幻惑',text:'使ったターンから5ターンのあいだ、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
+  genwaku:{name:'幻惑',text:'使ったターンから3ターンのあいだ、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
 };
 
 /* 今宵の相手：名前と台詞のある侍。性格・型・奥義・デッキがひとまとまりになっている */
@@ -876,8 +876,10 @@ const burnVal=(d,s)=>{const v=d.eff in BURN_SPECIAL?BURN_SPECIAL[d.eff]:(d.baseC
 /* 罠を置ける数：影の型なら2 */
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
-const using=(s,k)=>s.ougi===k&&(s.ougiNow||(k==='genwaku'&&s.genwakuUntil>=G.turn));
-const GENWAKU_TURNS=5,OUGI_FROM=3;  // 奥義は3手目から使える
+/* 何ターンか続く奥義（使ったターンを含む） */
+const KAGE_SWAP=5;  // 影の型：罠を張り替えると気力+5
+const OUGI_TURNS={genwaku:3,fudou:3},OUGI_FROM=3;  // 奥義は3手目から使える
+const using=(s,k)=>s.ougi===k&&(s.ougiNow||(OUGI_TURNS[k]&&s.genwakuUntil>=G.turn));
 const ougiReady=()=>G.tut!=null||G.turn>=OUGI_FROM;
 /* 型の効果を書くときの言い方 */
 const kataOf=(s,isP)=>`${isP?'あなた':'相手'}の型（${KATA[s.kata].name}）`;
@@ -1023,7 +1025,6 @@ function blockReason(s,i){
   if(d.type==='A'&&s.noAtk)return '攻撃不可';
   if(d.type==='D'&&s.noDef)return '防御不可';
   if(s.cap&&costOf(i)>=20)return '関所';
-  if(d.type==='T'&&s.traps.length>=trapMax(s))return '罠は満杯';
   return '';
 }
 function log(m){G.log.push(`${G.turn}手目　${m}`)}
@@ -1325,7 +1326,7 @@ function ougiNow(me,op){
 }
 function useOugi(){
   const P=G.p;if(G.phase!=='select'||P.ougiUsed||!ougiReady())return;
-  P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;if(P.ougi==='genwaku')P.genwakuUntil=G.turn+GENWAKU_TURNS-1;
+  P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;if(OUGI_TURNS[P.ougi])P.genwakuUntil=G.turn+OUGI_TURNS[P.ougi]-1;
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
   if(P.ougi==='shingan'){P.shinganUntil=G.turn+1;G.notices.push({t:isOpen()?'心眼：このターンと次のターン、相手の伏せた罠と山札の上から3枚が見える':'心眼：このターンと次のターン、相手の手札が全部見える',alert:true})}
@@ -1611,11 +1612,14 @@ function resolve(){
   for(const [s,n,w] of [[P,r.fx.millP,'あなた'],[C,r.fx.millC,'相手']])if(n){const k=mill(s,n);msgs.push(`${w}の山札を${k}枚捨てた（残り${s.deck.length}枚）`)}
   for(const [s,on,w] of [[P,r.fx.discP,'あなた'],[C,r.fx.discC,'相手']])if(on&&s.hand.length){const x=rnd(s.hand);removeFrom(s.hand,x);s.discard.push(x);s.noRefill=true;msgs.push(`焼き討ち：${w}の手札「${label(def(x))}」が燃えた`)}
   openEff('p',G.pPlay,msgs);openEff('c',G.cPlay,msgs);
-  // 出した札の行き先：罠は場へ（置き場が無ければ捨て札）、それ以外は捨て札へ
+  // 出した札の行き先：罠は場へ（いっぱいなら一番古い罠を墓地へ送って張り替える）、それ以外は捨て札へ
   for(const [s,inst] of [[P,G.pPlay],[C,G.cPlay]]){
     if(!inst)continue;
     const firedNow=(s===P?r.fx.firedP:r.fx.firedC).some(f=>f.uid==='now');
-    if(def(inst).type==='T'&&!firedNow&&s.traps.length<trapMax(s))s.traps.push({inst,active:true});
+    if(def(inst).type==='T'&&!firedNow){
+      if(s.traps.length>=trapMax(s)){const old=s.traps.shift();s.discard.push(old.inst);const w=s===P?'あなた':'相手';msgs.push(`${w}は罠を張り替えた（「${def(old.inst).name}」は墓地へ）`);
+        if(s.kata==='kage'){s.energy=clampE(s.energy+KAGE_SWAP);msgs.push(`影の型：張り替えで気力+${KAGE_SWAP}`)}}
+      s.traps.push({inst,active:true})}
     else s.discard.push(inst);
   }
   G.prevGauge=G.gauge;G.revealAt=Date.now();
@@ -1784,7 +1788,7 @@ function cpuMaybeBefore(){
   if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
   if(o==='genwaku')use=P.energy>=20&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
-  C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(o==='genwaku')C.genwakuUntil=G.turn+GENWAKU_TURNS-1;if(o==='shingan')C.shinganUntil=G.turn+1;ougiNow(C,P);
+  C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(OUGI_TURNS[o])C.genwakuUntil=G.turn+OUGI_TURNS[o]-1;if(o==='shingan')C.shinganUntil=G.turn+1;ougiNow(C,P);
   G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');saveGame();render();
 }
 
@@ -1915,7 +1919,7 @@ function rulesHTML(){
     <li>読み合いの目安：攻撃は守っていない相手（燃やす・罠を張る）に強く、防御は攻撃に強い。燃やす・見送るは、相手が攻めてこないと読めたときに、気力や札を溜める手（攻撃されるとそのまま押し込まれる）。相手の防御を空振りさせれば、相手は気力を払い損。気力の量は見えているので、そこから相手の手を読む。</li>
     <li><b>手札は4枚</b>。毎ターンの終わりに、4枚になるまで山札から引く。</li>
     <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで睨み合い。防御どうしも睨み合い。</li>
-    <li><b>罠</b>は伏せて場に残る。張ったターンから効き、発動するまで場に残る。条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
+    <li><b>罠</b>は伏せて場に残る。張ったターンから効き、発動するまで場に残る。条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。いっぱいのときに新しい罠を張ると、一番古い罠が墓地に行って張り替わる。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
     <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。お互いの札（手札と山札）が尽きたら、押し込んでいる側の勝ち。山札が尽きて引けないターンは5歩押される。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
     <li>デッキは30枚。デッキには型がある。どの札も3枚まで入れられるが、デッキの型ではない効果の札は「型違い」になり、数字が5下がる（罠は気力が5多くかかる）。強いカードは気力で縛られるので、数字の上限は無い。</li>
@@ -1971,7 +1975,7 @@ function sideChips(s,isP){
   if(isP)c.push(`<button class="chip ${s.ougiUsed&&!s.ougiNow?'':'on'}" data-act="school-info" aria-label="${kt.name}の型・奥義${og.name}">${monHTML('kata',s.kata)}${monHTML('ougi',s.ougi)}${s.ougiNow?og.name+'中':s.genwakuUntil>=G.turn?`${og.name} 残${s.genwakuUntil-G.turn+1}`:s.ougiUsed?'済':og.name}</button>`);
   else{
     if(!mixOn)c.push(`<span class="chip">手札${s.hand.length}</span>`);
-    c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">${s.genwakuUntil>=G.turn?`幻惑 残${s.genwakuUntil-G.turn+1}`:'奥義'+(s.ougiUsed?'済':'？')}</span>`);
+    c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">${s.genwakuUntil>=G.turn?`${og.name} 残${s.genwakuUntil-G.turn+1}`:'奥義'+(s.ougiUsed?'済':'？')}</span>`);
     // 眼の型：相手の手札の内訳が見える
     if(isOpen()){const sn=oppDeckSeen();if(sn.length)c.push(`<span class="chip warn deckline">山の上：${sn.map(({x})=>def(x).eff?def(x).name:label(def(x))).join(' → ')}</span>`)}
     else if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
