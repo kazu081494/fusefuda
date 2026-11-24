@@ -200,7 +200,12 @@ button.chip{cursor:pointer;border-color:var(--line)}
 }
 .hand .ctext{padding-bottom:6px}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
-.opp-hand.open{grid-template-columns:repeat(7,minmax(0,46px))}
+.opp-hand.open{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+/* 開けたら、相手の札を大きく前に出す（自分の札は小さめに） */
+.battle.rev{grid-template-columns:minmax(0,1.3fr) minmax(96px,1fr) minmax(0,.75fr)}
+.battle.rev .slot:first-of-type .big.card,.battle.rev .slot:first-of-type .big.back{box-shadow:0 0 0 3px var(--lose),0 0 18px rgba(238,138,116,.55)}
+.battle.rev .slot:first-of-type .who{color:var(--lose);font-weight:700}
+.battle.rev .slot:last-of-type .big{opacity:.85}
 .chip.deckline{white-space:normal}
 .openrule{display:flex;flex-direction:column;gap:4px}
 
@@ -534,7 +539,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 @media (max-height:720px){
   .big.card .ctext{font-size:10px;line-height:1.32}
   .opp-hand{grid-template-columns:repeat(7,30px)}
-  .opp-hand.open{grid-template-columns:repeat(7,minmax(0,36px))}
+  .opp-hand.open{grid-template-columns:repeat(7,minmax(0,40px))}
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
@@ -1993,7 +1998,7 @@ function gameHTML(){
     <section class="gauge" aria-label="橋">
       <div class="cells">${cells.join('')}</div>${zoom}
     </section>
-    <section class="battle stage${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':ph==='select'&&G.detail?'data-act="unzoom"':''} style="${stageStyle}" aria-label="場">
+    <section class="battle stage${revealed?' rev':''}${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':ph==='select'&&G.detail?'data-act="unzoom"':''} style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
       <div class="gtxt">${gTxt}</div>
       ${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?`<div class="nanori" aria-live="polite"><span>今宵の相手</span><b>${G.char.name}</b><q>${G.char.intro}</q></div>`:''}
