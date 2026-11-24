@@ -413,7 +413,7 @@ details.opp-info .dl{margin-top:8px}
 .ktabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:6px}
 .ktabs::-webkit-scrollbar{display:none}
 .ktab{appearance:none;flex:none;display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line);background:var(--table-2);color:var(--fg);border-radius:999px;padding:3px 10px 3px 4px;font-size:13px;cursor:pointer;min-height:32px}
-.ktab:first-child,.ktab:last-child{padding-left:10px}
+.ktab:nth-child(1),.ktab:nth-child(2){padding-left:10px}
 .ktab .mon{width:22px;height:22px;color:var(--muted)}
 .ktab.own{border-color:color-mix(in srgb,var(--accent) 60%,transparent)}
 .ktab.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -735,7 +735,7 @@ const EFFECTS=[
   ['hakaabaki','墓暴き','T',null,5,'相手が燃やしたら、その札をもらう','相手が札を燃やしたら、燃やした札を自分の手札にもらう（相手の気力は増える）'],
   ['kitsunebi','狐火','T',null,10,'相手が防御したら、気力-10して5押す','相手が防御したら、相手の気力を10減らして、5歩押し込む'],
 ];
-/* 効果の札は、どれか1つの型の札。デッキの型の札は3枚まで、ほかの型の札は1枚まで入れられる（素の札は3枚まで） */
+/* 効果の札は、どれか1つの型の札。デッキの型の札は3枚まで、ほかの型の札は1枚まで入れられる（型なしの札は3枚まで） */
 const CARD_KATA={
   gou:['oiuchi','kantsu','sutemi','rengeki','kuzushi','iai','yakiuchi','mizuzeme'],
   yanagi:['hangeki','ukenagashi','fuuji','zanshin','kamae','tessen','katanagari'],
@@ -1876,7 +1876,7 @@ function rulesHTML(){
     <li><b>罠</b>は伏せて場に残る。張ったターンから効き、発動するまで場に残る。条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
     <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。お互いの札（手札と山札）が尽きたら、押し込んでいる側の勝ち。山札が尽きて引けないターンは5歩押される。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
-    <li>デッキは30枚。デッキには型があり、効果の札はその型の札なら3枚まで、ほかの型の札は1枚まで（素の札は3枚まで）。強いカードは気力で縛られるので、数字の上限は無い。</li>
+    <li>デッキは30枚。デッキには型があり、効果の札はその型の札なら3枚まで、ほかの型の札は1枚まで（型なしの札は3枚まで）。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li>試合の前に<b>型</b>と<b>奥義</b>を1つずつ選ぶ。型はいつも効く小さな特性で、相手にも見えている。奥義は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。相手の型や戦い方、状況から、どの奥義をいつ使ってくるかを読む。</li>
     <li>相手（CPU）には性格（強気・慎重・溜め屋）があり、相手の欄に出ている。クセを読んで裏をかく。</li>
     <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカードで確定する（無ければ、一番気力の増える札を燃やす）。</li>
@@ -1890,7 +1890,7 @@ function rulesHTML(){
 const own0=()=>settings.deckKata;
 function builderHTML(){
   const st=deckStats(deck);
-  const own=settings.deckKata,order=[own,null,...Object.keys(KATA).filter(k=>k!==own)].filter(k=>builderKata==='all'||(builderKata==='plain'?k===null:k===builderKata));
+  const own=settings.deckKata,order=[null,own,...Object.keys(KATA).filter(k=>k!==own)].filter(k=>builderKata==='all'||(builderKata==='plain'?k===null:k===builderKata));
   const row=d=>{const c=deck[d.id]||0;
       return `<div class="crow"><div class="card t-${d.type}" aria-hidden="true">${silHTML(d)}<span class="ccost">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}<span class="plain">${TY[d.type].name[0]}</span></div>
         <div class="cinfo"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}</b><span class="stat-line">${KATA_OF[d.id]?`<span class="kmark${KATA_OF[d.id]===settings.deckKata?' own':''}">${monHTML('kata',KATA_OF[d.id])}${KATA[KATA_OF[d.id]].name}・${copyMax(d.id)}枚まで</span>`:''}${TY[d.type].name}${d.num!=null?d.num:''}・気力${d.cost}・燃やすと+${burnVal(d)}</span><span class="eff">${d.eff?d.text:'効果なし'}</span></div>
@@ -1899,7 +1899,7 @@ function builderHTML(){
         <button data-act="inc" data-id="${d.id}" ${c>=copyMax(d.id)||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`};
   const groups=TYPES.filter(t=>t===builderTab).map(t=>`<div class="group t-${t}">${order.map(k=>{
     const ds=POOL.filter(d=>d.type===t&&(k?KATA_OF[d.id]===k:!d.eff));if(!ds.length)return '';
-    return `<h4 class="kgroup${k===own?' own':''}">${k?`${monHTML('kata',k)}${KATA[k].name}の札<small>${k===own?'3枚まで':'1枚まで'}</small>`:'素の札<small>3枚まで</small>'}</h4>${ds.map(row).join('')}`}).join('')}
+    return `<h4 class="kgroup${k===own?' own':''}">${k?`${monHTML('kata',k)}${KATA[k].name}の札<small>${k===own?'3枚まで':'1枚まで'}</small>`:'型なしの札<small>3枚まで</small>'}</h4>${ds.map(row).join('')}`}).join('')}
   </div>`).join('');
   return `<div class="row"><button class="btn ghost" data-act="go-menu">メニューへ戻る</button></div>
   <div class="sticky">
@@ -1909,12 +1909,12 @@ function builderHTML(){
       <span class="small muted">攻撃 ${st.by.A}・防御 ${st.by.D}・罠 ${st.by.T}</span>
     </div>
     <p class="small" style="color:${st.ok?'var(--win)':'var(--lose)'}">${st.ok?'このデッキで対戦できます（自動で保存）':st.errs.join('／')}</p>
-    <div class="ktabs" role="tablist" aria-label="型で絞る">${[['all','全部'],[own0(),null],...Object.keys(KATA).filter(k=>k!==own0()).map(k=>[k,null]),['plain','素']].map(([k,n])=>`<button class="ktab${builderKata===k?' on':''}${k===own0()?' own':''}" data-act="bkata" data-k="${k}" aria-selected="${builderKata===k}">${n||monHTML('kata',k)+KATA[k].name}</button>`).join('')}</div>
+    <div class="ktabs" role="tablist" aria-label="型で絞る">${[['plain','型なし'],['all','全部'],[own0(),null],...Object.keys(KATA).filter(k=>k!==own0()).map(k=>[k,null])].map(([k,n])=>`<button class="ktab${builderKata===k?' on':''}${k===own0()?' own':''}" data-act="bkata" data-k="${k}" aria-selected="${builderKata===k}">${n||monHTML('kata',k)+KATA[k].name}</button>`).join('')}</div>
     <div class="tabs" role="tablist">${TYPES.map(t=>`<button class="tab t-${t}${builderTab===t?' on':''}" role="tab" aria-selected="${builderTab===t}" data-act="btab" data-t="${t}">${TY[t].name}<small>${st.by[t]}枚</small></button>`).join('')}</div>
   </div>
   <div class="panel"><div class="label">デッキの型（対戦ではこの型で戦う）</div>
     <div class="ougi-grid kata-grid">${Object.entries(KATA).map(([k,o])=>`<button class="og${settings.deckKata===k?' on':''}" data-act="deck-kata" data-k="${k}" aria-pressed="${settings.deckKata===k}">${monHTML('kata',k)}<span>${o.name}</span></button>`).join('')}</div>
-    <p class="small muted">${KATA[settings.deckKata].name}の型：${KATA[settings.deckKata].text}。効果の札は型ごとに分かれていて、${KATA[settings.deckKata].name}の札は3枚まで、ほかの型の札は${OFF_KATA_MAX}枚まで入れられる。素の札はどれも3枚まで</p></div>
+    <p class="small muted">${KATA[settings.deckKata].name}の型：${KATA[settings.deckKata].text}。効果の札は型ごとに分かれていて、${KATA[settings.deckKata].name}の札は3枚まで、ほかの型の札は${OFF_KATA_MAX}枚まで入れられる。型なしの札はどれも3枚まで</p></div>
   <div class="panel"><div class="label">見本のデッキから始める</div>
     <div class="chips">${PRESETS.filter(p=>!p.hidden).map(p=>`<button class="chip" data-act="preset" data-key="${p.key}">${monHTML('kata',p.kata)}${p.name}</button>`).join('')}<button class="chip" data-act="clear">全部外す</button></div>
     <p class="small muted">${builderPreset?builderPreset.desc:'見本を選ぶと、いまのデッキと入れ替わります'}</p>
