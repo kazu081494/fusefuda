@@ -645,6 +645,11 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
   <symbol id="art-kitsunebi" viewBox="0 0 100 100"><use href="#fx-flame" x="4" y="40" width="40" height="40"/><use href="#fx-flame" x="40" y="10" width="54" height="54"/><use href="#fx-flame" x="50" y="64" width="30" height="30"/></symbol>
   <symbol id="art-hiuchi" viewBox="0 0 100 100"><path d="M14 92 L22 62 L46 52 L66 60 L72 84 L52 96 Z"/><path d="M56 40 Q70 30 88 34 L90 42 Q74 40 62 48 Z"/><path d="M48 46 L40 22 L46 44 Z M52 44 L58 16 L55 44 Z M46 48 L26 32 L44 49 Z M58 46 L78 18 L60 47 Z"/><circle cx="34" cy="16" r="2.5"/><circle cx="70" cy="10" r="2"/><path d="M28 74 Q40 66 54 72" stroke="var(--lamp-2)" stroke-width="2" fill="none" opacity=".5"/></symbol>
   <symbol id="art-okuribi" viewBox="0 0 100 100"><path d="M18 74 L82 74 L72 88 L28 88 Z"/><rect x="46" y="88" width="8" height="8"/><rect x="34" y="95" width="32" height="4" rx="2"/><use href="#fx-flame" x="26" y="16" width="48" height="60"/><path d="M50 14 Q44 6 50 0 Q52 8 56 4 Q56 12 50 14 Z" opacity=".6"/></symbol>
+  <symbol id="art-shizan" viewBox="0 0 100 100"><ellipse cx="50" cy="88" rx="44" ry="10"/><circle cx="30" cy="74" r="12"/><circle cx="54" cy="72" r="13"/><circle cx="74" cy="76" r="11"/><circle cx="42" cy="52" r="12"/><circle cx="64" cy="52" r="12"/><circle cx="53" cy="31" r="12"/><circle cx="49" cy="29" r="2.6" fill="var(--lamp-2)"/><circle cx="57" cy="29" r="2.6" fill="var(--lamp-2)"/><circle cx="38" cy="50" r="2.4" fill="var(--lamp-2)"/><circle cx="46" cy="50" r="2.4" fill="var(--lamp-2)"/></symbol>
+  <symbol id="art-onryou" viewBox="0 0 100 100"><path d="M50 8 C74 8 84 30 80 52 C78 66 86 76 92 92 C80 86 74 94 64 86 C58 96 46 96 40 86 C30 94 22 88 18 94 C22 76 20 64 20 52 C18 28 28 8 50 8Z"/><ellipse cx="40" cy="38" rx="5" ry="7" fill="var(--lamp-2)"/><ellipse cx="60" cy="38" rx="5" ry="7" fill="var(--lamp-2)"/><path d="M42 58 Q50 66 58 58" stroke="var(--lamp-2)" stroke-width="3" fill="none"/></symbol>
+  <symbol id="art-yobimodoshi" viewBox="0 0 100 100"><rect x="0" y="84" width="100" height="16"/><path d="M38 86 L40 50 L34 22 Q34 16 39 17 L44 40 L45 12 Q46 6 51 7 L52 38 L56 14 Q58 8 62 10 L60 42 L66 24 Q69 19 72 22 L66 52 Q64 64 62 86Z"/></symbol>
+  <symbol id="art-kuyou" viewBox="0 0 100 100"><rect x="40" y="10" width="20" height="78" rx="2"/><path d="M40 10 L50 2 L60 10Z"/><rect x="26" y="88" width="48" height="8" rx="2"/><path d="M44 24 H56 M44 34 H56 M44 44 H56 M44 54 H52" stroke="var(--lamp-2)" stroke-width="2.5" opacity=".6"/><rect x="74" y="60" width="2.5" height="28"/><path d="M75 58 Q70 46 76 38 Q82 30 76 20" stroke="currentColor" stroke-width="2" fill="none" opacity=".6"/></symbol>
+  <symbol id="art-hakaabaki" viewBox="0 0 100 100"><path d="M14 96 L14 60 Q14 40 34 40 Q54 40 54 60 L54 96Z"/><path d="M24 58 H44 M24 70 H44" stroke="var(--lamp-2)" stroke-width="3" opacity=".55"/><rect x="70" y="10" width="5" height="62" transform="rotate(20 72 40)"/><path d="M58 70 L80 64 L86 92 L64 98Z"/><path d="M0 96 Q30 86 60 94 L100 96 L100 100 L0 100Z"/></symbol>
   <symbol id="art-hiya" viewBox="0 0 100 100"><path d="M8 92 L80 20 L84 24 L12 96Z"/><path d="M78 12 L96 4 L88 22 L84 24 L76 16Z"/><path d="M8 92 L2 84 L10 84 L16 88 L16 96 L10 98Z"/><use href="#fx-flame" x="58" y="0" width="34" height="38"/></symbol>
   <symbol id="art-houroku" viewBox="0 0 100 100"><circle cx="46" cy="60" r="32"/><rect x="40" y="22" width="12" height="10" rx="2"/><path d="M46 22 Q52 10 64 12" stroke="currentColor" stroke-width="3" fill="none"/><use href="#fx-flame" x="58" y="0" width="22" height="24"/><path d="M28 50 Q34 40 44 38" stroke="var(--lamp-2)" stroke-width="3" fill="none" opacity=".5"/></symbol>
   <symbol id="art-noroshi" viewBox="0 0 100 100"><rect x="36" y="78" width="28" height="18" rx="3"/><path d="M42 78 Q34 62 46 50 Q58 38 48 24 Q44 14 54 4 Q70 18 60 32 Q52 44 62 56 Q70 68 58 78Z" opacity=".75"/><use href="#fx-flame" x="38" y="60" width="24" height="24"/></symbol>
@@ -692,6 +697,8 @@ const EFFECTS=[
   ['kanashibari','金縛り','A',8,10,'押せたら、次のターン相手は防御できない','押せたら、次のターン相手は防御の札を出せない'],
   ['hiya','火矢','A',8,10,'燃やすと気力-10、相手を10押す','燃やすと、気力は増えずに10減るが、相手を10歩押し込む（相手が防御していたら止められる）。出せばふつうの攻撃8'],
   ['houroku','焙烙玉','A',13,15,'燃やすと気力-15、相手を20押す','燃やすと、気力は増えずに15減るが、相手を20歩押し込む（相手が防御していたら止められる）。出せばふつうの攻撃13'],
+  ['shizan','屍山','A',4,10,'墓地5枚ごとに攻撃+5','自分の墓地（捨て札）5枚ごとに、攻撃の数字が5増える（墓地20枚なら攻撃24）'],
+  ['onryou','怨霊','A',8,10,'押せたら、墓地の怨霊1枚ごとに+5押す','押せたら、自分の墓地にある怨霊1枚ごとに、さらに5押す'],
   ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
   ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
   ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る'],
@@ -705,6 +712,8 @@ const EFFECTS=[
   ['katanagari','刀狩り','D',8,10,'相手の手札の一番大きい攻撃を捨てさせる','開けたとき、相手の手札で一番数字の大きい攻撃の札を捨てさせる'],
   ['sekisho','関所','D',8,10,'次のターン、相手は気力20以上の札を出せない','開けたとき、次のターン相手は気力20以上の札を出せない'],
   ['noroshi','狼煙','D',4,5,'燃やすと気力+5、次の攻撃+10','燃やすと気力が5増え、次のターン自分の攻撃の数字が10増える。出せばふつうの防御4'],
+  ['yobimodoshi','呼び戻し','D',8,10,'墓地の一番大きい攻撃を手札に戻す','開けたとき、自分の墓地から一番数字の大きい攻撃の札を1枚、手札に戻す'],
+  ['kuyou','供養','D',4,0,'燃やすと気力+10、墓地3枚を山札に戻す','燃やすと気力が10増え、自分の墓地の札を3枚、山札の下に戻す（山札切れを防げる）。出せばふつうの防御4'],
   ['hiuchi','火打石','D',4,0,'燃やすと気力+10','気力0の札なのに、燃やすと気力が10増える。出せばふつうの防御4'],
   ['okuribi','送り火','D',8,10,'燃やすと、相手の気力を5減らす','燃やすと気力が10増え、さらに相手の気力を5減らす。出せばふつうの防御8'],
   ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','相手が攻撃してきたら、押される量を15減らして捨てる'],
@@ -715,6 +724,7 @@ const EFFECTS=[
   ['naruko','鳴子','T',null,5,'相手が燃やしたら、その気力をもらう','相手が燃やしたら、相手が増やすはずの気力を自分がもらう'],
   ['kagemusha','影武者','T',null,10,'相手が攻撃したら、押し込まれない','相手が攻撃してきたら、押し込まれる歩数を0にする'],
   ['hyourou','兵糧攻め','T',null,5,'相手が攻撃も防御もしなかったら、山札を4枚捨てさせる','相手が攻撃も防御もしなかったら（燃やす・罠）、相手の山札を上から4枚捨てさせる'],
+  ['hakaabaki','墓暴き','T',null,5,'相手が燃やしたら、その札をもらう','相手が札を燃やしたら、燃やした札を自分の手札にもらう（相手の気力は増える）'],
   ['kitsunebi','狐火','T',null,10,'相手が防御したら、気力-10して5押す','相手が防御したら、相手の気力を10減らして、5歩押し込む'],
 ];
 /* 効果の札は、どれか1つの型の札。デッキの型の札は3枚まで、ほかの型の札は1枚まで入れられる（素の札は3枚まで） */
@@ -722,7 +732,7 @@ const CARD_KATA={
   gou:['oiuchi','kantsu','sutemi','rengeki','kuzushi','iai','yakiuchi','mizuzeme'],
   yanagi:['hangeki','ukenagashi','fuuji','zanshin','kamae','tessen','katanagari'],
   homura:['senkou','hiuchi','okuribi','hikeshi','meisou','hikiashi','naruko','hiya','houroku','noroshi'],
-  kage:['otoshiana','kaeshi','dorobou','machibuse','ashikase','kagemusha','hyourou','kitsunebi'],
+  kage:['otoshiana','kaeshi','dorobou','machibuse','ashikase','kagemusha','hyourou','kitsunebi','shizan','onryou','yobimodoshi','kuyou','hakaabaki'],
   me:['teisatsu','yokoku','mikiri','kakuran','youdou','kanashibari','sekisho'],
 };
 const KATA_OF={};for(const [k,ids] of Object.entries(CARD_KATA))for(const id of ids)KATA_OF[id]=k;
@@ -739,7 +749,7 @@ const PRESETS=[
   {key:'soku',kata:'gou',name:'速攻',desc:'剛の型。重い攻撃で一気に押す。居合で大振りを返し、崩しと貫通で守りを割る',cards:{A30:2,A24:3,A18:2,A13:3,oiuchi:2,kantsu:2,rengeki:2,kuzushi:2,iai:3,yakiuchi:1,mizuzeme:1,sutemi:1,meisou:1,senkou:1,hiuchi:1,yokoku:1,D8:2}},
   {key:'mamori',kata:'yanagi',name:'守りの城',desc:'柳の型。受け止めて跳ね返す。構えで空振りの損を消し、反撃と残心で押し返す',cards:{D30:2,D24:2,D18:2,D13:2,hangeki:3,ukenagashi:2,zanshin:2,kamae:3,tessen:3,fuuji:1,katanagari:1,sekisho:1,meisou:1,mikiri:1,kaeshi:1,A24:1,A18:2}},
   {key:'hono',kata:'homura',name:'火祭り',desc:'炎の型。燃やして気力を貯め、大きい札で一気に押す。線香花火と火打石が軸',cards:{senkou:3,hiuchi:3,okuribi:2,hiya:3,houroku:2,noroshi:2,meisou:3,hikiashi:1,A30:2,A24:2,A18:2,D18:2,oiuchi:1,iai:1,kamae:1}},
-  {key:'wana',kata:'kage',name:'罠師',desc:'影の型。罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:3,kaeshi:2,dorobou:2,machibuse:3,ashikase:2,kagemusha:2,kitsunebi:2,hyourou:2,A24:2,A18:2,A13:2,D13:2,meisou:1,naruko:1,hikiashi:1,mikiri:1}},
+  {key:'wana',kata:'kage',name:'罠と屍',desc:'影の型。罠で相手の手を縛り、墓地にたまった札（屍山・怨霊）で押し切る',cards:{otoshiana:2,kaeshi:1,dorobou:1,machibuse:2,kagemusha:2,hakaabaki:2,shizan:3,onryou:3,yobimodoshi:2,kuyou:2,A24:2,A18:2,A13:2,D13:2,mikiri:1,meisou:1}},
   {key:'kin',kata:'me',name:'均衡',desc:'眼の型。陽動と予告で読みを外し、金縛りと関所で縛る',cards:{teisatsu:2,yokoku:2,mikiri:2,kakuran:2,youdou:3,kanashibari:2,sekisho:2,A24:2,A18:2,A13:2,D18:2,D13:2,hikeshi:1,senkou:1,hiuchi:1,hangeki:1,otoshiana:1}},
 ];
 /* 流派：型（いつも効く。中身は相手に秘密だが、戦い方ににじみ出る）と奥義（1試合に1回、伏せる前に使う） */
@@ -828,8 +838,10 @@ const sgn=v=>(v>=0?'+':'')+v;
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
 const burnBlock=(s,i)=>{const v=burnVal(def(i),s);return v<0&&s.energy<-v?'気力不足':''};
 /* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
+const numFor0=x=>def(x).num||0;
+const shizanBonus=s=>Math.floor((s.discard||[]).length/5)*5;
 const BURN_PUSH={senkou:5,hiya:10,houroku:20};
-const BURN_SPECIAL={hiya:-10,houroku:-15,senkou:5,hiuchi:10};
+const BURN_SPECIAL={hiya:-10,houroku:-15,senkou:5,hiuchi:10,kuyou:10};
 const burnVal=(d,s)=>{const v=d.eff in BURN_SPECIAL?BURN_SPECIAL[d.eff]:d.cost;return v+(v>=0&&s&&s.kata==='homura'?5:0)};
 /* 罠を置ける数：影の型なら2 */
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
@@ -845,7 +857,7 @@ const kataOf=(s,isP)=>`${isP?'あなた':'相手'}の型（${KATA[s.kata].name}�
 const kind=d=>!d||d.type==='T'?'P':d.type;
 function outcome(P,C,pd,cd,pb=null,cb=null){
   const kp=kind(pd),kc=kind(cd),notes=[],fx={banP:false,banC:false,stealFromP:0,stealFromC:0,firedP:[],firedC:[]};
-  const numOf=(s,d,k)=>k==='A'?d.num+(s.yokoku?10:0):k==='D'?d.num:0;
+  const numOf=(s,d,k)=>k==='A'?d.num+(s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0):k==='D'?d.num:0;
   const np=numOf(P,pd,kp),nc=numOf(C,cd,kc);
   let toC=0,toP=0,why='';
   if(kp==='A'&&kc==='A'){
@@ -924,6 +936,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
       if(id==='ashikase'&&victimK==='A'){fired=true;if(isP)fx.banC=true;else fx.banP=true;notes.push(`${on}の足かせ：次のターン、${vn}は攻撃できない`)}
       if(id==='naruko'&&victimBurn){fired=true;if(isP)fx.narukoP=true;else fx.narukoC=true;notes.push(`${on}の鳴子：${vn}の燃やした気力を${on}がもらう`)}
       if(id==='kagemusha'&&victimK==='A'){fired=true;if(isP)toP=0;else toC=0;notes.push(`${on}の影武者：身代わりになって、押し込まれない`)}
+      if(id==='hakaabaki'&&victimBurn){fired=true;if(isP)fx.robC=true;else fx.robP=true;notes.push(`${on}の墓暴き：${vn}の燃やした札をもらう`)}
       if(id==='hyourou'&&victimK!=='A'&&victimK!=='D'){fired=true;if(isP)fx.millC=(fx.millC||0)+4;else fx.millP=(fx.millP||0)+4;notes.push(`${on}の兵糧攻め：${vn}の山札を4枚捨てさせる`)}
       if(id==='kitsunebi'&&victimK==='D'){fired=true;if(isP){fx.drainC=10;toC+=5}else{fx.drainP=10;toP+=5}notes.push(`${on}の狐火：${vn}の気力を10減らして、5押した`)}
       if(fired)(isP?fx.firedP:fx.firedC).push({uid:t.inst.uid,name:def(t.inst).name});
@@ -946,6 +959,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   if(toP>0&&using(P,'fudou')){toP=0;fx.ougiP='fudou';notes.push('不動：押し込まれない')}
   if(toC>0&&using(C,'fudou')){toC=0;fx.ougiC='fudou';notes.push('相手の不動：押し込めない')}
   // 押せたら効く札（不動で止められたら効かない）
+  if(kp==='A'&&toC>0&&pd.eff==='onryou'){const n=P.discard.filter(x=>def(x).eff==='onryou').length;if(n){toC+=5*n;notes.push(`怨霊：墓地の怨霊${n}枚で、さらに${5*n}押す`)}}
+  if(kc==='A'&&toP>0&&cd.eff==='onryou'){const n=C.discard.filter(x=>def(x).eff==='onryou').length;if(n){toP+=5*n;notes.push(`相手の怨霊：墓地の怨霊${n}枚で、さらに${5*n}押された`)}}
   if(kp==='A'&&toC>0){if(pd.eff==='mizuzeme')fx.millC=(fx.millC||0)+3;if(pd.eff==='yakiuchi')fx.discC=true;if(pd.eff==='kanashibari')fx.noDefC=true}
   if(kc==='A'&&toP>0){if(cd.eff==='mizuzeme')fx.millP=(fx.millP||0)+3;if(cd.eff==='yakiuchi')fx.discP=true;if(cd.eff==='kanashibari')fx.noDefP=true}
   // 退き足：自分から5歩下がる（不動や幻惑でも打ち消せない）
@@ -1317,6 +1332,7 @@ function openEff(who,inst,msgs){
     case 'kakuran':if(op.hand.length){const x=rnd(op.hand);removeFrom(op.hand,x);op.discard.push(x);drawN(op,1);
       msgs.push(`撹乱：${on}は「${label(def(x))}」を捨てて1枚引いた`)}break;
     case 'katanagari':{const as=op.hand.filter(x=>def(x).type==='A');if(as.length){const x=as.reduce((a,b)=>def(b).num>def(a).num?b:a);removeFrom(op.hand,x);op.discard.push(x);msgs.push(`刀狩り：${on}の「${label(def(x))}」を捨てさせた`)}else msgs.push(`刀狩り：${on}の手札に攻撃の札が無かった`);break}
+    case 'yobimodoshi':{const as=me.discard.filter(x=>def(x).type==='A');if(as.length){const x=as.reduce((a,b)=>numFor0(b)>numFor0(a)?b:a);removeFrom(me.discard,x);(me.hand.length<HAND_MAX?me.hand:me.deck).push(x);msgs.push(`呼び戻し：${mn}は墓地から「${label(def(x))}」を手札に戻した`)}else msgs.push(`呼び戻し：${mn}の墓地に攻撃の札が無かった`);break}
     case 'sekisho':op.capNext=true;msgs.push(`関所：次のターン、${on}は気力20以上の札を出せない`);break;
     case 'meisou':me.energy=clampE(me.energy+15);msgs.push(`瞑想：${mn}は気力を15得た`);break;
     case 'hikiashi':me.energy=clampE(me.energy+20);msgs.push(`退き足：${mn}は気力を20得た`);break;
@@ -1525,6 +1541,7 @@ function resolve(){
   // 燃やしたときの効果：火打石は1枚引く、送り火は相手の気力を5減らす
   for(const [me,op,b,who] of [[P,C,G.pBurned,'あなた'],[C,P,G.cBurned,'相手']]){
     if(!b)continue;const e=def(b).eff;
+        if(e==='kuyou'){const pool=me.discard.filter(x=>x!==b);shuffle(pool);const back=pool.slice(0,3);back.forEach(x=>removeFrom(me.discard,x));me.deck.unshift(...back);msgs.push(`供養：${who}は墓地の札を${back.length}枚、山札の下に戻した`)}
         if(e==='noroshi'){me.yokokuNext=true;msgs.push(`狼煙：次のターン、${who}の攻撃+10`)}
     if(e==='okuribi'){const k=Math.min(op.energy,5);op.energy-=k;msgs.push(`送り火：${who==='あなた'?'相手':'あなた'}の気力を${k}減らした`)}
   }
@@ -1536,6 +1553,8 @@ function resolve(){
   if(r.fx.nextAtkC)C.yokokuNext=true;
   if(r.fx.banP)P.noAtkNext=true;
   if(r.fx.banC)C.noAtkNext=true;
+  // 墓暴き：燃やした札を、罠の持ち主の手札へ（いっぱいなら山札の上）
+  for(const [from,to,b,w] of [[C,P,G.cBurned,'あなた'],[P,C,G.pBurned,'相手']])if((to===P?r.fx.robC:r.fx.robP)&&b&&from.discard.includes(b)){removeFrom(from.discard,b);(to.hand.length<HAND_MAX?to.hand:to.deck).push(b);msgs.push(`墓暴き：${w}は「${label(def(b))}」を手に入れた`)}
   if(r.fx.noDefP){P.noDefNext=true;msgs.push('金縛り：次のターン、あなたは防御できない')}
   if(r.fx.noDefC){C.noDefNext=true;msgs.push('金縛り：次のターン、相手は防御できない')}
   for(const [s,n,w] of [[P,r.fx.millP,'あなた'],[C,r.fx.millC,'相手']])if(n){const k=mill(s,n);msgs.push(`${w}の山札を${k}枚捨てた（残り${s.deck.length}枚）`)}
@@ -1685,7 +1704,7 @@ function cpuChoose(peek){
     if(!burnBlock(C,o))combos.push({play:null,burn:o,ev:evOf(null,d)+0.09*gain-0.6-0.016*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)+(d.eff==='hiuchi'?0.8:d.eff==='okuribi'?0.5:d.eff==='noroshi'?0.5:0)});
     if(blockReason(C,o))continue;
     let ev=evOf(d)-0.044*costOf(o);
-    if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:0.3;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;if(d.eff==='mizuzeme')ev+=0.3+(P.deck.length<8?0.8:0);if(d.eff==='yakiuchi'||d.eff==='kanashibari')ev+=0.3;if(d.eff==='katanagari')ev+=P.hand.some(x=>def(x).type==='A')?0.6:-0.4;if(d.eff==='sekisho')ev+=P.energy>=20?0.5:0;
+    if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:0.3;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;if(d.eff==='mizuzeme')ev+=0.3+(P.deck.length<8?0.8:0);if(d.eff==='yakiuchi'||d.eff==='kanashibari')ev+=0.3;if(d.eff==='katanagari')ev+=P.hand.some(x=>def(x).type==='A')?0.6:-0.4;if(d.eff==='yobimodoshi')ev+=C.discard.some(x=>def(x).type==='A')?0.6:-0.4;if(d.eff==='shizan')ev+=C.discard.length/12;if(d.eff==='onryou')ev+=C.discard.filter(x=>def(x).eff==='onryou').length*0.3;if(d.eff==='sekisho')ev+=P.energy>=20?0.5:0;
     combos.push({play:o,burn:null,ev:ev+styleBias(d.type,d)});
   }
   if(combos.length>1)combos.shift();  // 見送るは、出す札も燃やす札も無いときだけ
@@ -1726,7 +1745,7 @@ const MON={
 };
 const monHTML=(kind,key,cls='')=>{const m=MON[kind][key];if(!m)return '';
   return `<svg class="mon ${cls}" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="4"/><svg x="15" y="15" width="70" height="70" viewBox="${m[1]||'0 0 100 100'}"><use href="#${m[0]}"/></svg></svg>`};
-const ARTS=new Set(["hiya","houroku","noroshi","mizuzeme","yakiuchi","kanashibari","katanagari","sekisho","hyourou","hiuchi","okuribi","oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
+const ARTS=new Set(["shizan","onryou","yobimodoshi","kuyou","hakaabaki","hiya","houroku","noroshi","mizuzeme","yakiuchi","kanashibari","katanagari","sekisho","hyourou","hiuchi","okuribi","oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
 /* 札の影：効果の札はその札の絵、素の札は型の絵（刀・唐傘・狐） */
 /* 画像生成AIで作った絵が届いた札の ID（art/cards/<ID>.png。作り方は art/PROMPTS.md）。ここに無い札は下の影絵のまま */
 const ART_IMG=new Set(["teisatsu","kaeshi","samurai","D","T"]);  // 斬撃の絵 slash は、一閃の紋と舞台の斬撃に使う（#img-slash）
@@ -2007,7 +2026,7 @@ function gameHTML(){
     if(ph==='select'&&x===G.pBurn)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
     if(ph==='select'&&G.burnMode)return tutStep()&&!(tutStep().burn||[]).includes(x.id)?cardHTML(x,{act:'hand',off:true,tag:'いまは使わない',tagBan:true}):(()=>{const v=burnVal(def(x),P),bb=burnBlock(P,x),push=BURN_PUSH[def(x).eff]||0;return cardHTML(x,{act:'hand',off:!!bb,badge:`<span class="bbadge${v<0?' neg':''}"><small>気力</small>${v>0?'+':''}${v}${push?`<small>${push}押す</small>`:''}</span>`,tag:bb||'',tagBan:!!bb})})();
     const why=ph==='select'?blockReason(P,x):'';
-    return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why,tagBan:!!why});
+    return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why||(def(x).eff==='shizan'&&shizanBonus(P)?`いま攻撃${4+shizanBonus(P)}`:''),tagBan:!!why});
   }).join('');
 
   let actions='';const tut=tutStep();
