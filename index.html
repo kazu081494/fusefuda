@@ -912,6 +912,10 @@ const sgn=v=>(v>=0?'+':'')+v;
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
 const burnBlock=(s,i)=>{if(s.noBurn)return '燃やせない';const v=burnVal(def(i),s);return v<0&&s.energy<-v?'気力不足':''};
 /* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
+/* 手札の札に、いま効いている上乗せ（開ける前に分かるものだけ） */
+const handBonus=(s,d)=>{const k=s.atkStreak||0;
+  if(d.type==='A')return (s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(k,3)*5:0)+(d.eff==='nino'&&k?10:0);
+  if(d.type==='D')return d.eff==='yugamae'&&k?10:0;return 0};
 const numFor0=x=>def(x).num||0;
 const shizanBonus=s=>Math.floor((s.discard||[]).length/5)*5;
 const BURN_PUSH={senkou:5,hiya:10,houroku:20};
@@ -1425,7 +1429,8 @@ function commit(pi,bi=null){
   const ch=G.cPre||(G.tut!=null?tutCpu():null)||cpuChoose(using(C,'sakiyomi')?(pi?def(pi):null):undefined);
   G.openMsgs=[];
   // 燃やす：そのターンは何も出さない。気力は開けた後に増え、次のターンから使える
-  const burn=(s,b,who)=>{const v=burnVal(def(b),s);removeFrom(s.hand,b);s.discard.push(b);s.burnGain=v;G.openMsgs.push(`${who}は「${label(def(b))}」を燃やした（気力${sgn(v)}）`)};
+  G.burnDice=[];
+  const burn=(s,b,who)=>{let v=burnVal(def(b),s);if(def(b).eff==='hanami'){const d=roll(s,x=>x>=4);v+=d*5;G.burnDice.push({who:s===P?'p':'c',v:[d]});(s===P?(G.pGain=v):(G.cGain=v))}removeFrom(s.hand,b);s.discard.push(b);s.burnGain=v;G.openMsgs.push(`${who}は「${label(def(b))}」を燃やした（気力${sgn(v)}）`)};
   G.pBurned=pi?null:bi;G.cBurned=ch.burn;G.pGain=G.pBurned?burnVal(def(G.pBurned),P):0;G.cGain=G.cBurned?burnVal(def(G.cBurned),C):0;
   if(G.pBurned)burn(P,G.pBurned,'あなた');
   if(G.cBurned)burn(C,G.cBurned,'相手');
@@ -1673,7 +1678,6 @@ function resolve(){
   // 燃やしたときの効果：火打石は相手の気力を10減らす、送り火は相手の手札を1枚燃やす
   for(const [me,op,b,who] of [[P,C,G.pBurned,'あなた'],[C,P,G.cBurned,'相手']]){
     if(!b)continue;const e=def(b).eff;
-        if(e==='hanami'){const v=roll(me,x=>x>=4);me.energy=clampE(me.energy+v*5);msgs.push(`花見で一杯：${who}は賽で${v}、気力+${v*5}`)}
         if(e==='kuyou'){const pool=me.discard.filter(x=>x!==b);shuffle(pool);const back=pool.slice(0,3);back.forEach(x=>removeFrom(me.discard,x));me.deck.unshift(...back);msgs.push(`供養：${who}は墓地の札を${back.length}枚、山札の下に戻した`)}
         if(e==='noroshi'){me.yokokuNext=true;msgs.push(`狼煙：次のターン、${who}の攻撃+10`)}
     if(e==='hiuchi'){const k=Math.min(op.energy,10);op.energy-=k;msgs.push(`火打石：${who==='あなた'?'相手':'あなた'}の気力を${k}減らした`)}
@@ -1909,7 +1913,7 @@ function cardHTML(i,o={}){
   return `<button class="card t-${d.type}${o.small?' small':''}${o.sel?' sel':''}${o.off?' off':''}${o.cls?' '+o.cls:''}"data-act="${o.act||'detail'}" data-uid="${i.uid}" aria-label="${label(d)}、気力${costOf(i)}${d.eff?'：'+d.short:''}">
     ${faceHTML(d,costOf(i))}${o.badge||''}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:i.free?'<span class="tag ban">屍</span>':''}</button>`;
 }
-const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力${sgn(burnVal(d,s))}</b>${note?`<small>${note}</small>`:''}</span></div>`;
+const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力${d.eff==='hanami'&&G&&G.phase==='result'?sgn(s===G.p?G.pGain:G.cGain):d.eff==='hanami'?'賽×5':sgn(burnVal(d,s))}</b>${note?`<small>${note}</small>`:''}</span></div>`;
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
 /* 画面の大きさに合わせて全体を拡大する（1〜1.6倍）。幅360px・縦700pxが等倍 */
 function fitZoom(){
@@ -2151,7 +2155,8 @@ function gameHTML(){
     // 罠が発動したら、真ん中に大きく出す
     for(const [fired,who] of [[G.res.fx.firedP,'あなた'],[G.res.fx.firedC,'相手']])
       for(const f of fired)center+=`<div class="trapfire ${who==='あなた'?'mine':'theirs'}">罠発動！<small>${who}の${f.name}</small></div>`;
-    if(G.res.fx.dice&&G.res.fx.dice.length)center+=`<div class="dice">${G.res.fx.dice.map(d=>`<span class="${d.who}">${d.who==='p'?'':'相手 '}${d.v.map(x=>`<b>${x}</b>`).join('')}</span>`).join('')}</div>`;
+    const allDice=[...(G.burnDice||[]),...(G.res.fx.dice||[])];
+    if(allDice.length)center+=`<div class="dice">${allDice.map(d=>`<span class="${d.who}">${d.who==='p'?'':'相手 '}${d.v.map(x=>`<b>${x}</b>`).join('')}</span>`).join('')}</div>`;
     if(G.yomi)center+=G.yomi.who==='p'?`<div class="yomi win">${G.yomi.word}${G.combo>=2?`<small>${G.combo}連${G.comboGain==='p'?`・気力+${COMBO_GAIN}`:`（${COMBO_EVERY-G.combo%COMBO_EVERY}連先で気力+${COMBO_GAIN}）`}</small>`:''}</div>`:`<div class="yomi lose">読まれた<small>相手の${G.yomi.word.replace('！','')}${G.cCombo>=2?`・相手${G.cCombo}連${G.comboGain==='c'?`・気力+${COMBO_GAIN}`:''}`:''}</small></div>`;
     center+=`<div class="verdict"><span class="v ${n>0?'win':n<0?'lose':''}">${n?`${Math.abs(n)}歩<small>${n>0?'押し込んだ':'押し込まれた'}</small>`:'睨み合い'}</span></div>`;
     if(G.tut!=null){info+=`<p class="why">${whyText()}</p>`;
@@ -2181,7 +2186,8 @@ function gameHTML(){
     if(ph==='select'&&x===G.pBurn)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
     if(ph==='select'&&G.burnMode)return tutStep()&&!(tutStep().burn||[]).includes(x.id)?cardHTML(x,{act:'hand',off:true,tag:'いまは使わない',tagBan:true}):(()=>{const v=burnVal(def(x),P),bb=burnBlock(P,x),push=BURN_PUSH[def(x).eff]||0;return cardHTML(x,{act:'hand',off:!!bb,badge:`<span class="bbadge${v<0?' neg':''}"><small>気力</small>${def(x).eff==='hanami'?'賽×5':(v>0?'+':'')+v}${push?`<small>${push}押す</small>`:''}</span>`,tag:bb||'',tagBan:!!bb})})();
     const why=ph==='select'?blockReason(P,x):'';
-    return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why||(def(x).eff==='shizan'&&shizanBonus(P)?`いま攻撃${4+shizanBonus(P)}`:''),tagBan:!!why});
+    const bn=handBonus(P,def(x));
+    return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why||(bn?`${def(x).type==='A'?'攻撃':'防御'}+${bn}`:''),tagBan:!!why});
   }).join('');
 
   let actions='';const tut=tutStep();
