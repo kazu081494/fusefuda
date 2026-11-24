@@ -206,11 +206,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .opp-row{flex:none;display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:10px;background:color-mix(in srgb,var(--lose) 12%,var(--table-2));border:1px solid color-mix(in srgb,var(--lose) 45%,transparent)}
 .opp-row .opp-hand{flex:1}
 .opp-lbl{flex:none;font-size:11px;line-height:1.25;font-weight:700;color:var(--lose);text-align:center}
-/* 開けたら、相手の札を大きく前に出す（自分の札は小さめに） */
-.battle.rev{grid-template-columns:minmax(0,1.3fr) minmax(96px,1fr) minmax(0,.75fr)}
-.battle.rev .slot:first-of-type .big.card,.battle.rev .slot:first-of-type .big.back{box-shadow:0 0 0 3px var(--lose),0 0 18px rgba(238,138,116,.55)}
-.battle.rev .slot:first-of-type .who{color:var(--lose);font-weight:700}
-.battle.rev .slot:last-of-type .big{opacity:.85}
+
 .chip.deckline{white-space:normal}
 .openrule{display:flex;flex-direction:column;gap:4px}
 
@@ -222,6 +218,8 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .cell.goal-p{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--win) 70%,transparent)}
 .cell.goal-c{box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--lose) 70%,transparent)}
 .cell.mid{box-shadow:inset 0 0 0 1px rgba(241,220,171,.35)}
+.cell.gain{background:linear-gradient(#6fbf7f,#3f8a4e);box-shadow:0 0 6px rgba(124,197,138,.45)}
+.cell.loss{background:linear-gradient(#e0705a,#a8442f);box-shadow:0 0 6px rgba(238,138,116,.45)}
 .cell.on{background:radial-gradient(circle,#fff6d6 0 30%,var(--accent) 70%);box-shadow:0 0 8px 2px rgba(226,178,71,.6);z-index:1}
 .gauge-labels{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted)}
 .gauge-labels b{color:var(--fg)}
@@ -1910,7 +1908,7 @@ function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
   const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true}):G.p.shinganUntil>=G.turn?cardHTML(x,{small:true,tag:'心眼'}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'').join('');
   const STEP=5,E8=GOAL/STEP,at=Math.round(G.gauge/STEP);
-  const cells=[];for(let k=E8;k>=-E8;k--)cells.push(`<div class="cell${k===at?' on':''}${k===E8?' goal-p':''}${k===-E8?' goal-c':''}${k===0?' mid':''}"></div>`);
+  const cells=[];for(let k=E8;k>=-E8;k--)cells.push(`<div class="cell${k===at?' on':''}${at>0&&k>0&&k<at?' gain':''}${at<0&&k<0&&k>at?' loss':''}${k===E8?' goal-p':''}${k===-E8?' goal-c':''}${k===0?' mid':''}"></div>`);
   const gTxt=G.gauge>0?`勝ちまで あと <b>${GOAL-G.gauge}</b> 歩`:G.gauge<0?`負けまで あと <b>${GOAL+G.gauge}</b> 歩`:'互角';
 
   let oppSlot,meSlot;
