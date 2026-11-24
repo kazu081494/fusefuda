@@ -201,7 +201,10 @@ button.chip{cursor:pointer;border-color:var(--line)}
 }
 .hand .ctext{padding-bottom:6px}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
-.opp-hand.open{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.opp-hand.open{grid-template-columns:repeat(4,minmax(0,66px));gap:6px}
+.opp-row .card.small .cname{font-size:11px}
+.opp-row .card.small .cnum{font-size:16px}
+.opp-row .card.small .ccost{width:16px;height:16px;font-size:10px}
 /* 相手の見えている手札は、自分の手札のすぐ上に並べる（選ぶときに目線を動かさずに見られる） */
 .opp-row{flex:none;display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:10px;background:color-mix(in srgb,var(--lose) 12%,var(--table-2));border:1px solid color-mix(in srgb,var(--lose) 45%,transparent)}
 .opp-row .opp-hand{flex:1}
@@ -414,6 +417,10 @@ details.opp-info .dl{margin-top:8px}
 .tab.on small{color:#fff;opacity:.85}
 .group{scroll-margin-top:150px}
 .ougi-grid.kata-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.kgroup{display:flex;align-items:center;gap:6px;margin:10px 0 2px;font-size:15px;color:var(--fg)}
+.kgroup .mon{width:24px;height:24px;color:var(--muted)}
+.kgroup small{font-size:12px;font-weight:400;color:var(--muted)}
+.kgroup.own{color:var(--accent)}.kgroup.own .mon{color:var(--accent)}
 .kmark{display:flex;width:fit-content;align-items:center;gap:2px;margin-bottom:2px;padding:0 6px 0 1px;border-radius:999px;border:1px solid var(--line)}
 .kmark .mon{width:16px;height:16px;color:var(--muted)}
 .kmark.own{border-color:var(--accent);color:var(--accent)}
@@ -553,7 +560,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 @media (max-height:720px){
   .big.card .ctext{font-size:10px;line-height:1.32}
   .opp-hand{grid-template-columns:repeat(7,30px)}
-  .opp-hand.open{grid-template-columns:repeat(7,minmax(0,40px))}
+  .opp-hand.open{grid-template-columns:repeat(4,minmax(0,52px))}
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
@@ -659,7 +666,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 const HAISUI_NEAR=10,HAISUI_BACK=10;
 /* 連：続けて読み勝つと連が伸び、COMBO_EVERY 連ごとに気力 +COMBO_GAIN */
 const COMBO_EVERY=3,COMBO_GAIN=5;
-const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=4,HAND_MAX=4,TURN_LIMIT=60,TRAP_MAX=1,DECKOUT=5;
+const GOAL=40,ENERGY_START=20,ENERGY_GAIN=0,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=4,HAND_MAX=4,TURN_LIMIT=60,TRAP_MAX=1,DECKOUT=5;
 /* 結果のあと次のターンへ進む速さ */
 const SPEEDS={fast:.6,normal:1,slow:1.6};
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
@@ -1828,7 +1835,7 @@ function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
   <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.7）</h2><ol>
     <li>2人が同時に、手札から1枚を伏せるか、1枚を燃やして、一斉に開ける。見送ることはできない（出せる札も燃やせる札も無いときだけ、何もせずに終わる）。</li>
-    <li><b>気力</b>：1手目は10、毎ターン5溜まる（上限50）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
+    <li><b>気力</b>：はじめは20。毎ターン自然には増えず、<b>札を燃やしたときだけ増える</b>（上限50）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
     <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字を5の倍数に切り上げたぶん（最大25、罠は5）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
     <li>2人は<b>橋</b>の上で向き合っている。<b>攻撃</b>は右上の数字の歩数だけ、相手を押し込む。</li>
     <li>攻撃と<b>防御</b>がぶつかったら：攻撃のほうが大きければ、<b>差だけ押す</b>（攻撃24対防御13なら11歩押し込む）。防御が攻撃以上なら防ぎきって、<b>攻撃をそのまま跳ね返す</b>（攻撃13対防御24なら、13跳ね返す）。防御の数字は「ここまでなら受け止められる」壁の高さ。</li>
@@ -1851,13 +1858,16 @@ function rulesHTML(){
 }
 function builderHTML(){
   const st=deckStats(deck);
-  const groups=TYPES.filter(t=>t===builderTab).map(t=>`<div class="group t-${t}">
-    ${POOL.filter(d=>d.type===t).map(d=>{const c=deck[d.id]||0;
+  const own=settings.deckKata,order=[own,null,...Object.keys(KATA).filter(k=>k!==own)];
+  const row=d=>{const c=deck[d.id]||0;
       return `<div class="crow"><div class="card t-${d.type}" aria-hidden="true">${silHTML(d)}<span class="ccost">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}<span class="plain">${TY[d.type].name[0]}</span></div>
         <div class="cinfo"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}</b><span class="stat-line">${KATA_OF[d.id]?`<span class="kmark${KATA_OF[d.id]===settings.deckKata?' own':''}">${monHTML('kata',KATA_OF[d.id])}${KATA[KATA_OF[d.id]].name}・${copyMax(d.id)}枚まで</span>`:''}${TY[d.type].name}${d.num!=null?d.num:''}・気力${d.cost}・燃やすと+${burnVal(d)}</span><span class="eff">${d.eff?d.text:'効果なし'}</span></div>
         <div class="stepper"><button data-act="dec" data-id="${d.id}" ${c?'':'disabled'} aria-label="${label(d)}を1枚減らす">−</button>
         <span class="n ${c?'':'zero'}">${c}</span>
-        <button data-act="inc" data-id="${d.id}" ${c>=copyMax(d.id)||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`}).join('')}
+        <button data-act="inc" data-id="${d.id}" ${c>=copyMax(d.id)||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`};
+  const groups=TYPES.filter(t=>t===builderTab).map(t=>`<div class="group t-${t}">${order.map(k=>{
+    const ds=POOL.filter(d=>d.type===t&&(k?KATA_OF[d.id]===k:!d.eff));if(!ds.length)return '';
+    return `<h4 class="kgroup${k===own?' own':''}">${k?`${monHTML('kata',k)}${KATA[k].name}の札<small>${k===own?'3枚まで':'1枚まで'}</small>`:'素の札<small>3枚まで</small>'}</h4>${ds.map(row).join('')}`}).join('')}
   </div>`).join('');
   return `<div class="row"><button class="btn ghost" data-act="go-menu">メニューへ戻る</button></div>
   <div class="sticky">
