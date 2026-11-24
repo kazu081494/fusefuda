@@ -692,7 +692,7 @@ const TYPES=['A','D','T'];
 const EFFECTS=[
   ['oiuchi','追い討ち','A',8,10,'押せたら、さらに10押す','押せたら、押す量に10を足す'],
   ['kantsu','貫通','A',13,15,'防御を無視して押す','相手が防御していても、数字の13をそのまま押す'],
-  ['sutemi','捨て身','A',27,20,'押せなかったら、自分が10押される','数字27の攻撃を気力20で出せる。ただし1も押せなかったら、自分が10押される'],
+  ['sutemi','捨て身','A',27,25,'押せなかったら、自分が10押される','数字27の攻撃を気力25で出せる。ただし1も押せなかったら、自分が10押される'],
   ['rengeki','連撃','A',8,10,'相手が攻撃も防御もしていなければ、2倍押す','相手が「燃やした」「罠を張った」ターンなら、押す量が2倍になる'],
   ['teisatsu','偵察','A',4,5,'相手の手札を1枚のぞく','開けたとき、相手の手札を1枚ランダムに見る。出されるまで表のまま見える'],
   ['yokoku','予告','A',8,5,'次のターン、自分の攻撃の数字+10','開けたとき予告する。次のターン、自分の攻撃カードの数字が10増える（相手にも見える）'],
@@ -778,7 +778,7 @@ const OUGI={
   kagenui:{name:'影縫い',text:'開けたとき、相手の罠を1枚奪って自分の場に張る（次のターンから効く）'},
   sakiyomi:{name:'先読み',text:'相手が攻撃してくるかどうかを見てから、自分の札を選べる'},
   fudou:{name:'不動',text:'このターン、押し込まれない'},
-  issen:{name:'一閃',text:'このターン、押し込めたら、さらに15歩押し込む（剛の型の上乗せとは重ならない）'},
+  issen:{name:'一閃',text:'このターン、押し込めたら、さらに10歩押し込む（剛の型の上乗せとは重ならない）'},
   shingan:{name:'心眼',text:'このターンと次のターン、相手の手札が全部見える'},
   tensei:{name:'転生',text:'手札の攻撃をすべて防御に、防御をすべて攻撃に変える。効果のある札も、数字の近い素の札になる（反撃（防御13）は攻撃13に）'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
@@ -857,7 +857,8 @@ const burnVal=(d,s)=>{const v=d.eff in BURN_SPECIAL?BURN_SPECIAL[d.eff]:(d.baseC
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
 const using=(s,k)=>s.ougi===k&&(s.ougiNow||(k==='genwaku'&&s.genwakuUntil>=G.turn));
-const GENWAKU_TURNS=5;
+const GENWAKU_TURNS=5,OUGI_FROM=3;  // 奥義は3手目から使える
+const ougiReady=()=>G.tut!=null||G.turn>=OUGI_FROM;
 /* 型の効果を書くときの言い方 */
 const kataOf=(s,isP)=>`${isP?'あなた':'相手'}の型（${KATA[s.kata].name}）`;
 
@@ -959,8 +960,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   if(pb&&using(P,'gouka')&&burnVal(pb,P)>0){const v=Math.min(20,Math.ceil(burnVal(pb,P)/2));toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
   if(cb&&using(C,'gouka')&&burnVal(cb,C)>0){const v=Math.min(20,Math.ceil(burnVal(cb,C)/2));toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
   // 一閃：押し込めたら+15歩。不動：押し込まれない（いちばん最後に効く）
-  if(toC>0&&using(P,'issen')){const g=P.kata==='gou'&&toC>=5?5:0;toC+=15-g;fx.ougiP='issen';notes.push(g?'一閃：剛の5と合わせて15歩押し込む':'一閃：さらに15歩押し込む')}
-  if(toP>0&&using(C,'issen')){const g=C.kata==='gou'&&toP>=5?5:0;toP+=15-g;fx.ougiC='issen';notes.push(g?'相手の一閃：剛の5と合わせて15歩押し込まれた':'相手の一閃：さらに15歩押し込まれた')}
+  if(toC>0&&using(P,'issen')){const g=P.kata==='gou'&&toC>=5?5:0;toC+=10-g;fx.ougiP='issen';notes.push(g?'一閃：剛の5と合わせて10歩押し込む':'一閃：さらに10歩押し込む')}
+  if(toP>0&&using(C,'issen')){const g=C.kata==='gou'&&toP>=5?5:0;toP+=10-g;fx.ougiC='issen';notes.push(g?'相手の一閃：剛の5と合わせて10歩押し込まれた':'相手の一閃：さらに10歩押し込まれた')}
   if(using(P,'genwaku')||using(C,'genwaku')){
     const a=toC,b=toP,gp=using(P,'genwaku'),gc=using(C,'genwaku');
     toC=(gp?b:0)+(gc?0:a);toP=(gc?a:0)+(gp?0:b);
@@ -1286,7 +1287,7 @@ function ougiNow(me,op){
   return '';
 }
 function useOugi(){
-  const P=G.p;if(G.phase!=='select'||P.ougiUsed)return;
+  const P=G.p;if(G.phase!=='select'||P.ougiUsed||!ougiReady())return;
   P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;if(P.ougi==='genwaku')P.genwakuUntil=G.turn+GENWAKU_TURNS-1;
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
@@ -1728,7 +1729,7 @@ function cpuChoose(peek){
 }
 /* 相手の奥義：伏せる前に、状況を見て使う */
 function cpuMaybeBefore(){
-  if(!G||G.phase!=='select'||G.c.ougiUsed||G.cPre)return;
+  if(!G||G.phase!=='select'||G.c.ougiUsed||G.cPre||!ougiReady())return;
   const C=G.c,P=G.p,late=G.gauge>=GOAL-15||G.gauge<=-(GOAL-20);
   const can=t=>C.hand.some(i=>def(i).type===t&&!blockReason(C,i));
   let use=false;
@@ -1860,7 +1861,7 @@ function schoolHTML(){
     <h2 style="font-size:20px">奥義を選ぶ</h2>
     <p class="small kataline">${monHTML('kata',settings.deckKata)}<span>型は<b>${KATA[settings.deckKata].name}</b>（デッキの型）：${KATA[settings.deckKata].text}</span></p>
     ${pickFor==='story'?'<p class="small" style="color:var(--accent)">物語：奥義は相手を見てから選び直せる</p>':''}
-    <p class="small muted">奥義は1試合に1回、伏せる前に使う大技。相手には秘密で、使ったことだけ知らされる。</p>
+    <p class="small muted">奥義は1試合に1回、伏せる前に使う大技（3手目から使える）。相手には秘密で、使ったことだけ知らされる。</p>
     ${Object.entries(OUGI).map(([k,o])=>opt('ougi',k,o)).join('')}
     <div class="startbar"><button class="btn wide" data-act="${pickFor==='story'?'story-start':'start-game'}" ${pick.kata&&pick.ougi?'':'disabled'}>${pick.kata&&pick.ougi?`${OUGI[pick.ougi].name}で${pickFor==='story'?'今宵に挑む':'対戦する'}`:'奥義を1つ選ぶ'}</button></div>`;
 }
@@ -1879,7 +1880,7 @@ function rulesHTML(){
     <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。お互いの札（手札と山札）が尽きたら、押し込んでいる側の勝ち。山札が尽きて引けないターンは5歩押される。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
     <li>デッキは30枚。デッキには型がある。どの札も3枚まで入れられるが、デッキの型ではない効果の札は「型違い」になり、数字が5下がる（罠は気力が5多くかかる）。強いカードは気力で縛られるので、数字の上限は無い。</li>
-    <li>試合の前に<b>型</b>と<b>奥義</b>を1つずつ選ぶ。型はいつも効く小さな特性で、相手にも見えている。奥義は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。相手の型や戦い方、状況から、どの奥義をいつ使ってくるかを読む。</li>
+    <li>試合の前に<b>型</b>と<b>奥義</b>を1つずつ選ぶ。型はいつも効く小さな特性で、相手にも見えている。奥義は3手目から、1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。相手の型や戦い方、状況から、どの奥義をいつ使ってくるかを読む。</li>
     <li>相手（CPU）には性格（強気・慎重・溜め屋）があり、相手の欄に出ている。クセを読んで裏をかく。</li>
     <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカードで確定する（無ければ、一番気力の増える札を燃やす）。</li>
   </ol>
@@ -2046,7 +2047,7 @@ function gameHTML(){
 
   let actions='';const tut=tutStep();
   if(ph==='select')actions=`<div class="acts">
-      ${!P.ougiUsed&&(!tut||tut.ougi)?`<button class="btn sub ougi${tut&&tut.ougi?' glow':''}" data-act="ougi">${OUGI[P.ougi].name}</button>`:''}
+      ${!P.ougiUsed&&(!tut||tut.ougi)?(ougiReady()?`<button class="btn sub ougi${tut&&tut.ougi?' glow':''}" data-act="ougi">${OUGI[P.ougi].name}</button>`:`<button class="btn sub ougi" disabled>${OUGI[P.ougi].name}<small class="resume-sub">${OUGI_FROM}手目から</small></button>`):''}
       <button class="btn sub${G.burnMode||G.pBurn?' on':''}${tut&&tut.burn&&!G.pBurn?' glow':''}" data-act="burn" ${tut&&!tut.burn?'disabled':''}>${G.burnMode||G.pBurn?'やめる':'燃やす'}</button>
       ${P.hand.some(i=>!blockReason(P,i)||!burnBlock(P,i))?'':'<button class="btn ghost" data-act="pass">何もできない</button>'}
       <button class="btn" data-act="commit" ${G.pBurn||(G.sel&&!blockReason(P,G.sel))?'':'disabled'}>${G.pBurn?'燃やす':'伏せる'}</button></div>`;
