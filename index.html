@@ -351,6 +351,11 @@ details.opp-info .dl{margin-top:8px}
 .lanterns i.now{border-color:var(--accent);box-shadow:0 0 0 2px rgba(226,178,71,.4)}
 .lanterns i.boss{width:22px;height:30px}
 .lanterns i.boss.now{border-color:#8fb6ff;box-shadow:0 0 12px rgba(143,182,255,.6)}
+.ougi-grid.kata-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
+.kmark{display:flex;width:fit-content;align-items:center;gap:2px;margin-bottom:2px;padding:0 6px 0 1px;border-radius:999px;border:1px solid var(--line)}
+.kmark .mon{width:16px;height:16px;color:var(--muted)}
+.kmark.own{border-color:var(--accent);color:var(--accent)}
+.kmark.own .mon{color:var(--accent)}
 .ougi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .og{appearance:none;background:var(--table);border:1px solid var(--line);border-radius:10px;padding:6px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;color:var(--fg)}
 .og .mon{width:34px;height:34px;color:var(--fg);opacity:.8}
@@ -443,6 +448,7 @@ details.opp-info .dl{margin-top:8px}
 .chip:has(.mon){display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 3px;font-size:13px}
 .chip .mon{width:24px;height:24px;color:inherit}
 .chip .mon+.mon,.chip .sep+.mon{margin-left:2px}
+.abil:disabled{opacity:.38;cursor:not-allowed}
 .abil.picked{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .abil.picked b::before{content:"✓ ";color:var(--accent)}
 .pickh{font-size:15px;margin-top:6px}
@@ -627,6 +633,16 @@ const EFFECTS=[
   ['hyourou','兵糧攻め','T',null,5,'相手が攻撃も防御もしなかったら、山札を4枚捨てさせる','相手が攻撃も防御もしなかったら（見送る・燃やす・罠）、相手の山札を上から4枚捨てさせる'],
   ['kitsunebi','狐火','T',null,10,'相手が防御したら、気力-10して5押す','相手が防御したら、相手の気力を10減らして、5歩押し込む'],
 ];
+/* 効果の札は、どれか1つの型の札。デッキの型の札は3枚まで、ほかの型の札は1枚まで入れられる（素の札は3枚まで） */
+const CARD_KATA={
+  gou:['oiuchi','kantsu','sutemi','rengeki','kuzushi','iai','yakiuchi','mizuzeme'],
+  yanagi:['hangeki','ukenagashi','fuuji','zanshin','kamae','tessen','katanagari'],
+  homura:['senkou','hiuchi','okuribi','hikeshi','meisou','hikiashi','naruko'],
+  kage:['otoshiana','kaeshi','dorobou','machibuse','ashikase','kagemusha','hyourou','kitsunebi'],
+  me:['teisatsu','yokoku','mikiri','kakuran','youdou','kanashibari','sekisho'],
+};
+const KATA_OF={};for(const [k,ids] of Object.entries(CARD_KATA))for(const id of ids)KATA_OF[id]=k;
+const OFF_KATA_MAX=1;
 /* 素の札の数字と気力 */
 const PLAIN=[[4,5],[8,10],[13,15],[18,20],[24,25],[30,35]];
 const CARDS={};const POOL=[];
@@ -636,10 +652,11 @@ for(const t of TYPES){
 }
 const PRESETS=[
   {key:'boss',name:'月影の主',hidden:true,desc:'',cards:{A30:2,A24:2,A18:2,D30:2,D24:2,D18:2,iai:2,kuzushi:2,hangeki:2,kamae:2,kaeshi:2,kagemusha:2,mikiri:2,meisou:2,tessen:2}},
-  {key:'soku',name:'速攻',desc:'重い攻撃で一気に押す。居合で大振りを返し、崩しで守りを割る',cards:{A30:2,A24:3,A18:2,A13:3,oiuchi:2,kantsu:1,rengeki:2,kuzushi:2,iai:2,yokoku:2,D13:1,D8:2,meisou:2,senkou:2,hiuchi:2}},
-  {key:'mamori',name:'守りの城',desc:'受け止めて跳ね返す。構えで空振りの損を消し、残心で反撃につなぐ',cards:{D30:2,D24:2,D18:2,D13:2,hangeki:2,ukenagashi:2,okuribi:1,zanshin:2,kamae:2,tessen:2,meisou:2,mikiri:1,katanagari:1,sekisho:1,A24:1,A18:2,A13:1,kaeshi:2}},
-  {key:'wana',name:'罠師',desc:'罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:2,kaeshi:2,dorobou:2,machibuse:2,ashikase:2,naruko:2,kagemusha:2,kitsunebi:2,A24:2,A18:2,A13:2,D13:2,D8:2,meisou:2,hyourou:2}},
-  {key:'kin',name:'均衡',desc:'攻守と罠を少しずつ。陽動と火消しで読みを外す',cards:{A24:2,A18:2,A13:2,D18:2,D13:2,D8:1,hikeshi:2,youdou:2,yokoku:1,senkou:2,teisatsu:1,hiuchi:2,okuribi:1,hangeki:1,kakuran:1,mikiri:2,meisou:1,hikiashi:1,otoshiana:1,machibuse:1}},
+  {key:'soku',kata:'gou',name:'速攻',desc:'剛の型。重い攻撃で一気に押す。居合で大振りを返し、崩しと貫通で守りを割る',cards:{A30:2,A24:3,A18:2,A13:3,oiuchi:2,kantsu:2,rengeki:2,kuzushi:2,iai:3,yakiuchi:1,mizuzeme:1,sutemi:1,meisou:1,senkou:1,hiuchi:1,yokoku:1,D8:2}},
+  {key:'mamori',kata:'yanagi',name:'守りの城',desc:'柳の型。受け止めて跳ね返す。構えで空振りの損を消し、反撃と残心で押し返す',cards:{D30:2,D24:2,D18:2,D13:2,hangeki:3,ukenagashi:2,zanshin:2,kamae:3,tessen:3,fuuji:1,katanagari:1,sekisho:1,meisou:1,mikiri:1,kaeshi:1,A24:1,A18:2}},
+  {key:'hono',kata:'homura',name:'火祭り',desc:'炎の型。燃やして気力を貯め、大きい札で一気に押す。線香花火と火打石が軸',cards:{senkou:3,hiuchi:3,okuribi:2,hikeshi:2,meisou:3,hikiashi:2,naruko:2,A30:2,A24:2,A18:2,D18:2,D8:1,oiuchi:1,iai:1,kamae:1,machibuse:1}},
+  {key:'wana',kata:'kage',name:'罠師',desc:'影の型。罠を切らさず張り続け、相手の手を縛る',cards:{otoshiana:3,kaeshi:2,dorobou:2,machibuse:3,ashikase:2,kagemusha:2,kitsunebi:2,hyourou:2,A24:2,A18:2,A13:2,D13:2,meisou:1,naruko:1,hikiashi:1,mikiri:1}},
+  {key:'kin',kata:'me',name:'均衡',desc:'眼の型。陽動と予告で読みを外し、金縛りと関所で縛る',cards:{teisatsu:2,yokoku:2,mikiri:2,kakuran:2,youdou:3,kanashibari:2,sekisho:2,A24:2,A18:2,A13:2,D18:2,D13:2,hikeshi:1,senkou:1,hiuchi:1,hangeki:1,otoshiana:1}},
 ];
 /* 流派：型（いつも効く。中身は相手に秘密だが、戦い方ににじみ出る）と奥義（1試合に1回、伏せる前に使う） */
 /* 型：いつも効く小さな特性。相手にも見えている（戦い方の色） */
@@ -670,7 +687,7 @@ const BOSS={name:'月影の主',yomi:'つきかげのぬし',style:'shincho',kat
 const CHARS=[
   {name:'赤鬼の権三',yomi:'あかおにのごんぞう',style:'kyoki',kata:'gou',ougi:'gougeki',deck:'soku',intro:'力こそすべて。受けてみよ',win:'軽い、軽いわ',lose:'……見事。次は負けぬ'},
   {name:'柳の小夜',yomi:'やなぎのさよ',style:'shincho',kata:'yanagi',ougi:'uke',deck:'mamori',intro:'押せば引く。それだけのこと',win:'力みすぎよ',lose:'流しきれなかった……'},
-  {name:'火車の弥太',yomi:'かしゃのやた',style:'tame',kata:'homura',ougi:'gouka',deck:'kin',intro:'燃えろ燃えろ、全部燃やしてやる',win:'灰になったな',lose:'火が……消えちまった'},
+  {name:'火車の弥太',yomi:'かしゃのやた',style:'tame',kata:'homura',ougi:'gouka',deck:'hono',intro:'燃えろ燃えろ、全部燃やしてやる',win:'灰になったな',lose:'火が……消えちまった'},
   {name:'影法師',yomi:'かげぼうし',style:'shincho',kata:'kage',ougi:'kagenui',deck:'wana',intro:'…………',win:'影は踏めぬ',lose:'……月が、明るすぎた'},
   {name:'心眼の宗玄',yomi:'しんがんのそうげん',style:'shincho',kata:'me',ougi:'sakiyomi',deck:'kin',intro:'目に頼るから見えぬのだ',win:'読めておったよ',lose:'ほう……読みを外されたか'},
   {name:'一閃の新之助',yomi:'いっせんのしんのすけ',style:'kyoki',kata:'gou',ougi:'issen',deck:'soku',intro:'一太刀で終わらせる',win:'ほらね',lose:'まだ……修行が足りないか'},
@@ -696,18 +713,22 @@ function cleanDeck(obj){
   for(const [id,c] of Object.entries(obj)){if(CARDS[id]&&Number.isInteger(c)&&c>0)out[id]=Math.min(c,COPY_MAX);}
   return out;
 }
-let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS[4].cards};
+let settings=Object.assign({vol:.6,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:true,bgm:true},store.get(KEY_SET,{}));
+let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS.find(p=>p.key==='kin').cards};
+if(!(settings.deckKata in KATA)){settings.deckKata=Object.keys(KATA).map(k=>[k,Object.entries(deck).reduce((a,[id,c])=>a+Math.max(0,c-copyMax(id,k)),0)]).sort((a,b)=>a[1]-b[1])[0][0];store.set(KEY_SET,settings)}
 (function padDeck(){let n=Object.values(deck).reduce((a,b)=>a+b,0);if(!n||n>=DECK_SIZE)return;
   const fill=['A13','D13','A18','D18','A8','D8','A24','D24','A4','D4','A30','D30'];
   for(let k=0;n<DECK_SIZE&&k<99;k++){const id=fill[k%fill.length];if((deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;n++}}
   store.set(KEY_DECK,deck)})();
-let settings=Object.assign({vol:.6,speed:'normal',timer:TIMER_DEFAULT,back:'shoji',moon:'full',sound:true,bgm:true},store.get(KEY_SET,{}));
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
 function saveDeck(){store.set(KEY_DECK,deck)}
-function deckStats(counts){
+function copyMax(id,kata=settings.deckKata){return KATA_OF[id]&&KATA_OF[id]!==kata?OFF_KATA_MAX:COPY_MAX}
+function deckStats(counts,kata=settings.deckKata){
   let n=0,cost=0;const by={A:0,D:0,T:0};
   for(const [id,c] of Object.entries(counts)){n+=c;cost+=CARDS[id].cost*c;by[CARDS[id].type]+=c;}
   const errs=[];if(n!==DECK_SIZE)errs.push(`${DECK_SIZE}枚ちょうどにする（今${n}枚）`);
+  const over=Object.entries(counts).filter(([id,c])=>c>copyMax(id,kata)).map(([id])=>CARDS[id].name);
+  if(over.length)errs.push(`${KATA[kata].name}の型ではない札は${OFF_KATA_MAX}枚まで：${over.join('、')}`);
   return {n,avg:n?cost/n:0,by,errs,ok:errs.length===0};
 }
 
@@ -1710,14 +1731,15 @@ function menuHTML(){
     <button class="btn ghost" data-act="tutorial">遊び方を覚える（チュートリアル）</button>
     <button class="btn ghost" data-act="go-rules">ルールを読む</button>`;
 }
-let pick={kata:settings.kata in KATA?settings.kata:null,ougi:settings.ougi in OUGI?settings.ougi:null};
+let pick={kata:settings.deckKata,ougi:settings.ougi in OUGI?settings.ougi:null};
 let pickFor='duel';
 function schoolHTML(){
-  const opt=(kind,k,o)=>`<button class="abil has-mon${pick[kind]===k?' picked':''}" data-act="pick-${kind}" data-k="${k}" aria-pressed="${pick[kind]===k}">${monHTML(kind,k)}<b>${o.name}</b><span class="t">${o.text}</span></button>`;
+  pick.kata=settings.deckKata;
+  const opt=(kind,k,o)=>`<button class="abil has-mon${pick[kind]===k?' picked':''}" ${kind==='kata'&&k!==settings.deckKata?'disabled':''} data-act="pick-${kind}" data-k="${k}" aria-pressed="${pick[kind]===k}">${monHTML(kind,k)}<b>${o.name}</b><span class="t">${o.text}</span></button>`;
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
     <h2 style="font-size:20px">型と奥義を選ぶ</h2>${pickFor==='story'?'<p class="small" style="color:var(--accent)">物語：型は今宵のあいだ変えられない。奥義は相手を見てから選び直せる</p>':''}
     <p class="small muted"><b>型</b>はいつも効く小さな特性で、相手にも見えている。<b>奥義</b>は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。型と奥義は自由に組み合わせられる。相手（CPU）も1つずつ選んでいる。</p>
-    <h3 class="pickh">型（相手に見える）</h3>
+    <h3 class="pickh">型（相手に見える）</h3><p class="small muted">型はデッキの型（${KATA[settings.deckKata].name}）で戦う。変えるときは「デッキを組む」で型を選び直す</p>
     ${Object.entries(KATA).map(([k,o])=>opt('kata',k,o)).join('')}
     <h3 class="pickh">奥義（相手には秘密）</h3>
     ${Object.entries(OUGI).map(([k,o])=>opt('ougi',k,o)).join('')}
@@ -1737,7 +1759,7 @@ function rulesHTML(){
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
     <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。20手で決着がつかなければ、押し込んでいる側の勝ち。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
-    <li>デッキは30枚、同じカードは3枚まで。強いカードは気力で縛られるので、数字の上限は無い。</li>
+    <li>デッキは30枚。デッキには型があり、効果の札はその型の札なら3枚まで、ほかの型の札は1枚まで（素の札は3枚まで）。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li>試合の前に<b>型</b>と<b>奥義</b>を1つずつ選ぶ。型はいつも効く小さな特性で、相手にも見えている。奥義は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。相手の型や戦い方、状況から、どの奥義をいつ使ってくるかを読む。</li>
     <li>相手（CPU）には性格（強気・慎重・溜め屋）があり、相手の欄に出ている。クセを読んで裏をかく。</li>
     <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカード（無ければ見送る）で確定する。</li>
@@ -1753,10 +1775,10 @@ function builderHTML(){
   const groups=TYPES.map(t=>`<div class="group t-${t}"><h3>${TY[t].name}</h3>
     ${POOL.filter(d=>d.type===t).map(d=>{const c=deck[d.id]||0;
       return `<div class="crow"><div class="card t-${d.type}" aria-hidden="true">${silHTML(d)}<span class="ccost">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}<span class="plain">${TY[d.type].name[0]}</span></div>
-        <div class="cinfo"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}</b><span class="stat-line">${TY[d.type].name}${d.num!=null?d.num:''}・気力${d.cost}・燃やすと+${burnVal(d)}</span><span class="eff">${d.eff?d.text:'効果なし'}</span></div>
+        <div class="cinfo"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}</b><span class="stat-line">${KATA_OF[d.id]?`<span class="kmark${KATA_OF[d.id]===settings.deckKata?' own':''}">${monHTML('kata',KATA_OF[d.id])}${KATA[KATA_OF[d.id]].name}・${copyMax(d.id)}枚まで</span>`:''}${TY[d.type].name}${d.num!=null?d.num:''}・気力${d.cost}・燃やすと+${burnVal(d)}</span><span class="eff">${d.eff?d.text:'効果なし'}</span></div>
         <div class="stepper"><button data-act="dec" data-id="${d.id}" ${c?'':'disabled'} aria-label="${label(d)}を1枚減らす">−</button>
         <span class="n ${c?'':'zero'}">${c}</span>
-        <button data-act="inc" data-id="${d.id}" ${c>=COPY_MAX||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`}).join('')}
+        <button data-act="inc" data-id="${d.id}" ${c>=copyMax(d.id)||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`}).join('')}
   </div>`).join('');
   return `<div class="row"><button class="btn ghost" data-act="go-menu">メニューへ戻る</button></div>
   <div class="sticky">
@@ -1767,8 +1789,11 @@ function builderHTML(){
     </div>
     <p class="small" style="color:${st.ok?'var(--win)':'var(--lose)'}">${st.ok?'このデッキで対戦できます（自動で保存）':st.errs.join('／')}</p>
   </div>
+  <div class="panel"><div class="label">デッキの型（対戦ではこの型で戦う）</div>
+    <div class="ougi-grid kata-grid">${Object.entries(KATA).map(([k,o])=>`<button class="og${settings.deckKata===k?' on':''}" data-act="deck-kata" data-k="${k}" aria-pressed="${settings.deckKata===k}">${monHTML('kata',k)}<span>${o.name}</span></button>`).join('')}</div>
+    <p class="small muted">${KATA[settings.deckKata].name}の型：${KATA[settings.deckKata].text}。効果の札は型ごとに分かれていて、${KATA[settings.deckKata].name}の札は3枚まで、ほかの型の札は${OFF_KATA_MAX}枚まで入れられる。素の札はどれも3枚まで</p></div>
   <div class="panel"><div class="label">見本のデッキから始める</div>
-    <div class="chips">${PRESETS.filter(p=>!p.hidden).map(p=>`<button class="chip" data-act="preset" data-key="${p.key}">${p.name}</button>`).join('')}<button class="chip" data-act="clear">全部外す</button></div>
+    <div class="chips">${PRESETS.filter(p=>!p.hidden).map(p=>`<button class="chip" data-act="preset" data-key="${p.key}">${monHTML('kata',p.kata)}${p.name}</button>`).join('')}<button class="chip" data-act="clear">全部外す</button></div>
     <p class="small muted">${builderPreset?builderPreset.desc:'見本を選ぶと、いまのデッキと入れ替わります'}</p>
   </div>
   ${groups}`;
@@ -2016,7 +2041,7 @@ document.addEventListener('click',e=>{
     case 'go-school':pickFor='duel';bgmStop();clearTimers();screen='school';G=null;render();window.scrollTo(0,0);break;
     case 'go-builder':screen='builder';builderPreset=null;render();window.scrollTo(0,0);break;
     case 'go-rules':screen='rules';render();break;
-    case 'pick-kata':case 'pick-ougi':{const kind=act.slice(5);pick[kind]=el.dataset.k;settings[kind]=el.dataset.k;store.set(KEY_SET,settings);render();break}
+    case 'pick-kata':case 'pick-ougi':{const kind=act.slice(5);if(kind==='kata'&&el.dataset.k!==settings.deckKata)break;pick[kind]=el.dataset.k;settings[kind]=el.dataset.k;store.set(KEY_SET,settings);render();break}
     case 'story-new':pickFor='story';screen='school';G=null;render();window.scrollTo(0,0);break;
     case 'story-start':if(pick.kata&&pick.ougi){pickFor='duel';storyBegin(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
     case 'story-next':screen='story-round';render();break;
@@ -2029,9 +2054,10 @@ document.addEventListener('click',e=>{
     case 'story-quit':story.active=false;story.result='lose';saveStory();screen='story-end';render();break;
     case 'story-again':pickFor='story';screen='school';G=null;render();window.scrollTo(0,0);break;
     case 'start-game':if(pick.kata&&pick.ougi){clearSave();bgmStart();startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
-    case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
+    case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<copyMax(id)){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
     case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
-    case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};builderPreset=p;saveDeck();render();break}
+    case 'deck-kata':if(KATA[el.dataset.k]){settings.deckKata=el.dataset.k;pick.kata=el.dataset.k;settings.kata=el.dataset.k;store.set(KEY_SET,settings);render()}break;
+    case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};settings.deckKata=p.kata;pick.kata=p.kata;settings.kata=p.kata;store.set(KEY_SET,settings);builderPreset=p;saveDeck();render();break}
     case 'clear':deck={};builderPreset=null;saveDeck();render();break;
     case 'hand':{
       const x=G.p.hand.find(i=>String(i.uid)===el.dataset.uid);if(!x)return;

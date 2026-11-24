@@ -9,15 +9,15 @@ const {chromium}=require('playwright');
   await p.goto('file://'+require('path').join(__dirname,'..','index.html'));
   // 最初に開いたときは序章が出るので、タップして進める
   if(await p.$('[data-act=prologue-end]'))await p.click('[data-act=prologue-end]');
-  const results=[];const presets=['soku','mamori','wana','kin'];
+  const results=[];const presets=['soku','mamori','hono','wana','kin'];
   for(let g=0;g<25;g++){
     if(g%5===0){
       await p.click('[data-act=go-builder]');
-      await p.click(`[data-act=preset][data-key=${presets[(g/5)%4]}]`);
+      await p.click(`[data-act=preset][data-key=${presets[(g/5)%5]}]`);
       await p.click('[data-act=go-menu]');
     }
     await p.click('[data-act=go-school]');
-    await (await p.$$('[data-act=pick-kata]'))[g%5].click();
+    await p.click('[data-act=pick-kata]:not([disabled])');  // 型はデッキの型だけ選べる
     await (await p.$$('[data-act=pick-ougi]'))[g%11].click();
     await p.click('[data-act=start-game]');
     for(let i=0;i<120;i++){
