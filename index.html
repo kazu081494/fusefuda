@@ -243,17 +243,17 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .stage{container-type:size}
 .stage[data-act=next]{cursor:pointer}
 .center{position:relative;justify-content:flex-start}
-.duel{position:absolute;left:-6px;right:-6px;bottom:0;height:56%;transform:translateX(var(--g1));pointer-events:none}
+.duel{position:absolute;z-index:0;left:0;right:0;bottom:0;height:88%;transform:translateX(var(--g1));pointer-events:none}
 .play .duel{animation:gshift .5s .6s ease-in-out both}
 @keyframes gshift{from{transform:translateX(var(--g0))}to{transform:translateX(var(--g1))}}
-.samurai{position:absolute;bottom:10%;height:min(78%,120px);aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
+.samurai{position:absolute;bottom:6%;height:min(80%,210px);aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
 /* 侍の姿の絵は正方形なので、縦長の枠いっぱいの高さで出す（横は枠からはみ出してよい） */
 .samurai img.char{width:166.7%;max-width:none;margin-left:-33.3%}
 .samurai img.mirror{transform:scaleX(-1)}
 .samurai svg,.samurai img{width:100%;height:100%;display:block;object-fit:contain;object-position:bottom}
 img.sil{object-fit:contain;height:auto}
-.samurai.opp{left:12%}
-.samurai.me{right:12%;transform:scaleX(-1)}
+.samurai.opp{left:24%}
+.samurai.me{right:24%;transform:scaleX(-1)}
 .play .samurai.opp.lunge{animation:lungeO .45s ease-out}
 .play .samurai.me.lunge{animation:lungeM .45s ease-out}
 .play .samurai.opp.hit{animation:hitO .5s .45s ease-out}
@@ -2104,13 +2104,13 @@ function gameHTML(){
       <div class="cells">${cells.join('')}</div>${zoom}
     </section>
     <section class="battle stage${revealed?' rev':''}${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':ph==='select'&&G.detail?'data-act="unzoom"':''} style="${stageStyle}" aria-label="場">
-      <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
+      <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>${duel}
       <div class="gtxt">${gTxt}</div>
       ${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?`<div class="nanori" aria-live="polite"><i class="nanori-img" aria-hidden="true">${charImg(G.char)}</i><span>今宵の相手</span><b>${G.char.name}</b><q>${G.char.intro}</q></div>`:''}
       ${cutinHTML()}
       ${finale?`<div class="kessen" aria-hidden="true">${G.over.winner?'勝負あり':'引き分け'}</div>`:''}
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
-      <div class="center">${duel}<div class="calls">${center}</div></div>
+      <div class="center"><div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
       <div class="info" aria-live="polite">${info}</div>
     </section>
