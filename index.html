@@ -430,7 +430,8 @@ details.opp-info .dl{margin-top:8px}
 .verdict .v{font-family:var(--font-display);font-size:min(20px,15cqw);line-height:1.25;white-space:nowrap}
 .verdict .v.win{color:var(--win)}.verdict .v.lose{color:var(--lose)}
 /* 説明は場の下に横幅いっぱいで出す（真ん中の列は狭くて見切れたため） */
-.info{flex:none;display:flex;flex-direction:column;gap:4px;max-height:40%;overflow:auto}
+/* 説明は舞台の下に重ねて出す（画面の組み立てを変えないので、舞台や手札が縮まない） */
+.info{position:absolute;left:4px;right:4px;bottom:4px;z-index:5;display:flex;flex-direction:column;gap:4px;max-height:48%;overflow:auto;background:rgba(6,9,14,.88);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--fg);text-align:left}
 .info:empty{display:none}
 .info .why{font-size:12.5px;font-weight:700;line-height:1.45}
 .msgs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}
@@ -2001,8 +2002,8 @@ function gameHTML(){
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
+      <div class="info" aria-live="polite">${info}</div>
     </section>
-    <section class="info" aria-live="polite">${info}</section>
     <section class="side me-side" aria-label="あなた">
       <div class="side-head"><div class="who-line">${energyHTML(P)}</div>${sideChips(P,true)}</div>
       <div class="hand${P.hand.length>=6?' many':''}${P.hand.length>=7?' lots':''}" style="--n:${Math.max(5,P.hand.length)}">${hand}</div>
