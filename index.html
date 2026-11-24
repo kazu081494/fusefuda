@@ -348,6 +348,11 @@ details.opp-info .dl{margin-top:8px}
 .lanterns i.now{border-color:var(--accent);box-shadow:0 0 0 2px rgba(226,178,71,.4)}
 .lanterns i.boss{width:22px;height:30px}
 .lanterns i.boss.now{border-color:#8fb6ff;box-shadow:0 0 12px rgba(143,182,255,.6)}
+.ougi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.og{appearance:none;background:var(--table);border:1px solid var(--line);border-radius:10px;padding:6px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11.5px;color:var(--fg)}
+.og .mon{width:34px;height:34px;color:var(--fg);opacity:.8}
+.og.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+.og.on .mon{color:var(--accent);opacity:1}
 .sr-line{font-family:var(--font-display);font-size:16px;text-align:center}
 .sr-foe{display:grid;grid-template-columns:90px minmax(0,1fr);gap:14px;align-items:center;background:linear-gradient(#0c111b,#16202e);border-radius:14px;padding:14px;border:1px solid var(--line)}
 .sr-foe>img,.sr-foe>svg{width:90px;height:140px;object-fit:contain;fill:#05070b;filter:drop-shadow(0 0 1.5px rgba(226,234,255,.95)) drop-shadow(0 0 8px rgba(170,195,255,.35))}
@@ -588,7 +593,7 @@ const EFFECTS=[
   ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る（上限50）'],
   ['kakuran','撹乱','D',4,5,'相手の手札を1枚捨てさせる（相手は1枚引く）','開けたとき、相手は手札を1枚ランダムに捨てて、1枚引く'],
   ['fuuji','封じ手','D',8,10,'防ぎきったら、次のターン相手は攻撃できない','相手の攻撃を1も通さなかったら、次のターン相手は攻撃カードを出せない'],
-  ['mikiri','見切り','D',4,10,'相手の罠を1枚外す','開けたとき、相手が張っている罠を発動させずに捨てさせる'],
+  ['mikiri','見切り','D',4,10,'罠を外す。無ければ手札の内訳を見る','開けたとき、相手が張っている罠を発動させずに捨てさせる。罠が無ければ、次の手番のあいだ相手の手札の内訳（攻撃・防御・罠の枚数）が見える'],
   ['zanshin','残心','D',8,10,'防ぎきったら、次の攻撃+10','相手の攻撃を防ぎきったら、次のターン自分の攻撃の数字+10'],
   ['kamae','構え','D',13,15,'相手が攻撃しなければ、気力が戻る','相手が攻撃してこなかったら、払った気力が戻る'],
   ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を20得る','開けたとき、自分から5歩下がって気力を20得る（上限50）。不動や幻惑でも打ち消せない'],
@@ -965,7 +970,10 @@ function storyScreenHTML(){
       </div>
       ${tierHints(tierOf(i)).length?`<ul class="threat">${tierHints(tierOf(i)).map(h=>`<li>${h}</li>`).join('')}</ul>`:'<p class="small muted" style="text-align:center">肩慣らしの相手。</p>'}
       ${Object.keys(story.extra).length?`<p class="small muted">褒美の札：${Object.entries(story.extra).map(([id,c])=>label(CARDS[id])+(c>1?`×${c}`:'')).join('、')}</p>`:''}
-      <button class="btn wide" data-act="story-fight">挑む</button>
+      <div class="panel repick"><p class="small"><b>奥義を選び直す</b>（型は${KATA[story.kata].name}のまま）</p>
+        <div class="ougi-grid">${Object.entries(OUGI).map(([k,o])=>`<button class="og${story.ougi===k?' on':''}" data-act="story-ougi" data-k="${k}" aria-pressed="${story.ougi===k}">${monHTML('ougi',k)}<span>${o.name}</span></button>`).join('')}</div>
+        <p class="small"><b style="color:var(--accent)">${OUGI[story.ougi].name}</b>：${OUGI[story.ougi].text}</p></div>
+      <button class="btn wide" data-act="story-fight">${KATA[story.kata].name}の型・${OUGI[story.ougi].name}で挑む</button>
       <button class="btn ghost wide" data-act="story-quit">今宵はここまでにする</button>
     </div>`;
   }
@@ -1159,7 +1167,7 @@ function openEff(who,inst,msgs){
     case 'meisou':me.energy=clampE(me.energy+15);msgs.push(`瞑想：${mn}は気力を15得た`);break;
     case 'hikiashi':me.energy=clampE(me.energy+20);msgs.push(`退き足：${mn}は気力を20得た`);break;
     case 'yokoku':me.yokokuNext=true;msgs.push(`予告：次のターン、${mn}の攻撃の数字+10`);break;
-    case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;op.discard.push(t);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else msgs.push('見切り：外す罠がなかった');break;
+    case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;op.discard.push(t);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else{me.mixUntil=G.turn+1;const n=t=>op.hand.filter(i=>def(i).type===t).length;msgs.push(who==='p'?`見切り：罠は無い。相手の手札は 攻${n('A')}・防${n('D')}・罠${n('T')}（次の手番も見える）`:'見切り：罠が無いので、相手に手札の内訳を見られた')}break;
   }
 }
 /* 出した手の種類：atk・def・burn・pass・trap */
@@ -1446,7 +1454,7 @@ function cpuOppModel(){
   if(E>=5)list.push({d:{type:'D',num:numFor(Math.min(E,25)),cost:Math.min(E,25),eff:null},w:cnt('D')});
   list.push({d:null,w:cnt('P')*0.8});
   // 手札の内訳を見抜く相手：出せない種類は読みから外し、多い種類ほど重く見る
-  if(G.cKnow){
+  if(G.cKnow||G.c.mixUntil>=G.turn){
     const n=t=>P.hand.filter(i=>def(i).type===t&&!blockReason(P,i)).length;
     for(const o of list)if(o.d){const k=n(o.d.type);o.w*=k?(0.6+k*.4):0}
   }
@@ -1487,7 +1495,7 @@ function cpuChoose(peek){
     combos.push({play:null,burn:o,ev:evOf(null,d)+0.09*gain-0.6-0.016*d.cost-(C.hand.length<=2?0.8:0)+styleBias('B',d)+(d.eff==='hiuchi'?0.8:d.eff==='okuribi'?0.5:0)});
     if(blockReason(C,o))continue;
     let ev=evOf(d)-0.044*costOf(o);
-    if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:-0.5;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;
+    if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:0.3;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;
     combos.push({play:o,burn:null,ev:ev+styleBias(d.type,d)});
   }
   const temp=(peek!==undefined?0.5:G.pUsedNow?1.6:1.1)*(1-(G.diff||0)*.55);
@@ -1622,7 +1630,7 @@ let pickFor='duel';
 function schoolHTML(){
   const opt=(kind,k,o)=>`<button class="abil has-mon${pick[kind]===k?' picked':''}" data-act="pick-${kind}" data-k="${k}" aria-pressed="${pick[kind]===k}">${monHTML(kind,k)}<b>${o.name}</b><span class="t">${o.text}</span></button>`;
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
-    <h2 style="font-size:20px">型と奥義を選ぶ</h2>${pickFor==='story'?'<p class="small" style="color:var(--accent)">物語：今宵のあいだ、この型と奥義で戦い抜く</p>':''}
+    <h2 style="font-size:20px">型と奥義を選ぶ</h2>${pickFor==='story'?'<p class="small" style="color:var(--accent)">物語：型は今宵のあいだ変えられない。奥義は相手を見てから選び直せる</p>':''}
     <p class="small muted"><b>型</b>はいつも効く小さな特性で、相手にも見えている。<b>奥義</b>は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。型と奥義は自由に組み合わせられる。相手（CPU）も1つずつ選んでいる。</p>
     <h3 class="pickh">型（相手に見える）</h3>
     ${Object.entries(KATA).map(([k,o])=>opt('kata',k,o)).join('')}
@@ -1688,7 +1696,7 @@ function sideChips(s,isP){
     c.push(`<span class="chip" title="${kt.text}">${monHTML('kata',s.kata)}${kt.name}の型</span>`);
     c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">奥義${s.ougiUsed?'：使用済み':'：？'}</span>`);
     // 眼の型：相手の手札の内訳が見える
-    if(G.p.kata==='me'){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
+    if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
   }
   for(const t of s.traps){
     const st=t.active?'発動待ち':'次から';
@@ -1925,6 +1933,7 @@ document.addEventListener('click',e=>{
     case 'story-start':if(pick.kata&&pick.ougi){pickFor='duel';storyBegin(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
     case 'story-next':screen='story-round';render();break;
     case 'story-continue':{const sv=readSave();if(sv&&sv.story){bgmStart();resumeGame()}else{screen=story.rewards?'story-reward':'story-round';render()}window.scrollTo(0,0);break}
+    case 'story-ougi':if(OUGI[el.dataset.k]){story.ougi=el.dataset.k;saveStory();render()}break;
     case 'story-fight':storyFight();window.scrollTo(0,0);break;
     case 'story-reward':bgmStop();clearTimers();screen='story-reward';render();window.scrollTo(0,0);break;
     case 'story-pick':{const id=el.dataset.id;if(id&&CARDS[id])story.extra[id]=(story.extra[id]||0)+1;story.rewards=null;saveStory();screen='story-round';render();window.scrollTo(0,0);break}
