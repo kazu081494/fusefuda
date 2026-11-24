@@ -2272,6 +2272,7 @@ function overHTML(){
       </dl></details>
     ${G.story?`<div class="row">${w==='p'?(story&&story.active?`<button class="btn" data-act="story-reward">褒美を選ぶ（${KAN[story.round-1]}人抜き）</button>`:`<button class="btn" data-act="story-endscreen">結末へ</button>`):`<button class="btn" data-act="story-endscreen">今宵の終わり</button>`}</div>`
       :`<div class="row"><button class="btn" data-act="go-school">もう一戦</button><button class="btn ghost" data-act="go-menu">メニュー</button></div>`}
+    <button class="btn ghost wide" data-act="open-log">この試合の記録を見る</button>
   </div></div>`;
 }
 function modalHTML(){
