@@ -247,6 +247,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .play .duel{animation:gshift .5s .6s ease-in-out both}
 @keyframes gshift{from{transform:translateX(var(--g0))}to{transform:translateX(var(--g1))}}
 .samurai{position:absolute;bottom:10%;height:min(78%,120px);aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
+.samurai img.mirror{transform:scaleX(-1)}
 .samurai svg,.samurai img{width:100%;height:100%;display:block;object-fit:contain;object-position:bottom}
 img.sil{object-fit:contain;height:auto}
 .samurai.opp{left:12%}
@@ -430,6 +431,13 @@ details.opp-info .dl{margin-top:8px}
 .ougi-grid.kata-grid{grid-template-columns:repeat(5,minmax(0,1fr))}
 .modal-top{position:sticky;top:-18px;z-index:2;margin:-18px -18px 0;padding:10px 18px;background:var(--table-2);border-bottom:1px solid var(--line);display:flex;justify-content:flex-end}
 .modal-top .btn{min-height:38px;padding:6px 18px}
+.skins{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.skin{appearance:none;border:1px solid var(--line);background:linear-gradient(#0c111b,#16202e);color:var(--fg);border-radius:10px;padding:6px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:10.5px;line-height:1.2;text-align:center;min-height:96px}
+.skin img,.skin svg{width:56px;height:60px;object-fit:contain;fill:#05070b;filter:brightness(0) drop-shadow(0 0 1px rgba(226,234,255,.95)) drop-shadow(0 0 5px rgba(170,195,255,.35))}
+.skin img.mirror{transform:scaleX(-1)}
+.skin.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.skin.locked{opacity:.5;cursor:default}
+.skin.locked i{font-style:normal;font-size:28px;height:60px;display:flex;align-items:center;color:var(--muted)}
 .pile{display:flex;flex-direction:column;gap:6px}
 .pile-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .pile-h b{font-size:16px}
@@ -1187,12 +1195,28 @@ const rankName=w=>RANKS[rankIdx(w)][1];
 function recordResult(){
   if(!G||!G.over||G.recorded||G.tut!=null)return;G.recorded=true;
   const before=rankIdx(rec.w),w=G.over.winner;
-  if(w==='p'){rec.w++;rec.streak++;rec.best=Math.max(rec.best,rec.streak)}else if(w==='c'){rec.l++;rec.streak=0}else rec.d++;
+  let newSkin=null;
+  if(w==='p'){rec.w++;rec.streak++;rec.best=Math.max(rec.best,rec.streak);const k=G.char&&G.char.img;rec.beaten=rec.beaten||[];if(k&&!rec.beaten.includes(k)){rec.beaten.push(k);newSkin=SKINS.find(x=>x.key===k)}
+    const wsk=SKINS.find(x=>x.wins===rec.w);if(wsk)newSkin=wsk}else if(w==='c'){rec.l++;rec.streak=0}else rec.d++;
   store.set(KEY_REC,rec);
   const after=rankIdx(rec.w);
   if(after>before){const un=[...SCENES,...MOONS].filter(x=>x.rank===after).map(x=>x.name);G.rankUp={name:RANKS[after][1],unlock:un}}
+  if(newSkin)G.newSkin=newSkin.name;
 }
 const unlocked=x=>rankIdx(rec.w)>=x.rank;
+/* 舞台の自分の侍の姿。名前のある侍は、その侍に勝つと使える。鎧武者は勝ち数で。face：絵の向き（l＝左向き。舞台では向き合うように裏返す） */
+const SKINS=[
+  {key:'default',name:'侍'},
+  {key:'shinnosuke',name:'一閃の新之助',face:'l'},{key:'gonzou',name:'赤鬼の権三',face:'l'},{key:'sayo',name:'柳の小夜'},
+  {key:'yata',name:'火車の弥太'},{key:'kageboushi',name:'影法師'},{key:'sougen',name:'心眼の宗玄'},
+  {key:'oren',name:'鉄扇のお蓮'},{key:'kon',name:'狐の紺'},{key:'boss',name:'月影の主'},
+  {key:'spare1',name:'鎧武者・壱',wins:10},{key:'spare2',name:'鎧武者・弐',wins:25},
+];
+const FACE={};SKINS.forEach(x=>{if(x.face)FACE[x.key]=x.face});
+const skinOpen=x=>x.key==='default'||(x.wins?rec.w>=x.wins:(rec.beaten||[]).includes(x.key));
+const skinNeed=x=>x.wins?`${x.wins}勝で解放`:`${x.name}に勝つと解放`;
+/* 舞台の侍の絵：key があればその姿、無ければいつもの侍 */
+const samImg=key=>key&&key!=='default'?`<img src="art/chars/${key}.png" alt=""${FACE[key]==='l'?' class="mirror"':''}>`:(ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100"><use href="#samurai"/></svg>');
 
 /* ---------- 途中の試合の保存（この端末の中だけ） ----------
    ターンの始め・奥義を使った直後・結果が出た直後に保存する。
@@ -1817,6 +1841,7 @@ function recordPanel(){
     <p class="small muted">物語：最高 ${storyRec.best>STORY_N?'月下の覇者':storyRec.best+'人抜き'}・月下の覇者 ${storyRec.clears}回</p>
     <div class="rank"><b>${RANKS[i][1]}</b><span class="muted small">${next?`${next[1]}まで あと${next[0]-rec.w}勝`:'最高位'}</span></div>
     <p class="small muted">${rec.w}勝 ${rec.l}敗${rec.d?` ${rec.d}分`:''}・連勝 ${rec.streak}（最高 ${rec.best}）</p>
+    <div class="label">あなたの侍（勝った相手の姿を使える）</div><div class="skins">${SKINS.map(x=>skinOpen(x)?`<button class="skin${(settings.skin||'default')===x.key?' on':''}" data-act="skin" data-key="${x.key}" aria-pressed="${(settings.skin||'default')===x.key}">${samImg(x.key)}<span>${x.name}</span></button>`:`<span class="skin locked" title="${skinNeed(x)}"><i>？</i><span>${skinNeed(x)}</span></span>`).join('')}</div>
     <div class="label">舞台の景色</div><div class="chips">${SCENES.map(x=>chip(x,'scene')).join('')}</div>
     <div class="label">舞台の月</div><div class="chips">${MOONS.map(x=>chip(x,'moon')).join('')}</div>
   </div>`;
@@ -2012,7 +2037,7 @@ function gameHTML(){
   }
   const n0=revealed&&G.res?G.res.net:0;
   const loser=G.over&&G.over.winner?(G.over.winner==='p'?'opp':'me'):null,finale=!!G.over&&Date.now()<(G.finaleUntil||0);
-  const sam=(side,atk,hit)=>`<div class="samurai ${side}${atk?' lunge':''}${hit&&loser!==side?' hit':''}${loser===side?' down':''}">${ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100"><use href="#samurai"/></svg>'}</div>`;
+  const sam=(side,atk,hit)=>`<div class="samurai ${side}${atk?' lunge':''}${hit&&loser!==side?' hit':''}${loser===side?' down':''}">${samImg(side==='me'?(SKINS.some(x=>x.key===settings.skin&&skinOpen(x))?settings.skin:'default'):(G.char&&G.char.img))}</div>`;
   const t=Date.now()/1000;
   const petals=[8,22,37,55,68,81,93].map((x,i)=>{const d=7+(i%3)*2.5;return `<i class="petal" style="left:${x}%;animation-duration:${d}s;animation-delay:-${((t+i*1.9)%d).toFixed(2)}s"></i>`}).join('');
   const duel=`<div class="duel" aria-hidden="true">${sam('opp',ca==='atk',n0>0)}${sam('me',pa==='atk',n0<0)}${fx}</div>`;
@@ -2122,6 +2147,7 @@ function overHTML(){
       <div class="tile"><b>${st.maxPush}<small style="font-size:14px"> 歩</small></b><span>1手でいちばん押し込んだ</span></div>
       <div class="tile"><b>${G.p.ougiUsed?OUGI[G.p.ougi].name:'—'}</b><span>${G.p.ougiUsed?'使った奥義':'奥義は使わなかった'}</span></div>
     </div>
+    ${G.newSkin?`<div class="rankup"><b>侍の姿「${G.newSkin}」を手に入れた</b><span>メニューの「段位と戦績」で、舞台の自分の侍に使える</span></div>`:''}
     ${G.rankUp?`<div class="rankup"><b>${G.rankUp.name}に昇段！</b>${G.rankUp.unlock.length?`<span>${G.rankUp.unlock.join('・')}を解放した</span>`:''}</div>`:''}
     <div class="rankbar">
       <div class="lbl"><b>${cur[1]}</b><span>${next?`${next[1]}まで あと${next[0]-rec.w}勝`:'最高位'}</span></div>
@@ -2230,6 +2256,7 @@ document.addEventListener('click',e=>{
     case 'mytrap':{const t=G.p.traps.find(t=>String(t.inst.uid)===el.dataset.uid);if(t){G.detail=t.inst;render()}break}
     case 'school-info':G.schoolInfo=!G.schoolInfo;G.oppInfo=false;render();break;
     case 'unzoom':if(G){G.detail=null;render()}break;
+    case 'skin':{const x=SKINS.find(o=>o.key===el.dataset.key);if(x&&skinOpen(x)){settings.skin=x.key;store.set(KEY_SET,settings);render()}break}
     case 'opp-info':G.oppInfo=!G.oppInfo;G.schoolInfo=false;render();break;
     case 'commit':if(G.pBurn)commit(null,G.pBurn);else if(G.sel)commit(G.sel);break;
     case 'pass':if(G&&!G.p.hand.some(i=>!blockReason(G.p,i)||!burnBlock(G.p,i)))commit(null);break;
