@@ -1930,6 +1930,8 @@ function rulesHTML(){
   </div>`;
 }
 const own0=()=>settings.deckKata;
+/* デッキ画面：型で絞り込んだときの、その種類の札の枚数 */
+const fCount=t=>Object.entries(deck).filter(([id])=>{const d=CARDS[id];return d.type===t&&(builderKata==='plain'?!d.eff:KATA_OF[id]===builderKata)}).reduce((a,[,c])=>a+c,0);
 function builderHTML(){
   const st=deckStats(deck);
   const own=settings.deckKata,order=[null,own,...Object.keys(KATA).filter(k=>k!==own)].filter(k=>builderKata==='all'||(builderKata==='plain'?k===null:k===builderKata));
@@ -1952,7 +1954,8 @@ function builderHTML(){
     </div>
     <p class="small" style="color:${st.ok?'var(--win)':'var(--lose)'}">${st.ok?'このデッキで対戦できます（自動で保存）':st.errs.join('／')}</p>
     <div class="ktabs" role="tablist" aria-label="型で絞る">${[['plain','型なし'],['all','全部'],[own0(),null],...Object.keys(KATA).filter(k=>k!==own0()).map(k=>[k,null])].map(([k,n])=>`<button class="ktab${builderKata===k?' on':''}${k===own0()?' own':''}" data-act="bkata" data-k="${k}" aria-selected="${builderKata===k}">${n||monHTML('kata',k)+KATA[k].name}</button>`).join('')}</div>
-    <div class="tabs" role="tablist">${TYPES.map(t=>`<button class="tab t-${t}${builderTab===t?' on':''}" role="tab" aria-selected="${builderTab===t}" data-act="btab" data-t="${t}">${TY[t].name}<small>${st.by[t]}枚</small></button>`).join('')}</div>
+    <div class="tabs" role="tablist">${TYPES.map(t=>`<button class="tab t-${t}${builderTab===t?' on':''}" role="tab" aria-selected="${builderTab===t}" data-act="btab" data-t="${t}">${TY[t].name}<small>${builderKata==='all'?`${st.by[t]}枚`:`${fCount(t)}/${st.by[t]}枚`}</small></button>`).join('')}</div>
+    ${builderKata!=='all'?`<p class="small muted">「${builderKata==='plain'?'型なし':KATA[builderKata].name}」の札だけ表示中（タブの数字は 表示中の札/全体）。全部見るときは「全部」</p>`:''}
   </div>
   <div class="panel"><div class="label">デッキの型（対戦ではこの型で戦う）</div>
     <div class="ougi-grid kata-grid">${Object.entries(KATA).map(([k,o])=>`<button class="og${settings.deckKata===k?' on':''}" data-act="deck-kata" data-k="${k}" aria-pressed="${settings.deckKata===k}">${monHTML('kata',k)}<span>${o.name}</span></button>`).join('')}</div>
