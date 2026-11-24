@@ -175,6 +175,10 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .side-head{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
 .side-head .who-line{display:flex;align-items:center;gap:10px}
 .side-head h2{font-size:14px;font-weight:700}
+.me-side .side-head{flex-wrap:nowrap}
+.me-side .side-head .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-end}
+.me-side .side-head .chips::-webkit-scrollbar{display:none}
+.chip.trap.wait{border-style:dashed;opacity:.8}
 .oname{appearance:none;background:none;border:0;padding:0;display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--fg)}
 .oname .mon{width:22px;height:22px;color:var(--fg)}
 .oname i{font-style:normal;font-size:9px;color:var(--muted)}
@@ -308,8 +312,9 @@ img.sil{object-fit:contain;height:auto}
 .center{display:flex;flex-direction:column;justify-content:center;gap:6px;min-height:0;overflow:visible;text-align:center}
 .verdict{display:flex;flex-direction:column;gap:0}
 .yomi{font-family:var(--font-display);font-weight:800;line-height:1.1;white-space:nowrap;display:flex;flex-direction:column;align-items:center}
-.yomi.win{font-size:24px;color:#ffe7a3;text-shadow:0 0 8px rgba(226,178,71,.9),0 0 20px rgba(226,178,71,.6),0 2px 0 #000}
-.yomi.win small{font-size:14px;color:var(--accent)}
+.center{container-type:inline-size}
+.yomi.win{font-size:min(24px,18cqw);color:#ffe7a3;text-shadow:0 0 8px rgba(226,178,71,.9),0 0 20px rgba(226,178,71,.6),0 2px 0 #000}
+.yomi.win small{max-width:100cqw;font-size:min(13px,9.5cqw);color:var(--accent);white-space:normal;text-align:center;line-height:1.25}
 .yomi.lose{font-size:15px;color:var(--lose);text-shadow:0 0 6px #000}
 .yomi small{font-family:var(--font-body);font-size:11px;font-weight:700}
 .play .yomi.win{animation:yomiin .6s .45s cubic-bezier(.2,1.7,.4,1) both}
@@ -418,11 +423,11 @@ details.opp-info .dl{margin-top:8px}
 .reward:hover,.reward:focus-visible{border-color:var(--accent)}
 .reward .card{cursor:pointer}
 .reward>span{font-size:11.5px;line-height:1.45;color:var(--muted)}
-.trapfire{font-family:var(--font-display);font-size:17px;line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
+.trapfire{font-family:var(--font-display);font-size:min(17px,13cqw);line-height:1.15;color:#fff;background:var(--trap);border-radius:8px;padding:5px 8px;display:flex;flex-direction:column;align-items:center;white-space:nowrap;box-shadow:0 0 0 2px #9fd0a4;animation:trapin .5s cubic-bezier(.2,1.6,.4,1) both}
 .trapfire small{font-family:var(--font-body);font-size:11px;font-weight:700}
 .trapfire.theirs{box-shadow:0 0 0 2px var(--lose)}
 @keyframes trapin{0%{transform:scale(2.2) rotate(-6deg);opacity:0}100%{transform:none;opacity:1}}
-.verdict .v{font-family:var(--font-display);font-size:20px;line-height:1.25;white-space:nowrap}
+.verdict .v{font-family:var(--font-display);font-size:min(20px,15cqw);line-height:1.25;white-space:nowrap}
 .verdict .v.win{color:var(--win)}.verdict .v.lose{color:var(--lose)}
 /* 説明は場の下に横幅いっぱいで出す（真ん中の列は狭くて見切れたため） */
 .info{flex:none;display:flex;flex-direction:column;gap:4px;max-height:40%;overflow:auto}
@@ -1847,7 +1852,7 @@ function builderHTML(){
 }
 function sideChips(s,isP){
   const c=[],kt=KATA[s.kata],og=OUGI[s.ougi],mixOn=!isP&&!isOpen()&&(G.p.kata==='me'||G.p.mixUntil>=G.turn);
-  if(isP)c.push(`<button class="chip ${s.ougiUsed&&!s.ougiNow?'':'on'}" data-act="school-info" aria-label="${kt.name}の型・奥義${og.name}">${monHTML('kata',s.kata)}${monHTML('ougi',s.ougi)}${og.name}${s.ougiNow?'（発動中）':s.ougiUsed?'（済）':''}</button>`);
+  if(isP)c.push(`<button class="chip ${s.ougiUsed&&!s.ougiNow?'':'on'}" data-act="school-info" aria-label="${kt.name}の型・奥義${og.name}">${monHTML('kata',s.kata)}${monHTML('ougi',s.ougi)}${s.ougiNow?og.name+'中':s.ougiUsed?'済':og.name}</button>`);
   else{
     if(!mixOn)c.push(`<span class="chip">手札${s.hand.length}</span>`);
     c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">奥義${s.ougiUsed?'済':'？'}</span>`);
@@ -1856,11 +1861,11 @@ function sideChips(s,isP){
     else if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
   }
   for(const t of s.traps){
-    const st=t.active?'発動待ち':'次から';
-    c.push(isP?`<button class="chip trap" data-act="mytrap" data-uid="${t.inst.uid}">罠：${def(t.inst).name}（${st}）</button>`:(trapSeen(t)?`<span class="chip trap">罠：${label(def(t.inst))}（${st}）</span>`:`<span class="chip trap">罠あり（${st}）</span>`));
+    const w=t.active?'':' wait',tt=t.active?'発動待ち':'次のターンから効く';
+    c.push(isP?`<button class="chip trap${w}" data-act="mytrap" data-uid="${t.inst.uid}" title="${tt}" aria-label="罠：${def(t.inst).name}（${tt}）">罠:${def(t.inst).name}</button>`:`<span class="chip trap${w}" title="${tt}" aria-label="罠（${tt}）">${trapSeen(t)?'罠:'+label(def(t.inst)):'罠あり'}</span>`);
   }
   if(s.haisui)c.push('<span class="chip haisui">背水</span>');
-  c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}">山${s.deck.length}・捨${s.discard.length}</button>`);
+  c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}" aria-label="山${s.deck.length}枚・捨て札${s.discard.length}枚">山${s.deck.length}</button>`);
   return `<div class="chips">${c.join('')}</div>`;
 }
 const energyHTML=s=>{
