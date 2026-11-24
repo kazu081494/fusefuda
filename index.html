@@ -201,7 +201,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 }
 .hand .ctext{padding-bottom:6px}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
-.opp-hand.open{grid-template-columns:repeat(4,minmax(0,66px));gap:6px}
+.opp-hand.open{grid-template-columns:repeat(var(--n,4),minmax(0,66px));gap:6px}
 .opp-row .card.small .cname{font-size:11px}
 .opp-row .card.small .cnum{font-size:16px}
 .opp-row .card.small .ccost{width:16px;height:16px;font-size:10px}
@@ -433,6 +433,8 @@ details.opp-info .dl{margin-top:8px}
 .ougi-grid.kata-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .modal-top{position:sticky;top:-18px;z-index:2;margin:-18px -18px 0;padding:10px 18px;background:var(--table-2);border-bottom:1px solid var(--line);display:flex;justify-content:flex-end}
 .modal-top .btn{min-height:38px;padding:6px 18px}
+.skinbox summary{cursor:pointer;list-style:revert}
+.skinbox[open] summary{margin-bottom:6px}
 .skins{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .skin{appearance:none;border:1px solid var(--line);background:linear-gradient(#0c111b,#16202e);color:var(--fg);border-radius:10px;padding:6px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:10.5px;line-height:1.2;text-align:center;min-height:96px}
 .skin img,.skin svg{width:56px;height:60px;object-fit:contain;fill:#05070b;filter:brightness(0) drop-shadow(0 0 1px rgba(226,234,255,.95)) drop-shadow(0 0 5px rgba(170,195,255,.35))}
@@ -591,7 +593,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 @media (max-height:720px){
   .big.card .ctext{font-size:10px;line-height:1.32}
   .opp-hand{grid-template-columns:repeat(7,30px)}
-  .opp-hand.open{grid-template-columns:repeat(4,minmax(0,52px))}
+  .opp-hand.open{grid-template-columns:repeat(var(--n,4),minmax(0,52px))}
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
@@ -1086,7 +1088,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
 }
 
 /* ---------- 試合 ---------- */
-let screen='menu';let G=null;let builderPreset=null;let builderTab='A',builderKata='all';
+let screen='menu';let G=null;let builderPreset=null;let skinBoxOpen=false;
+let builderTab='A',builderKata='all';
 
 function mill(s,n){let k=0;while(k<n&&s.deck.length){s.discard.push(s.deck.pop());k++}return k}
 function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<(s.handMax||HAND_MAX)){s.hand.push(s.deck.pop());k++}return k}
@@ -1943,7 +1946,7 @@ function recordPanel(){
     <p class="small muted">物語：最高 ${storyRec.best>STORY_N?'月下の覇者':storyRec.best+'人抜き'}・月下の覇者 ${storyRec.clears}回</p>
     <div class="rank"><b>${RANKS[i][1]}</b><span class="muted small">${next?`${next[1]}まで あと${next[0]-rec.w}勝`:'最高位'}</span></div>
     <p class="small muted">${rec.w}勝 ${rec.l}敗${rec.d?` ${rec.d}分`:''}・連勝 ${rec.streak}（最高 ${rec.best}）</p>
-    <div class="label">あなたの侍（勝った相手の姿を使える）</div><div class="skins">${SKINS.map(x=>skinOpen(x)?`<button class="skin${(settings.skin||'default')===x.key?' on':''}" data-act="skin" data-key="${x.key}" aria-pressed="${(settings.skin||'default')===x.key}">${samImg(x.key)}<span>${x.name}</span></button>`:`<span class="skin locked" title="${skinNeed(x)}"><i>？</i><span>${skinNeed(x)}</span></span>`).join('')}</div>
+    <details class="skinbox"${skinBoxOpen?' open':''}><summary class="label" data-act="skinbox">あなたの侍：${(SKINS.find(x=>x.key===(settings.skin||'default'))||SKINS[0]).name}（勝った相手の姿を使える・押して選ぶ）</summary><div class="skins">${SKINS.map(x=>skinOpen(x)?`<button class="skin${(settings.skin||'default')===x.key?' on':''}" data-act="skin" data-key="${x.key}" aria-pressed="${(settings.skin||'default')===x.key}">${samImg(x.key)}<span>${x.name}</span></button>`:`<span class="skin locked" title="${skinNeed(x)}"><i>？</i><span>${skinNeed(x)}</span></span>`).join('')}</div></details>
     <div class="label">舞台の景色</div><div class="chips">${SCENES.map(x=>chip(x,'scene')).join('')}</div>
     <div class="label">舞台の月</div><div class="chips">${MOONS.map(x=>chip(x,'moon')).join('')}</div>
   </div>`;
@@ -1969,6 +1972,7 @@ function menuHTML(){
     <button class="btn wide story-btn" data-act="${story&&story.active?'story-continue':'story-new'}" ${st.ok?'':'disabled'}>${story&&story.active?`物語の続き<small class="resume-sub">${story.round>=STORY_N?'月影の主':KAN[story.round]+'人目'}・${KATA[story.kata].name}の型と${OUGI[story.ougi].name}</small>`:'物語：月下の勝ち抜き<small class="resume-sub">五人を抜き、月影の主に挑む</small>'}</button>
     ${sv?`<button class="btn wide" data-act="resume">続きから<small class="resume-sub">${sv.turn}手目・${KATA[sv.p.kata].name}の型と${OUGI[sv.p.ougi].name}・${sv.gauge>0?`勝ちまで あと${GOAL-sv.gauge}歩`:sv.gauge<0?`負けまで あと${GOAL+sv.gauge}歩`:'互角'}</small></button>`:''}
     <button class="btn wide${sv?' ghost':''}" data-act="go-school" ${st.ok?'':'disabled'}>${sv?'新しく対戦する（続きは消える）':'対戦する'}</button>
+    <button class="btn sub wide" data-act="go-builder">デッキを組む</button>
     ${recordPanel()}
     ${deckSummary()}
     <div class="panel">
@@ -2221,7 +2225,7 @@ function gameHTML(){
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
       <div class="info" aria-live="polite">${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?'':info}</div>
     </section>
-    ${oppHand?`<section class="opp-row" aria-label="相手の手札"><span class="opp-lbl">相手の<br>手札</span><div class="opp-hand${isOpen()?' open':''}">${oppHand}</div></section>`:''}
+    ${oppHand?`<section class="opp-row" aria-label="相手の手札"><span class="opp-lbl">相手の<br>手札</span><div class="opp-hand${isOpen()?' open':''}" style="--n:${Math.max(4,C.hand.length)}">${oppHand}</div></section>`:''}
     <section class="side me-side" aria-label="あなた">
       <div class="side-head"><div class="who-line">${energyHTML(P)}</div>${sideChips(P,true)}</div>
       <div class="hand${P.hand.length>=6?' many':''}${P.hand.length>=7?' lots':''}" style="--n:${Math.max(5,P.hand.length)}">${hand}</div>
@@ -2366,6 +2370,7 @@ document.addEventListener('click',e=>{
     case 'mytrap':{const t=G.p.traps.find(t=>String(t.inst.uid)===el.dataset.uid);if(t){G.detail=t.inst;render()}break}
     case 'school-info':G.schoolInfo=!G.schoolInfo;G.oppInfo=false;render();break;
     case 'unzoom':if(G){G.detail=null;render()}break;
+    case 'skinbox':e.preventDefault();skinBoxOpen=!skinBoxOpen;render();break;
     case 'skin':{const x=SKINS.find(o=>o.key===el.dataset.key);if(x&&skinOpen(x)){settings.skin=x.key;store.set(KEY_SET,settings);render()}break}
     case 'opp-info':G.oppInfo=!G.oppInfo;G.schoolInfo=false;render();break;
     case 'commit':if(G.pBurn)commit(null,G.pBurn);else if(G.sel)commit(G.sel);break;
