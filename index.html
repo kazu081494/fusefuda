@@ -176,7 +176,8 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .side-head .who-line{display:flex;align-items:center;gap:10px}
 .side-head h2{font-size:14px;font-weight:700}
 .me-side .side-head{flex-wrap:nowrap}
-.me-side .side-head .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-end}
+.me-side .side-head .chips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-start;min-width:0}
+.me-side .side-head .who-line{flex:none}
 .me-side .side-head .chips::-webkit-scrollbar{display:none}
 .chip.trap.wait{border-style:dashed;opacity:.8}
 .oname{appearance:none;background:none;border:0;padding:0;display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--fg)}
@@ -439,9 +440,9 @@ details.opp-info .dl{margin-top:8px}
 .verdict .v{font-family:var(--font-display);font-size:min(20px,15cqw);line-height:1.25;white-space:nowrap}
 .verdict .v.win{color:var(--win)}.verdict .v.lose{color:var(--lose)}
 /* 説明は場の下に横幅いっぱいで出す（真ん中の列は狭くて見切れたため） */
-/* 説明は舞台の下に重ねて出す（画面の組み立てを変えないので、舞台や手札が縮まない） */
-.info{position:absolute;left:4px;right:4px;bottom:4px;z-index:5;display:flex;flex-direction:column;gap:4px;max-height:48%;overflow:auto;background:rgba(6,9,14,.88);border:1px solid var(--line);border-radius:8px;padding:6px 8px;color:var(--fg);text-align:left}
-.info:empty{display:none}
+/* 説明は舞台の下の決まった高さの欄に出す（出ても消えても高さが変わらないので、舞台や手札が縮まない。長いときは欄の中で流す） */
+.info{flex:none;height:62px;display:flex;flex-direction:column;gap:3px;overflow:auto;padding:2px 2px}
+.info .msgs{font-size:11.5px;line-height:1.35}
 .info .why{font-size:12.5px;font-weight:700;line-height:1.45}
 .msgs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}
 .notice{font-size:11.5px;line-height:1.4;padding:5px 7px;border-radius:7px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);text-align:left}
@@ -2010,8 +2011,8 @@ function gameHTML(){
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
-      <div class="info" aria-live="polite">${info}</div>
     </section>
+    <section class="info" aria-live="polite">${info}</section>
     ${oppHand?`<section class="opp-row" aria-label="相手の手札"><span class="opp-lbl">相手の<br>手札</span><div class="opp-hand${isOpen()?' open':''}">${oppHand}</div></section>`:''}
     <section class="side me-side" aria-label="あなた">
       <div class="side-head"><div class="who-line">${energyHTML(P)}</div>${sideChips(P,true)}</div>
