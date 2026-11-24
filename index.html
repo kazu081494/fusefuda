@@ -177,6 +177,7 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .side-head h2{font-size:14px;font-weight:700}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
 .opp-hand.open{grid-template-columns:repeat(7,minmax(0,46px))}
+.chip.deckline{white-space:normal}
 .openrule{display:flex;flex-direction:column;gap:4px}
 
 .gauge{display:flex;flex-direction:column;gap:3px;flex:none}
@@ -476,6 +477,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 /* 背の低い画面：手札を少し低くして一画面に収める */
 @media (max-height:720px){
   .opp-hand{grid-template-columns:repeat(7,30px)}
+  .opp-hand.open{grid-template-columns:repeat(7,minmax(0,36px))}
   .gauge .cell{height:13px}
 }
 @media (prefers-reduced-motion: reduce){
@@ -642,7 +644,7 @@ const OUGI={
   kagenui:{name:'影縫い',text:'開けたとき、相手の罠を1枚奪って自分の場に張る（次のターンから効く）'},
   sakiyomi:{name:'先読み',text:'相手が攻撃してくるかどうかを見てから、自分の札を選べる'},
   fudou:{name:'不動',text:'このターン、押し込まれない'},
-  issen:{name:'一閃',text:'このターン、押し込めたら、さらに15歩押し込む'},
+  issen:{name:'一閃',text:'このターン、押し込めたら、さらに15歩押し込む（剛の型の上乗せとは重ならない）'},
   shingan:{name:'心眼',text:'相手の今の手札を全部見る。見た札は、相手が出すか捨てるまで見えたまま'},
   tensei:{name:'転生',text:'手札の攻撃をすべて防御に、防御をすべて攻撃に変える。効果のある札も、数字の近い素の札になる（反撃（防御13）は攻撃13に）'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
@@ -807,8 +809,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   if(pb&&using(P,'gouka')){const v=burnVal(pb,P);toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
   if(cb&&using(C,'gouka')){const v=burnVal(cb,C);toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
   // 一閃：押し込めたら+15歩。不動：押し込まれない（いちばん最後に効く）
-  if(toC>0&&using(P,'issen')){toC+=15;fx.ougiP='issen';notes.push('一閃：さらに15歩押し込む')}
-  if(toP>0&&using(C,'issen')){toP+=15;fx.ougiC='issen';notes.push('相手の一閃：さらに15歩押し込まれた')}
+  if(toC>0&&using(P,'issen')){const g=P.kata==='gou'&&toC>=5?5:0;toC+=15-g;fx.ougiP='issen';notes.push(g?'一閃：剛の5と合わせて15歩押し込む':'一閃：さらに15歩押し込む')}
+  if(toP>0&&using(C,'issen')){const g=C.kata==='gou'&&toP>=5?5:0;toP+=15-g;fx.ougiC='issen';notes.push(g?'相手の一閃：剛の5と合わせて15歩押し込まれた':'相手の一閃：さらに15歩押し込まれた')}
   if(using(P,'genwaku')||using(C,'genwaku')){
     const a=toC,b=toP,gp=using(P,'genwaku'),gc=using(C,'genwaku');
     toC=(gp?b:0)+(gc?0:a);toP=(gc?a:0)+(gp?0:b);
@@ -1040,6 +1042,7 @@ function readSave(){
 function resumeGame(){
   const g=readSave();if(!g){render();return}
   clearTimers();G=g;G.modal=null;screen='game';
+  G.knownTrap=G.knownTrap||new Set();G.knownDeck=G.knownDeck||new Set();applyOpenTexts(G.open);
   // 札の番号が重ならないよう、保存された札の番号より先から数える
   let mx=0;const walk=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){o.forEach(walk);return}if(typeof o.uid==='number')mx=Math.max(mx,o.uid);Object.values(o).forEach(walk)};
   walk(G.p);walk(G.c);UID=Math.max(UID,mx);
@@ -1058,7 +1061,7 @@ function startGame(kata,ougi,opts={}){
     gauge:0,prevGauge:0,revealAt:0,finaleUntil:0,st:{yomiP:0,yomiC:0,bestCombo:0,maxPush:0,maxPushed:0},combo:0,cCombo:0,comboGain:null,yomi:null,turn:0,phase:'',sel:null,detail:null,log:[],notices:[],knownOpp:new Set(),knownByCpu:new Set(),schoolInfo:false,
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   if(opts.cBonus)G.c.energy+=opts.cBonus;
-  G.open=!!settings.openHand;
+  G.open=!!settings.openHand;G.knownTrap=new Set();G.knownDeck=new Set();applyOpenTexts(G.open);
   G.cKnow=opts.know||0;G.cRead=opts.read||.8;if(opts.hand)drawN(G.c,opts.hand);G.c.ougiLeft=opts.ougi||1;
   screen='game';startTurn();
 }
@@ -1122,7 +1125,7 @@ function useOugi(){
   P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
-  if(P.ougi==='shingan')for(const x of G.c.hand)G.knownOpp.add(x.uid);
+  if(P.ougi==='shingan'){if(isOpen()){P.shinganOpen=true;G.notices.push({t:'心眼：相手の伏せた罠と、山札の上から3枚が見える',alert:true})}else for(const x of G.c.hand)G.knownOpp.add(x.uid)}
   if(['sakiyomi','shingan','tensei','shikabane'].includes(P.ougi)){G.cutin={who:'p',key:P.ougi,at:Date.now()};playCutinSound()}
   const m=ougiNow(P,G.c);if(m){G.notices.push({t:m});log(m);if(G.sel&&blockReason(P,G.sel))G.sel=null}
   if(P.ougi==='sakiyomi'){G.cPre=G.tut!=null?tutCpu():cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
@@ -1166,7 +1169,11 @@ function openEff(who,inst,msgs){
   const d=def(inst),me=who==='p'?G.p:G.c,op=who==='p'?G.c:G.p;
   const mn=who==='p'?'あなた':'相手',on=who==='p'?'相手':'あなた';
   switch(d.eff){
-    case 'teisatsu':if(op.hand.length){const x=rnd(op.hand);
+    case 'teisatsu':if(isOpen()){
+        if(op.traps.length){if(who==='p'){op.traps.forEach(t=>G.knownTrap.add(t.inst.uid));msgs.push(`偵察：相手の罠は「${op.traps.map(t=>def(t.inst).name).join('」「')}」`)}else msgs.push('偵察：あなたの罠を見られた')}
+        else{const top=op.deck.slice(-2).reverse();if(who==='p'){top.forEach(x=>G.knownDeck.add(x.uid));msgs.push(top.length?`偵察：罠は無い。相手の山札の上は「${top.map(x=>label(def(x))).join('」「')}」`:'偵察：罠も山札も無い')}else msgs.push('偵察：罠が無いので、あなたの山札の上を見られた')}
+        break}
+      if(op.hand.length){const x=rnd(op.hand);
       if(who==='p'){G.knownOpp.add(x.uid);msgs.push(`偵察：相手の手札に「${label(def(x))}」がある`)}
       else msgs.push(`偵察：相手に「${label(def(x))}」を見られた`)}break;
     case 'kakuran':if(op.hand.length){const x=rnd(op.hand);removeFrom(op.hand,x);op.discard.push(x);drawN(op,1);
@@ -1174,7 +1181,8 @@ function openEff(who,inst,msgs){
     case 'meisou':me.energy=clampE(me.energy+15);msgs.push(`瞑想：${mn}は気力を15得た`);break;
     case 'hikiashi':me.energy=clampE(me.energy+20);msgs.push(`退き足：${mn}は気力を20得た`);break;
     case 'yokoku':me.yokokuNext=true;msgs.push(`予告：次のターン、${mn}の攻撃の数字+10`);break;
-    case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;op.discard.push(t);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else{me.mixUntil=G.turn+1;const n=t=>op.hand.filter(i=>def(i).type===t).length;msgs.push(who==='p'?`見切り：罠は無い。相手の手札は 攻${n('A')}・防${n('D')}・罠${n('T')}（次の手番も見える）`:'見切り：罠が無いので、相手に手札の内訳を見られた')}break;
+    case 'mikiri':if(op.traps.length){const t=op.traps.shift().inst;op.discard.push(t);msgs.push(`見切り：${on}の罠「${def(t).name}」を外した`)}else if(isOpen()){const as=me.deck.filter(x=>def(x).type==='A');if(as.length){const best=as.reduce((a,b)=>def(b).num>def(a).num?b:a);removeFrom(me.deck,best);if(me.hand.length<HAND_MAX){me.hand.push(best);msgs.push(`見切り：罠は無い。${mn}は山札から「${label(def(best))}」を手札に加えた`)}else{me.deck.push(best);msgs.push('見切り：罠は無い。手札がいっぱいで探せなかった')}}else msgs.push('見切り：罠も、山札の攻撃の札も無い')}
+    else{me.mixUntil=G.turn+1;const n=t=>op.hand.filter(i=>def(i).type===t).length;msgs.push(who==='p'?`見切り：罠は無い。相手の手札は 攻${n('A')}・防${n('D')}・罠${n('T')}（次の手番も見える）`:'見切り：罠が無いので、相手に手札の内訳を見られた')}break;
   }
 }
 /* 出した手の種類：atk・def・burn・pass・trap */
@@ -1478,6 +1486,27 @@ function styleBias(k,d){
 }
 /* 心眼：見たあなたの札は覚えておき、手を読むのに使う（見えていない札のぶんは、いつもの読みで補う） */
 const isOpen=()=>!!(G&&G.open&&G.tut==null);
+/* 手札公開ルールでは、手札を見る仕組みが要らなくなるので、山札と罠を見る効果に変える */
+const OPEN_TXT={
+  card:{teisatsu:['相手の罠を見る。無ければ山札の上2枚','開けたとき、相手が伏せている罠を見る（発動するまで見える）。罠が無ければ、相手の山札の上から2枚を見る（引かれるまで見える）'],
+        mikiri:['罠を外す。無ければ山札から大きい攻撃を探す','開けたとき、相手が張っている罠を発動させずに捨てさせる。罠が無ければ、自分の山札から一番数字の大きい攻撃の札を探して手札に加える']},
+  kata:{me:'相手が次に引く札（山札の一番上）がいつも見える'},
+  ougi:{shingan:'この試合のあいだ、相手の伏せた罠と、相手の山札の上から3枚がずっと見える'},
+};
+const BASE_TXT={card:{},kata:{},ougi:{}};
+for(const k in OPEN_TXT.card)BASE_TXT.card[k]=[CARDS[k].short,CARDS[k].text];
+for(const k in OPEN_TXT.kata)BASE_TXT.kata[k]=KATA[k].text;
+for(const k in OPEN_TXT.ougi)BASE_TXT.ougi[k]=OUGI[k].text;
+let openTxtOn=null;
+function applyOpenTexts(on){on=!!on;if(openTxtOn===on)return;openTxtOn=on;const src=on?OPEN_TXT:BASE_TXT;
+  for(const k in src.card)[CARDS[k].short,CARDS[k].text]=src.card[k];
+  for(const k in src.kata)KATA[k].text=src.kata[k];
+  for(const k in src.ougi)OUGI[k].text=src.ougi[k];}
+applyOpenTexts(settings.openHand);
+/* 公開ルールで見えている相手の山札：眼の型は一番上、心眼は上から3枚、偵察で見た札 */
+function oppDeckSeen(){const C=G.c,n=Math.max(G.p.kata==='me'?1:0,G.p.shinganOpen?3:0),out=[];
+  for(let k=0;k<C.deck.length;k++){const x=C.deck[C.deck.length-1-k];if(k<n||G.knownDeck.has(x.uid))out.push({x,k})}return out}
+const trapSeen=t=>isOpen()&&(G.p.shinganOpen||G.knownTrap.has(t.inst.uid));
 /* 手札公開ルール：CPU はあなたの手札を全部知っている。出しそうな種類（攻・防・罠・見送る）の重みは読みのまま使い、その種類の中で実際の札に配る */
 function openModel(){
   const P=G.p,base=cpuOppModel(),wt={A:0,D:0,T:0,P:0};
@@ -1629,7 +1658,7 @@ function menuHTML(){
     <div class="panel">
       <div class="openrule"><div class="row"><span>手札公開ルール（お試し）</span>
         <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
-        <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える</p></div>
+        <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える。手札を見る仕組みは、山札と罠を見る効果に変わる（眼の型・心眼・偵察・見切り）</p></div>
       <label class="row" for="timerSel"><span>持ち時間（1手）</span>
       <select id="timerSel">${TIMER_OPTIONS.map(v=>`<option value="${v}" ${settings.timer===v?'selected':''}>${v?v+'秒':'なし'}</option>`).join('')}</select></label>
       <div class="row sound-row"><span>音</span>
@@ -1716,12 +1745,12 @@ function sideChips(s,isP){
     c.push(`<span class="chip" title="${kt.text}">${monHTML('kata',s.kata)}${kt.name}の型</span>`);
     c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">奥義${s.ougiUsed?'：使用済み':'：？'}</span>`);
     // 眼の型：相手の手札の内訳が見える
-    if(isOpen())c.push(`<span class="chip on">手札公開ルール</span>`);
+    if(isOpen()){const sn=oppDeckSeen();if(sn.length)c.push(`<span class="chip warn deckline">山の上：${sn.map(({x})=>def(x).eff?def(x).name:label(def(x))).join(' → ')}</span>`)}
     else if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
   }
   for(const t of s.traps){
     const st=t.active?'発動待ち':'次から';
-    c.push(isP?`<button class="chip trap" data-act="mytrap" data-uid="${t.inst.uid}">罠：${def(t.inst).name}（${st}）</button>`:`<span class="chip trap">罠あり（${st}）</span>`);
+    c.push(isP?`<button class="chip trap" data-act="mytrap" data-uid="${t.inst.uid}">罠：${def(t.inst).name}（${st}）</button>`:(trapSeen(t)?`<span class="chip trap">罠：${label(def(t.inst))}（${st}）</span>`:`<span class="chip trap">罠あり（${st}）</span>`));
   }
   if(s.haisui)c.push('<span class="chip haisui">背水</span>');
   c.push(`<button class="chip" data-act="discard" data-who="${isP?'p':'c'}">山${s.deck.length}・捨${s.discard.length}</button>`);
@@ -1932,7 +1961,7 @@ document.addEventListener('click',e=>{
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
     case 'look':{const kind=el.dataset.kind,list=kind==='back'?BACKS:MOONS,x=list.find(o=>o.key===el.dataset.key);if(x&&unlocked(x)){settings[kind]=x.key;store.set(KEY_SET,settings);render()}break}
-    case 'open-hand':settings.openHand=!settings.openHand;store.set(KEY_SET,settings);render();break;
+    case 'open-hand':settings.openHand=!settings.openHand;applyOpenTexts(settings.openHand);store.set(KEY_SET,settings);render();break;
     case 'snd-sfx':settings.sound=!settings.sound;if(!settings.sound)settings.bgm=false;store.set(KEY_SET,settings);if(!settings.sound)bgmStop();render();break;
     case 'snd-bgm':if(settings.sound&&settings.bgm){settings.bgm=false}else{settings.sound=true;settings.bgm=true}store.set(KEY_SET,settings);render();break;
     case 'snd-test':{
