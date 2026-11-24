@@ -697,7 +697,7 @@ const EFFECTS=[
   ['kanashibari','金縛り','A',8,10,'押せたら、次のターン相手は防御できない','押せたら、次のターン相手は防御の札を出せない'],
   ['hiya','火矢','A',8,10,'燃やすと気力-10、相手を10押す','燃やすと、気力は増えずに10減るが、相手を10歩押し込む（相手が防御していたら止められる）。出せばふつうの攻撃8'],
   ['houroku','焙烙玉','A',13,15,'燃やすと気力-15、相手を20押す','燃やすと、気力は増えずに15減るが、相手を20歩押し込む（相手が防御していたら止められる）。出せばふつうの攻撃13'],
-  ['shizan','屍山','A',4,10,'墓地5枚ごとに攻撃+5','自分の墓地（捨て札）5枚ごとに、攻撃の数字が5増える（墓地20枚なら攻撃24）'],
+  ['shizan','灰燼','A',4,10,'墓地5枚ごとに攻撃+5','自分の墓地（捨て札）5枚ごとに、攻撃の数字が5増える（墓地20枚なら攻撃24）'],
   ['onryou','怨霊','A',8,10,'押せたら、墓地の怨霊1枚ごとに+5押す','押せたら、自分の墓地にある怨霊1枚ごとに、さらに5押す'],
   ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
   ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
@@ -712,7 +712,7 @@ const EFFECTS=[
   ['katanagari','刀狩り','D',8,10,'相手の手札の一番大きい攻撃を捨てさせる','開けたとき、相手の手札で一番数字の大きい攻撃の札を捨てさせる'],
   ['sekisho','関所','D',8,10,'次のターン、相手は気力20以上の札を出せない','開けたとき、次のターン相手は気力20以上の札を出せない'],
   ['noroshi','狼煙','D',4,5,'燃やすと気力+5、次の攻撃+10','燃やすと気力が5増え、次のターン自分の攻撃の数字が10増える。出せばふつうの防御4'],
-  ['yobimodoshi','呼び戻し','D',8,10,'墓地の一番大きい攻撃を手札に戻す','開けたとき、自分の墓地から一番数字の大きい攻撃の札を1枚、手札に戻す'],
+  ['yobimodoshi','口寄せ','D',8,10,'墓地の一番大きい攻撃を手札に戻す','開けたとき、自分の墓地から一番数字の大きい攻撃の札を1枚、手札に戻す'],
   ['kuyou','供養','D',4,0,'燃やすと気力+10、墓地3枚を山札に戻す','燃やすと気力が10増え、自分の墓地の札を3枚、山札の下に戻す（山札切れを防げる）。出せばふつうの防御4'],
   ['hiuchi','火打石','D',4,0,'燃やすと気力+10','気力0の札なのに、燃やすと気力が10増える。出せばふつうの防御4'],
   ['okuribi','送り火','D',8,10,'燃やすと、相手の気力を5減らす','燃やすと気力が10増え、さらに相手の気力を5減らす。出せばふつうの防御8'],
@@ -749,7 +749,7 @@ const PRESETS=[
   {key:'soku',kata:'gou',name:'速攻',desc:'剛の型。重い攻撃で一気に押す。居合で大振りを返し、崩しと貫通で守りを割る',cards:{A30:2,A24:3,A18:2,A13:3,oiuchi:2,kantsu:2,rengeki:2,kuzushi:2,iai:3,yakiuchi:1,mizuzeme:1,sutemi:1,meisou:1,senkou:1,hiuchi:1,yokoku:1,D8:2}},
   {key:'mamori',kata:'yanagi',name:'守りの城',desc:'柳の型。受け止めて跳ね返す。構えで空振りの損を消し、反撃と残心で押し返す',cards:{D30:2,D24:2,D18:2,D13:2,hangeki:3,ukenagashi:2,zanshin:2,kamae:3,tessen:3,fuuji:1,katanagari:1,sekisho:1,meisou:1,mikiri:1,kaeshi:1,A24:1,A18:2}},
   {key:'hono',kata:'homura',name:'火祭り',desc:'炎の型。燃やして気力を貯め、大きい札で一気に押す。線香花火と火打石が軸',cards:{senkou:3,hiuchi:3,okuribi:2,hiya:3,houroku:2,noroshi:2,meisou:3,hikiashi:1,A30:2,A24:2,A18:2,D18:2,oiuchi:1,iai:1,kamae:1}},
-  {key:'wana',kata:'kage',name:'罠と屍',desc:'影の型。罠で相手の手を縛り、墓地にたまった札（屍山・怨霊）で押し切る',cards:{otoshiana:2,kaeshi:1,dorobou:1,machibuse:2,kagemusha:2,hakaabaki:2,shizan:3,onryou:3,yobimodoshi:2,kuyou:2,A24:2,A18:2,A13:2,D13:2,mikiri:1,meisou:1}},
+  {key:'wana',kata:'kage',name:'罠と屍',desc:'影の型。罠で相手の手を縛り、墓地にたまった札（灰燼・怨霊）で押し切る',cards:{otoshiana:2,kaeshi:1,dorobou:1,machibuse:2,kagemusha:2,hakaabaki:2,shizan:3,onryou:3,yobimodoshi:2,kuyou:2,A24:2,A18:2,A13:2,D13:2,mikiri:1,meisou:1}},
   {key:'kin',kata:'me',name:'均衡',desc:'眼の型。陽動と予告で読みを外し、金縛りと関所で縛る',cards:{teisatsu:2,yokoku:2,mikiri:2,kakuran:2,youdou:3,kanashibari:2,sekisho:2,A24:2,A18:2,A13:2,D18:2,D13:2,hikeshi:1,senkou:1,hiuchi:1,hangeki:1,otoshiana:1}},
 ];
 /* 流派：型（いつも効く。中身は相手に秘密だが、戦い方ににじみ出る）と奥義（1試合に1回、伏せる前に使う） */
@@ -1332,7 +1332,7 @@ function openEff(who,inst,msgs){
     case 'kakuran':if(op.hand.length){const x=rnd(op.hand);removeFrom(op.hand,x);op.discard.push(x);drawN(op,1);
       msgs.push(`撹乱：${on}は「${label(def(x))}」を捨てて1枚引いた`)}break;
     case 'katanagari':{const as=op.hand.filter(x=>def(x).type==='A');if(as.length){const x=as.reduce((a,b)=>def(b).num>def(a).num?b:a);removeFrom(op.hand,x);op.discard.push(x);msgs.push(`刀狩り：${on}の「${label(def(x))}」を捨てさせた`)}else msgs.push(`刀狩り：${on}の手札に攻撃の札が無かった`);break}
-    case 'yobimodoshi':{const as=me.discard.filter(x=>def(x).type==='A');if(as.length){const x=as.reduce((a,b)=>numFor0(b)>numFor0(a)?b:a);removeFrom(me.discard,x);(me.hand.length<HAND_MAX?me.hand:me.deck).push(x);msgs.push(`呼び戻し：${mn}は墓地から「${label(def(x))}」を手札に戻した`)}else msgs.push(`呼び戻し：${mn}の墓地に攻撃の札が無かった`);break}
+    case 'yobimodoshi':{const as=me.discard.filter(x=>def(x).type==='A');if(as.length){const x=as.reduce((a,b)=>numFor0(b)>numFor0(a)?b:a);removeFrom(me.discard,x);(me.hand.length<HAND_MAX?me.hand:me.deck).push(x);msgs.push(`口寄せ：${mn}は墓地から「${label(def(x))}」を手札に戻した`)}else msgs.push(`口寄せ：${mn}の墓地に攻撃の札が無かった`);break}
     case 'sekisho':op.capNext=true;msgs.push(`関所：次のターン、${on}は気力20以上の札を出せない`);break;
     case 'meisou':me.energy=clampE(me.energy+15);msgs.push(`瞑想：${mn}は気力を15得た`);break;
     case 'hikiashi':me.energy=clampE(me.energy+20);msgs.push(`退き足：${mn}は気力を20得た`);break;
