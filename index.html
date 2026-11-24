@@ -243,7 +243,7 @@ img.sil{object-fit:contain;height:auto}
 @keyframes hitO{30%{transform:translateX(-30%) rotate(-8deg);filter:drop-shadow(0 0 3px #ff6b4a) drop-shadow(0 0 10px #ff6b4a)}}
 @keyframes hitM{30%{transform:scaleX(-1) translateX(-30%) rotate(-8deg);filter:drop-shadow(0 0 3px #ff6b4a) drop-shadow(0 0 10px #ff6b4a)}}
 .fx{position:absolute;pointer-events:none;opacity:0}
-.fx.slash{bottom:34%;left:20%;width:60%;aspect-ratio:2;fill:#fff;filter:drop-shadow(0 0 5px #d8e6ff) drop-shadow(0 0 12px rgba(200,220,255,.6))}
+.fx.slash{bottom:22%;left:22%;width:56%;aspect-ratio:1;fill:#fff;filter:drop-shadow(0 0 5px #d8e6ff) drop-shadow(0 0 12px rgba(200,220,255,.6))}
 .fx.slash.from-me{animation:slashM .55s .12s ease-out}
 .fx.slash.from-opp{animation:slashO .55s .12s ease-out}
 .fx.slash.from-me.rebound{animation:slashMB .9s .12s ease-in-out}
@@ -554,6 +554,9 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
     <path d="M41 45 L50 36 L51 37 L42 46 Z"/>
   </symbol>
   <!-- 三日月の斬撃 -->
+  <!-- 斬撃の絵（Gemini で作成。art/cards/slash.png）。画像の形で切り抜き、使う所の色で塗る -->
+  <mask id="m-slash" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100" style="mask-type:alpha"><image href="art/cards/slash.png" width="100" height="100"/></mask>
+  <symbol id="img-slash" viewBox="0 0 100 100"><rect width="100" height="100" mask="url(#m-slash)"/></symbol>
   <symbol id="fx-slash" viewBox="0 0 100 50">
     <path d="M4 44 Q50 -18 96 44 Q50 6 4 44 Z"/>
   </symbol>
@@ -1660,14 +1663,14 @@ const $app=document.getElementById('app');
 /* 型と奥義の紋：丸い枠の中に影絵。[使う絵, 絵の viewBox] */
 const MON={
   kata:{gou:['sil-A'],yanagi:['art-ukenagashi'],homura:['fx-flame'],kage:['art-kagemusha'],me:['art-mikiri']},
-  ougi:{gougeki:['art-kantsu'],uke:['sil-D'],gouka:['art-kitsunebi'],kagenui:['art-kakuran'],sakiyomi:['art-yokoku'],fudou:['art-yama'],issen:['fx-slash','0 0 100 50'],shingan:['art-meisou'],tensei:['art-youdou'],shikabane:['art-haka'],genwaku:['sil-T']},
+  ougi:{gougeki:['art-kantsu'],uke:['sil-D'],gouka:['art-kitsunebi'],kagenui:['art-kakuran'],sakiyomi:['art-yokoku'],fudou:['art-yama'],issen:['img-slash'],shingan:['art-meisou'],tensei:['art-youdou'],shikabane:['art-haka'],genwaku:['sil-T']},
 };
 const monHTML=(kind,key,cls='')=>{const m=MON[kind][key];if(!m)return '';
   return `<svg class="mon ${cls}" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="4"/><svg x="15" y="15" width="70" height="70" viewBox="${m[1]||'0 0 100 100'}"><use href="#${m[0]}"/></svg></svg>`};
 const ARTS=new Set(["mizuzeme","yakiuchi","kanashibari","katanagari","sekisho","hyourou","hiuchi","okuribi","oiuchi", "kantsu", "sutemi", "rengeki", "teisatsu", "yokoku", "iai", "kuzushi", "hikeshi", "youdou", "senkou", "hangeki", "ukenagashi", "meisou", "kakuran", "fuuji", "mikiri", "zanshin", "kamae", "hikiashi", "tessen", "otoshiana", "kaeshi", "dorobou", "machibuse", "ashikase", "naruko", "kagemusha", "kitsunebi"]);
 /* 札の影：効果の札はその札の絵、素の札は型の絵（刀・唐傘・狐） */
 /* 画像生成AIで作った絵が届いた札の ID（art/cards/<ID>.png。作り方は art/PROMPTS.md）。ここに無い札は下の影絵のまま */
-const ART_IMG=new Set(["teisatsu","kaeshi","samurai","D","T"]);
+const ART_IMG=new Set(["teisatsu","kaeshi","samurai","D","T"]);  // 斬撃の絵 slash は、一閃の紋と舞台の斬撃に使う（#img-slash）
 const artKey=d=>d.eff||d.type;
 const silHTML=d=>ART_IMG.has(artKey(d))?`<img class="sil" src="art/cards/${artKey(d)}.png" alt="" aria-hidden="true">`
   :`<svg class="sil" viewBox="0 0 100 100" aria-hidden="true"><use href="#${ARTS.has(d.eff)?'art-'+d.eff:'sil-'+d.type}"/></svg>`;
@@ -1891,8 +1894,8 @@ function gameHTML(){
   let fx='';
   if(play){
     const r=G.res;
-    if(pa==='atk')fx+=`<svg class="fx slash from-me${ca==='def'&&r.base<0?' rebound':''}" viewBox="0 0 100 50"><use href="#fx-slash"/></svg>`;
-    if(ca==='atk')fx+=`<svg class="fx slash from-opp${pa==='def'&&r.base>0?' rebound':''}" viewBox="0 0 100 50"><use href="#fx-slash"/></svg>`;
+    if(pa==='atk')fx+=`<svg class="fx slash from-me${ca==='def'&&r.base<0?' rebound':''}" viewBox="0 0 100 100"><use href="#img-slash"/></svg>`;
+    if(ca==='atk')fx+=`<svg class="fx slash from-opp${pa==='def'&&r.base>0?' rebound':''}" viewBox="0 0 100 100"><use href="#img-slash"/></svg>`;
     if(pa==='def')fx+=`<svg class="fx um me" viewBox="0 0 100 100"><use href="#sil-D"/></svg>`;
     if(ca==='def')fx+=`<svg class="fx um opp" viewBox="0 0 100 100"><use href="#sil-D"/></svg>`;
     if(pa==='burn')fx+=`<svg class="fx flame me" viewBox="0 0 100 100"><use href="#fx-flame"/></svg>`;
