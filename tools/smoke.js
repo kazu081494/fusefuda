@@ -27,7 +27,9 @@ const {chromium}=require('playwright');
         if(Math.random()<0.15&&await p.$('[data-act=ougi]'))await p.click('[data-act=ougi]');
         if(Math.random()<0.3){await p.click('[data-act=burn]');const all=await p.$$('[data-act=hand]');if(all.length){await all[Math.floor(Math.random()*all.length)].click();if(Math.random()<0.6){await p.click('[data-act=commit]');continue}}}
         const hs2=await p.$$('[data-act=hand]:not(.off)');
-        if(!hs2.length||Math.random()<0.1){await p.click('[data-act=pass]',{timeout:2000});continue}
+        if(!hs2.length){  // 出せる札が無い：燃やす（それもできなければ「何もできない」）
+          if(await p.$('[data-act=pass]')){await p.click('[data-act=pass]',{timeout:2000});continue}
+          await p.click('[data-act=burn]');const all=await p.$$('[data-act=hand]:not(.off)');if(all.length){await all[0].click();await p.click('[data-act=commit]',{timeout:2000})}continue}
         const idx=Math.floor(Math.random()*hs2.length);
         await hs2[idx].click();
         const again=(await p.$$('.card.sel'))[0];
@@ -43,7 +45,7 @@ const {chromium}=require('playwright');
   // 画面確認用：数手進めたところ
   await p.click('[data-act=go-school]');
   await p.click('[data-act=start-game]');
-  await p.click('[data-act=pass]');
+  await p.click('[data-act=burn]');await (await p.$$('[data-act=hand]:not(.off)'))[0].click();await p.click('[data-act=commit]');
   await p.click('[data-act=next]');
   const hs=await p.$$('[data-act=hand]:not(.off)');
   if(hs.length)await hs[0].click();

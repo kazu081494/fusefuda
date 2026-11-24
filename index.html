@@ -659,7 +659,7 @@ select{font:inherit;background:var(--table-3);color:var(--fg);border:1px solid v
 const HAISUI_NEAR=10,HAISUI_BACK=10;
 /* 連：続けて読み勝つと連が伸び、COMBO_EVERY 連ごとに気力 +COMBO_GAIN */
 const COMBO_EVERY=3,COMBO_GAIN=5;
-const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=5,HAND_MAX=7,TURN_LIMIT=60,TRAP_MAX=1,DECKOUT=5;
+const GOAL=40,ENERGY_START=10,ENERGY_GAIN=5,BURN_MAX=25,ENERGY_MAX=50,DECK_SIZE=30,COPY_MAX=3,HAND_START=4,HAND_MAX=4,TURN_LIMIT=60,TRAP_MAX=1,DECKOUT=5;
 /* 結果のあと次のターンへ進む速さ */
 const SPEEDS={fast:.6,normal:1,slow:1.6};
 const TIMER_OPTIONS=[30,45,60,90,0],TIMER_DEFAULT=60;
@@ -672,7 +672,7 @@ const EFFECTS=[
   ['oiuchi','追い討ち','A',8,10,'押せたら、さらに10押す','押せたら、押す量に10を足す'],
   ['kantsu','貫通','A',13,15,'防御を無視して押す','相手が防御していても、数字の13をそのまま押す'],
   ['sutemi','捨て身','A',27,20,'押せなかったら、自分が10押される','数字27の攻撃を気力20で出せる。ただし1も押せなかったら、自分が10押される'],
-  ['rengeki','連撃','A',8,10,'相手が攻撃も防御もしていなければ、2倍押す','相手が「見送った」「燃やした」「罠を張った」ターンなら、押す量が2倍になる'],
+  ['rengeki','連撃','A',8,10,'相手が攻撃も防御もしていなければ、2倍押す','相手が「燃やした」「罠を張った」ターンなら、押す量が2倍になる'],
   ['teisatsu','偵察','A',4,5,'相手の手札を1枚のぞく','開けたとき、相手の手札を1枚ランダムに見る。出されるまで表のまま見える'],
   ['yokoku','予告','A',8,5,'次のターン、自分の攻撃の数字+10','開けたとき予告する。次のターン、自分の攻撃カードの数字が10増える（相手にも見える）'],
   ['iai','居合','A',8,10,'相手が攻撃なら、数字に関係なく勝つ','攻撃どうしになったら、数字の大小に関係なく勝って8押し込む（相手も居合なら普通に比べる）'],
@@ -698,16 +698,16 @@ const EFFECTS=[
   ['katanagari','刀狩り','D',8,10,'相手の手札の一番大きい攻撃を捨てさせる','開けたとき、相手の手札で一番数字の大きい攻撃の札を捨てさせる'],
   ['sekisho','関所','D',8,10,'次のターン、相手は気力20以上の札を出せない','開けたとき、次のターン相手は気力20以上の札を出せない'],
   ['noroshi','狼煙','D',4,5,'燃やすと気力+10、次の攻撃+10','燃やすと気力が10増え、次のターン自分の攻撃の数字が10増える。出せばふつうの防御4'],
-  ['hiuchi','火打石','D',4,0,'燃やすと気力+10、札を1枚引く','燃やすと気力が10増え、さらに札を1枚引く（燃やしても手札が減らない）。出せばふつうの防御4'],
+  ['hiuchi','火打石','D',4,0,'燃やすと気力+15','燃やすと気力が15増える。出せばふつうの防御4'],
   ['okuribi','送り火','D',8,10,'燃やすと、相手の気力を5減らす','燃やすと気力が10増え、さらに相手の気力を5減らす。出せばふつうの防御8'],
   ['otoshiana','落とし穴','T',null,5,'相手が攻撃したら、押される量を15減らす','相手が攻撃してきたら、押される量を15減らして捨てる'],
   ['kaeshi','返し罠','T',null,15,'相手が18以上で攻撃したら、跳ね返す','相手が数字18以上で攻撃してきたら、押されずに、その数字ぶん相手を押し返す'],
   ['dorobou','気力泥棒','T',null,5,'相手が攻撃したら、気力を15奪う','相手が攻撃してきたら、相手の気力を15まで奪って自分のものにする'],
-  ['machibuse','待ち伏せ','T',null,10,'相手が攻撃しなかったら、15押す','相手が攻撃以外（防御・燃やす・見送る・罠を張る）をしたら、相手を15押す'],
+  ['machibuse','待ち伏せ','T',null,10,'相手が攻撃しなかったら、15押す','相手が攻撃以外（防御・燃やす・罠を張る）をしたら、相手を15押す'],
   ['ashikase','足かせ','T',null,10,'相手が攻撃したら、次のターン攻撃させない','相手が攻撃してきたら、次のターン相手は攻撃カードを出せない'],
   ['naruko','鳴子','T',null,5,'相手が燃やしたら、その気力をもらう','相手が燃やしたら、相手が増やすはずの気力を自分がもらう'],
   ['kagemusha','影武者','T',null,10,'相手が攻撃したら、押し込まれない','相手が攻撃してきたら、押し込まれる歩数を0にする'],
-  ['hyourou','兵糧攻め','T',null,5,'相手が攻撃も防御もしなかったら、山札を4枚捨てさせる','相手が攻撃も防御もしなかったら（見送る・燃やす・罠）、相手の山札を上から4枚捨てさせる'],
+  ['hyourou','兵糧攻め','T',null,5,'相手が攻撃も防御もしなかったら、山札を4枚捨てさせる','相手が攻撃も防御もしなかったら（燃やす・罠）、相手の山札を上から4枚捨てさせる'],
   ['kitsunebi','狐火','T',null,10,'相手が防御したら、気力-10して5押す','相手が防御したら、相手の気力を10減らして、5歩押し込む'],
 ];
 /* 効果の札は、どれか1つの型の札。デッキの型の札は3枚まで、ほかの型の札は1枚まで入れられる（素の札は3枚まで） */
@@ -756,7 +756,7 @@ const OUGI={
   shingan:{name:'心眼',text:'このターンと次のターン、相手の手札が全部見える'},
   tensei:{name:'転生',text:'手札の攻撃をすべて防御に、防御をすべて攻撃に変える。効果のある札も、数字の近い素の札になる（反撃（防御13）は攻撃13に）'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
-  genwaku:{name:'幻惑',text:'このターン、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
+  genwaku:{name:'幻惑',text:'使ったターンから5ターンのあいだ、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
 };
 
 /* 今宵の相手：名前と台詞のある侍。性格・型・奥義・デッキがひとまとまりになっている */
@@ -821,11 +821,12 @@ const sgn=v=>(v>=0?'+':'')+v;
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
 const burnBlock=(s,i)=>{const v=burnVal(def(i),s);return v<0&&s.energy<-v?'気力不足':''};
 /* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
-const burnVal=(d,s)=>(d.eff==='hiya'?-10:d.eff==='houroku'?-20:d.eff==='senkou'?15:d.eff==='hiuchi'?10:d.eff==='noroshi'?10:d.num==null?5:Math.min(BURN_MAX,Math.ceil(d.num/5)*5))+(s&&s.kata==='homura'?5:0);
+const burnVal=(d,s)=>(d.eff==='hiya'?-10:d.eff==='houroku'?-20:d.eff==='senkou'?15:d.eff==='hiuchi'?15:d.eff==='noroshi'?10:d.num==null?5:Math.min(BURN_MAX,Math.ceil(d.num/5)*5))+(s&&s.kata==='homura'?5:0);
 /* 罠を置ける数：影の型なら2 */
 const trapMax=s=>s.kata==='kage'?2:TRAP_MAX;
 /* このターン奥義を使っているか */
-const using=(s,k)=>s.ougi===k&&s.ougiNow;
+const using=(s,k)=>s.ougi===k&&(s.ougiNow||(k==='genwaku'&&s.genwakuUntil>=G.turn));
+const GENWAKU_TURNS=5;
 /* 型の効果を書くときの言い方 */
 const kataOf=(s,isP)=>`${isP?'あなた':'相手'}の型（${KATA[s.kata].name}）`;
 
@@ -1000,9 +1001,9 @@ const TUT=[
   {say:'<b>罠</b>は伏せて場に残り、張った次のターンから効く。「落とし穴」を2回タップして張ろう。',
    p:['otoshiana','A8','D8'],c:['A4','D4'],ce:15,cpu:null,allow:['otoshiana'],
    after:'罠を張った。相手には「罠あり」としか見えない。何の罠かを読ませるのも駆け引き。'},
-  {say:'相手が攻撃してきそうだ。今回は「<b>見送る</b>」を押してみよう。見送ると何も出さない代わりに、<b>札を1枚多く引ける</b>。張っておいた落とし穴が守ってくれる。',
-   p:['A8','D8'],c:['A18','D4'],ce:40,cpu:{play:'A18'},allow:[],pass:true,
-   after:'落とし穴が発動して、押し込まれる量を15減らした。見送ったので札も1枚多く引けた。<b>罠は、相手の動きを読んで先に仕掛ける札。</b>'},
+  {say:'相手が攻撃してきそうだ。張っておいた落とし穴が守ってくれるので、今回は「攻撃8」を<b>燃やして</b>気力を溜めよう。',
+   p:['A8','D8'],c:['A18','D4'],ce:40,cpu:{play:'A18'},allow:[],burn:['A8'],
+   after:'落とし穴が発動して、押し込まれる量を15減らした。そのあいだに気力も溜められた。<b>罠は、相手の動きを読んで先に仕掛ける札。</b>'},
   {say:'<b>奥義</b>は1試合に1回の大技。あなたの奥義は「先読み」で、相手が攻撃してくるかが分かる。下の「先読み」を押してから、札を選ぼう。',
    p:['D24','A13','A8'],c:['A13','D8'],ce:40,cpu:{play:'A13'},allow:['D24'],ougi:true,
    after:'先読みで攻撃が来ると分かったので、防御で受けて跳ね返した。奥義は11種類あり、相手の奥義は秘密。いつ使ってくるかも読み合い。'},
@@ -1230,7 +1231,7 @@ function tick(){
   if(bar)bar.style.width=(left/settings.timer*100)+'%';
   if(num)num.textContent=Math.ceil(left)+'秒';
   if(box)box.classList.toggle('low',left<=10);
-  if(left<=0){clearInterval(G.tId);if(G.pBurn){log('時間切れ：選んでいた札を燃やした');commit(null,G.pBurn);return}const s=G.sel&&!blockReason(G.p,G.sel)?G.sel:null;log(s?'時間切れ：選んでいた札で確定':'時間切れ：見送った');commit(s)}
+  if(left<=0){clearInterval(G.tId);if(G.pBurn){log('時間切れ：選んでいた札を燃やした');commit(null,G.pBurn);return}const s=G.sel&&!blockReason(G.p,G.sel)?G.sel:null;if(s){log('時間切れ：選んでいた札で確定');commit(s);return}const bs=G.p.hand.filter(i=>!burnBlock(G.p,i)).sort((a,b)=>burnVal(def(b),G.p)-burnVal(def(a),G.p));if(bs.length){log('時間切れ：一番気力の増える札を燃やした');commit(null,bs[0]);return}log('時間切れ：何もできなかった');commit(null)}
 }
 /* 相手の手の種類（先読みで見える） */
 const actKind=ch=>ch.play&&def(ch.play).type==='A'?'攻撃してくる':'攻撃してこない';
@@ -1251,7 +1252,7 @@ function ougiNow(me,op){
 }
 function useOugi(){
   const P=G.p;if(G.phase!=='select'||P.ougiUsed)return;
-  P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;
+  P.ougiUsed=true;P.ougiNow=true;G.pUsedNow=true;if(P.ougi==='genwaku')P.genwakuUntil=G.turn+GENWAKU_TURNS-1;
   log(`奥義「${OUGI[P.ougi].name}」を使った`);
   // 先読み：相手はここで手を決める（あなたの手はまだ知らない）。種類だけ見える
   if(P.ougi==='shingan'){P.shinganUntil=G.turn+1;G.notices.push({t:isOpen()?'心眼：このターンと次のターン、相手の伏せた罠と山札の上から3枚が見える':'心眼：このターンと次のターン、相手の手札が全部見える',alert:true})}
@@ -1516,8 +1517,7 @@ function resolve(){
   // 燃やしたときの効果：火打石は1枚引く、送り火は相手の気力を5減らす
   for(const [me,op,b,who] of [[P,C,G.pBurned,'あなた'],[C,P,G.cBurned,'相手']]){
     if(!b)continue;const e=def(b).eff;
-    if(e==='hiuchi'&&drawN(me,1))msgs.push(`火打石：${who}は札を1枚引いた`);
-    if(e==='noroshi'){me.yokokuNext=true;msgs.push(`狼煙：次のターン、${who}の攻撃+10`)}
+        if(e==='noroshi'){me.yokokuNext=true;msgs.push(`狼煙：次のターン、${who}の攻撃+10`)}
     if(e==='okuribi'){const k=Math.min(op.energy,5);op.energy-=k;msgs.push(`送り火：${who==='あなた'?'相手':'あなた'}の気力を${k}減らした`)}
   }
   if(r.fx.refundP&&G.pPlay)P.energy=clampE(P.energy+costOf(G.pPlay));
@@ -1555,13 +1555,10 @@ function resolve(){
   if(yw&&yw.who==='p'&&G.combo%COMBO_EVERY===0){P.energy=clampE(P.energy+COMBO_GAIN);G.comboGain='p';msgs.push(`${G.combo}連：あなたは気力を${COMBO_GAIN}得た`)}
   if(yw&&yw.who==='c'&&G.cCombo%COMBO_EVERY===0){C.energy=clampE(C.energy+COMBO_GAIN);G.comboGain='c';msgs.push(`相手の${G.cCombo}連：相手は気力を${COMBO_GAIN}得た`)}
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
-  {const np=P.hand.length<HAND_MAX&&!P.deck.length,nc=C.hand.length<HAND_MAX&&!C.deck.length;drawN(P,1);drawN(C,1);
+  {const np=P.hand.length<HAND_MAX&&!P.deck.length,nc=C.hand.length<HAND_MAX&&!C.deck.length;drawN(P,HAND_MAX);drawN(C,HAND_MAX);
    if(np){G.gauge-=DECKOUT;msgs.push(`山札切れ：あなたは引けずに${DECKOUT}歩押された`)}
    if(nc){G.gauge+=DECKOUT;msgs.push(`山札切れ：相手は引けずに${DECKOUT}歩押された`)}
    G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge))}
-  // 見送る：何も出さず燃やしもしなかったら、もう1枚引く
-  if(!G.pPlay&&!G.pBurned&&drawN(P,1))msgs.push('見送った：あなたは札を1枚多く引いた');
-  if(!G.cPlay&&!G.cBurned&&drawN(C,1))msgs.push('見送った：相手は札を1枚多く引いた');
   for(const u of [...G.knownOpp])if(!C.hand.some(x=>x.uid===u))G.knownOpp.delete(u);
   for(const u of [...G.knownByCpu])if(!P.hand.some(x=>x.uid===u))G.knownByCpu.delete(u);
   G.extra=msgs;
@@ -1683,6 +1680,7 @@ function cpuChoose(peek){
     if(d.type==='T')ev+=1.6;if(d.eff==='meisou')ev+=0.9;if(d.eff==='yokoku')ev+=0.6;if(d.eff==='teisatsu'||d.eff==='kakuran')ev+=0.3;if(d.eff==='mikiri')ev+=P.traps.length?2:0.3;if(d.eff==='kamae')ev+=0.4;if(d.eff==='zanshin'||d.eff==='youdou')ev+=0.3;if(d.eff==='hikiashi')ev+=1.2;if(d.eff==='mizuzeme')ev+=0.3+(P.deck.length<8?0.8:0);if(d.eff==='yakiuchi'||d.eff==='kanashibari')ev+=0.3;if(d.eff==='katanagari')ev+=P.hand.some(x=>def(x).type==='A')?0.6:-0.4;if(d.eff==='sekisho')ev+=P.energy>=20?0.5:0;
     combos.push({play:o,burn:null,ev:ev+styleBias(d.type,d)});
   }
+  if(combos.length>1)combos.shift();  // 見送るは、出す札も燃やす札も無いときだけ
   const temp=(peek!==undefined?0.5:G.pUsedNow?1.6:1.1)*(1-(G.diff||0)*.55);
   const mx=Math.max(...combos.map(c=>c.ev)),ex=combos.map(c=>Math.exp((c.ev-mx)/temp)),tot=ex.reduce((a,b)=>a+b,0);
   let u=Math.random()*tot;for(let i=0;i<combos.length;i++){u-=ex[i];if(u<=0)return combos[i]}
@@ -1707,7 +1705,7 @@ function cpuMaybeBefore(){
   if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
   if(o==='genwaku')use=P.energy>=20&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
-  C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(o==='shingan')C.shinganUntil=G.turn+1;ougiNow(C,P);
+  C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(o==='genwaku')C.genwakuUntil=G.turn+GENWAKU_TURNS-1;if(o==='shingan')C.shinganUntil=G.turn+1;ougiNow(C,P);
   G.notices.push({t:'相手が奥義を使った',alert:true});log('相手が奥義を使った');saveGame();render();
 }
 
@@ -1788,7 +1786,7 @@ function menuHTML(){
   const st=deckStats(deck),sv=readSave();
   return `<div class="title"><div class="lamp" aria-hidden="true">${ART_IMG.has('T')?'<img src="art/cards/T.png" alt="">':'<svg viewBox="0 0 100 100"><use href="#sil-T"/></svg>'}</div><h1>月花乱舞</h1><p class="reading">げっからんぶ</p>
     <p class="sub">同時に伏せて、一斉に開ける。読み合いのカードゲーム（試作版・CPU対戦）</p>
-    <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>は防ぎきれば跳ね返す。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と気力が、<b>見送る</b>と札が溜まる。</p></div>
+    <p class="tri"><b class="a">攻撃</b>は数字ぶん押す。<b class="d">防御</b>は防ぎきれば跳ね返す。<b class="t">罠</b>は伏せて待つ。札を出す代わりに<b>燃やす</b>と気力が溜まる。</p></div>
     <button class="btn wide story-btn" data-act="${story&&story.active?'story-continue':'story-new'}" ${st.ok?'':'disabled'}>${story&&story.active?`物語の続き<small class="resume-sub">${story.round>=STORY_N?'月影の主':KAN[story.round]+'人目'}・${KATA[story.kata].name}の型と${OUGI[story.ougi].name}</small>`:'物語：月下の勝ち抜き<small class="resume-sub">五人を抜き、月影の主に挑む</small>'}</button>
     ${sv?`<button class="btn wide" data-act="resume">続きから<small class="resume-sub">${sv.turn}手目・${KATA[sv.p.kata].name}の型と${OUGI[sv.p.ougi].name}・${sv.gauge>0?`勝ちまで あと${GOAL-sv.gauge}歩`:sv.gauge<0?`負けまで あと${GOAL+sv.gauge}歩`:'互角'}</small></button>`:''}
     <button class="btn wide${sv?' ghost':''}" data-act="go-school" ${st.ok?'':'disabled'}>${sv?'新しく対戦する（続きは消える）':'対戦する'}</button>
@@ -1829,13 +1827,13 @@ function schoolHTML(){
 function rulesHTML(){
   return `<div class="row"><button class="btn ghost" data-act="go-menu">戻る</button></div>
   <div class="panel rules"><h2 style="font-size:20px">ルール（試作 v0.7）</h2><ol>
-    <li>2人が同時に手札から1枚を伏せ（または何も出さずに「見送る」）、一斉に開ける。</li>
+    <li>2人が同時に、手札から1枚を伏せるか、1枚を燃やして、一斉に開ける。見送ることはできない（出せる札も燃やせる札も無いときだけ、何もせずに終わる）。</li>
     <li><b>気力</b>：1手目は10、毎ターン5溜まる（上限50）。カードは左上の気力を払って出す。気力の量は相手にも見えている。</li>
     <li><b>燃やす</b>：札を出す代わりに、手札を1枚燃やして伏せられる。そのターンは何もしていない扱いで、札の数字を5の倍数に切り上げたぶん（最大25、罠は5）気力が増え、次のターンから使える。何を燃やしたかは開けるときに相手に見える。</li>
     <li>2人は<b>橋</b>の上で向き合っている。<b>攻撃</b>は右上の数字の歩数だけ、相手を押し込む。</li>
     <li>攻撃と<b>防御</b>がぶつかったら：攻撃のほうが大きければ、<b>差だけ押す</b>（攻撃24対防御13なら11歩押し込む）。防御が攻撃以上なら防ぎきって、<b>攻撃をそのまま跳ね返す</b>（攻撃13対防御24なら、13跳ね返す）。防御の数字は「ここまでなら受け止められる」壁の高さ。</li>
-    <li>読み合いの目安：攻撃は守っていない相手（燃やす・見送る・罠を張る）に強く、防御は攻撃に強い。燃やす・見送るは、相手が攻めてこないと読めたときに、気力や札を溜める手（攻撃されるとそのまま押し込まれる）。相手の防御を空振りさせれば、相手は気力を払い損。気力の量は見えているので、そこから相手の手を読む。</li>
-    <li><b>見送る</b>：何も出さない代わりに、札を1枚多く引ける（手札は7枚まで）。</li>
+    <li>読み合いの目安：攻撃は守っていない相手（燃やす・罠を張る）に強く、防御は攻撃に強い。燃やす・見送るは、相手が攻めてこないと読めたときに、気力や札を溜める手（攻撃されるとそのまま押し込まれる）。相手の防御を空振りさせれば、相手は気力を払い損。気力の量は見えているので、そこから相手の手を読む。</li>
+    <li><b>手札は4枚</b>。毎ターンの終わりに、4枚になるまで山札から引く。</li>
     <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで睨み合い。防御どうしも睨み合い。</li>
     <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
     <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。お互いの札（手札と山札）が尽きたら、押し込んでいる側の勝ち。山札が尽きて引けないターンは5歩押される。</li>
@@ -1843,7 +1841,7 @@ function rulesHTML(){
     <li>デッキは30枚。デッキには型があり、効果の札はその型の札なら3枚まで、ほかの型の札は1枚まで（素の札は3枚まで）。強いカードは気力で縛られるので、数字の上限は無い。</li>
     <li>試合の前に<b>型</b>と<b>奥義</b>を1つずつ選ぶ。型はいつも効く小さな特性で、相手にも見えている。奥義は1試合に1回、伏せる前に使う大技で、相手には秘密（使ったことだけ知らされる）。相手の型や戦い方、状況から、どの奥義をいつ使ってくるかを読む。</li>
     <li>相手（CPU）には性格（強気・慎重・溜め屋）があり、相手の欄に出ている。クセを読んで裏をかく。</li>
-    <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカード（無ければ見送る）で確定する。</li>
+    <li>選んだカードをもう一度タップすると伏せられる。持ち時間を過ぎると、選んでいたカードで確定する（無ければ、一番気力の増える札を燃やす）。</li>
   </ol>
   <h3 style="font-size:16px">型</h3>
   <dl class="dl">${Object.values(KATA).map(o=>`<dt>${o.name}</dt><dd>${o.text}</dd>`).join('')}</dl>
@@ -1882,10 +1880,10 @@ function builderHTML(){
 }
 function sideChips(s,isP){
   const c=[],kt=KATA[s.kata],og=OUGI[s.ougi],mixOn=!isP&&!isOpen()&&(G.p.kata==='me'||G.p.mixUntil>=G.turn);
-  if(isP)c.push(`<button class="chip ${s.ougiUsed&&!s.ougiNow?'':'on'}" data-act="school-info" aria-label="${kt.name}の型・奥義${og.name}">${monHTML('kata',s.kata)}${monHTML('ougi',s.ougi)}${s.ougiNow?og.name+'中':s.ougiUsed?'済':og.name}</button>`);
+  if(isP)c.push(`<button class="chip ${s.ougiUsed&&!s.ougiNow?'':'on'}" data-act="school-info" aria-label="${kt.name}の型・奥義${og.name}">${monHTML('kata',s.kata)}${monHTML('ougi',s.ougi)}${s.ougiNow?og.name+'中':s.genwakuUntil>=G.turn?`${og.name} 残${s.genwakuUntil-G.turn+1}`:s.ougiUsed?'済':og.name}</button>`);
   else{
     if(!mixOn)c.push(`<span class="chip">手札${s.hand.length}</span>`);
-    c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">奥義${s.ougiUsed?'済':'？'}</span>`);
+    c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">${s.genwakuUntil>=G.turn?`幻惑 残${s.genwakuUntil-G.turn+1}`:'奥義'+(s.ougiUsed?'済':'？')}</span>`);
     // 眼の型：相手の手札の内訳が見える
     if(isOpen()){const sn=oppDeckSeen();if(sn.length)c.push(`<span class="chip warn deckline">山の上：${sn.map(({x})=>def(x).eff?def(x).name:label(def(x))).join(' → ')}</span>`)}
     else if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
@@ -2005,7 +2003,7 @@ function gameHTML(){
   if(ph==='select')actions=`<div class="acts">
       ${!P.ougiUsed&&(!tut||tut.ougi)?`<button class="btn sub ougi${tut&&tut.ougi?' glow':''}" data-act="ougi">${OUGI[P.ougi].name}</button>`:''}
       <button class="btn sub${G.burnMode||G.pBurn?' on':''}${tut&&tut.burn&&!G.pBurn?' glow':''}" data-act="burn" ${tut&&!tut.burn?'disabled':''}>${G.burnMode||G.pBurn?'やめる':'燃やす'}</button>
-      <button class="btn ghost${tut&&tut.pass?' glow':''}" data-act="pass" ${tut&&!tut.pass?'disabled':''}>見送る</button>
+      ${P.hand.some(i=>!blockReason(P,i)||!burnBlock(P,i))?'':'<button class="btn ghost" data-act="pass">何もできない</button>'}
       <button class="btn" data-act="commit" ${G.pBurn||(G.sel&&!blockReason(P,G.sel))?'':'disabled'}>${G.pBurn?'燃やす':'伏せる'}</button></div>`;
   else if(ph==='result'&&!G.over)actions=`<button class="btn wide sub" data-act="next">すぐ次へ（場をタップでも進む）<i class="auto" style="animation-duration:${G.autoMs}ms"></i></button>`;
   else actions=`<button class="btn wide sub" disabled>　</button>`;
@@ -2044,10 +2042,9 @@ function overHTML(){
   if(G.tut!=null)return `<div class="modal-bg"><div class="modal result-modal" role="dialog" aria-modal="true" aria-labelledby="ovt">
     <div class="result-head"><h2 id="ovt" class="win">チュートリアル完了</h2><p class="muted small">攻撃・防御・燃やす・罠・奥義をひととおり使った。</p></div>
     <ul class="tut-sum">
-      <li><b>攻撃</b>は、守っていない相手（燃やす・見送る・罠を張る）に強い</li>
+      <li><b>攻撃</b>は、守っていない相手（燃やす・罠を張る）に強い</li>
       <li><b>防御</b>は、攻撃してくる相手に強い。防ぎきれば攻撃をそのまま跳ね返す</li>
       <li><b>燃やす</b>は、何もしない代わりに気力を溜める手。気力は次のターンから使える。攻撃されるとそのまま押し込まれる</li>
-      <li><b>見送る</b>は、何もしない代わりに札を1枚多く引ける</li>
       <li>相手の<b>気力</b>や、これまでの動きから、次の手を読もう</li>
       <li>本番では、型と奥義を自分で選ぶ。相手（CPU）にも性格と奥義がある</li>
     </ul>
@@ -2170,7 +2167,7 @@ document.addEventListener('click',e=>{
     case 'unzoom':if(G){G.detail=null;render()}break;
     case 'opp-info':G.oppInfo=!G.oppInfo;G.schoolInfo=false;render();break;
     case 'commit':if(G.pBurn)commit(null,G.pBurn);else if(G.sel)commit(G.sel);break;
-    case 'pass':commit(null);break;
+    case 'pass':if(G&&!G.p.hand.some(i=>!blockReason(G.p,i)||!burnBlock(G.p,i)))commit(null);break;
     case 'burn':if(G&&G.phase==='select'){if(G.pBurn){G.pBurn=null;G.burnMode=false}else G.burnMode=!G.burnMode;render()}break;
     case 'ougi':useOugi();break;
     case 'next':if(G&&G.phase==='result'&&!G.over){if(G.tut!=null)G.tut++;startTurn()}break;
