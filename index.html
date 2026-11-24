@@ -731,7 +731,7 @@ const EFFECTS=[
   ['shizan','灰燼','A',4,10,'墓地5枚ごとに攻撃+5','自分の墓地（捨て札）5枚ごとに、攻撃の数字が5増える（墓地20枚なら攻撃24）'],
   ['onryou','怨霊','A',8,10,'押せたら、墓地の怨霊1枚ごとに+5押す','押せたら、自分の墓地にある怨霊1枚ごとに、さらに5押す'],
   ['kyojitsu','虚実','A',13,15,'相手が防御していたら、攻撃+10','相手が防御していたら、攻撃の数字が10増える（攻撃13なら23で押し合う）'],
-  ['kokoro','心の一方','A',8,10,'押せたら、次のターン相手は燃やせない','押せたら、次のターン相手は札を燃やせない'],
+  ['kokoro','鎮火','A',8,10,'押せたら、次のターン相手は燃やせない','押せたら、次のターン相手は札を燃やせない'],
   ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
   ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
   ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る'],
@@ -1295,8 +1295,8 @@ function startTurn(){
   if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
   if(G.p.noDef)G.notices.push({t:'金縛り：このターン、あなたは防御できない'});
   if(G.c.noDef)G.notices.push({t:'金縛り：このターン、相手は防御できない'});
-  if(G.p.noBurn)G.notices.push({t:'心の一方：このターン、あなたは燃やせない'});
-  if(G.c.noBurn)G.notices.push({t:'心の一方：このターン、相手は燃やせない'});
+  if(G.p.noBurn)G.notices.push({t:'鎮火：このターン、あなたは燃やせない'});
+  if(G.c.noBurn)G.notices.push({t:'鎮火：このターン、相手は燃やせない'});
   if(G.p.cap)G.notices.push({t:'関所：このターン、あなたは気力20以上の札を出せない'});
   if(G.c.cap)G.notices.push({t:'関所：このターン、相手は気力20以上の札を出せない'});
   if(G.p.yokoku)G.notices.push({t:'あなたの予告：攻撃の数字+10'});
@@ -1624,8 +1624,8 @@ function resolve(){
   for(const [from,to,b,w] of [[C,P,G.cBurned,'あなた'],[P,C,G.pBurned,'相手']])if((to===P?r.fx.robC:r.fx.robP)&&b&&from.discard.includes(b)){removeFrom(from.discard,b);(to.hand.length<HAND_MAX?to.hand:to.deck).push(b);msgs.push(`墓暴き：${w}は「${label(def(b))}」を手に入れた`)}
   if(r.fx.noDefP){P.noDefNext=true;msgs.push('金縛り：次のターン、あなたは防御できない')}
   if(r.fx.noDefC){C.noDefNext=true;msgs.push('金縛り：次のターン、相手は防御できない')}
-  if(r.fx.noBurnP){P.noBurnNext=true;msgs.push('心の一方：次のターン、あなたは燃やせない')}
-  if(r.fx.noBurnC){C.noBurnNext=true;msgs.push('心の一方：次のターン、相手は燃やせない')}
+  if(r.fx.noBurnP){P.noBurnNext=true;msgs.push('鎮火：次のターン、あなたは燃やせない')}
+  if(r.fx.noBurnC){C.noBurnNext=true;msgs.push('鎮火：次のターン、相手は燃やせない')}
   for(const [s,n,w] of [[P,r.fx.millP,'あなた'],[C,r.fx.millC,'相手']])if(n){const k=mill(s,n);msgs.push(`${w}の山札を${k}枚捨てた（残り${s.deck.length}枚）`)}
   for(const [s,on,w] of [[P,r.fx.discP,'あなた'],[C,r.fx.discC,'相手']])if(on&&s.hand.length){const x=rnd(s.hand);removeFrom(s.hand,x);s.discard.push(x);s.noRefill=true;msgs.push(`焼き討ち：${w}の手札「${label(def(x))}」が燃えた`)}
   openEff('p',G.pPlay,msgs);openEff('c',G.cPlay,msgs);
