@@ -744,7 +744,7 @@ const EFFECTS=[
   ['kyojitsu','虚実','A',13,15,'相手が防御していたら、攻撃+10','相手が防御していたら、攻撃の数字が10増える（攻撃13なら23で押し合う）'],
   ['kokoro','鎮火','A',8,10,'押せたら、次のターン相手は燃やせない','押せたら、次のターン相手は札を燃やせない'],
   ['chouhan','丁半','A',8,10,'賽が丁なら攻撃+15、半なら攻撃0','開けたとき賽を振る。丁（2・4・6）なら攻撃の数字+15、半（1・3・5）なら攻撃0'],
-  ['oobakuchi','大博打','A',24,15,'賽が4〜6なら攻撃が倍、1〜3なら自分が10押される','開けたとき賽を振る。4〜6なら攻撃の数字が倍（48）、1〜3なら攻撃はそのままだが、自分も10押される'],
+  ['oobakuchi','大博打','A',13,15,'賽が4〜6なら攻撃が倍、1〜3なら自分が10押される','開けたとき賽を振る。4〜6なら攻撃の数字が倍（26）、1〜3なら攻撃はそのままだが、自分も10押される'],
   ['inoshika','猪鹿蝶','A',8,10,'賽を3つ振り、全部違う目なら攻撃+20','開けたとき賽を3つ振る。3つとも違う目（猪・鹿・蝶がそろう）なら、攻撃の数字+20'],
   ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
   ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
@@ -829,6 +829,7 @@ const OUGI={
   tensei:{name:'転生',text:'手札の攻撃をすべて防御に、防御をすべて攻撃に変える。効果のある札も、数字の近い素の札になる（反撃（防御13）は攻撃13に）'},
   shikabane:{name:'屍姫',text:'相手の捨て札からランダムに1枚を手札に加える。その札は気力0で出せる'},
   genwaku:{name:'幻惑',text:'使ったターンから3ターンのあいだ、押し込まれるはずの歩数ぶん、逆に相手を押し込む'},
+  senzai:{name:'千載一遇',text:'このターン、押し込めたら賽を振る。偶数なら押す量が倍（増えるのは最大15）、奇数なら半分'},
 };
 
 /* 今宵の相手：名前と台詞のある侍。性格・型・奥義・デッキがひとまとまりになっている */
@@ -1034,6 +1035,9 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   if(pb&&using(P,'gouka')&&burnVal(pb,P)>0){const v=Math.min(20,Math.ceil(burnVal(pb,P)/2));toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
   if(cb&&using(C,'gouka')&&burnVal(cb,C)>0){const v=Math.min(20,Math.ceil(burnVal(cb,C)/2));toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
   // 一閃：押し込めたら+15歩。不動：押し込まれない（いちばん最後に効く）
+  const SENZAI_MAX=15;  // 倍でも、増えるのは最大15（1手で決まらないように）
+  // 千載一遇：押し込めたら賽。偶数なら倍、奇数なら半分（いちばん最後のほうで掛ける）
+  for(const [s,isP] of [[P,true],[C,false]]){const v0=isP?toC:toP;if(v0>0&&using(s,'senzai')){const v=roll(s,x=>x%2===0);(fx.dice=fx.dice||[]).push({who:isP?'p':'c',v:[v]});const nv=v%2===0?v0+Math.min(v0,SENZAI_MAX):Math.floor(v0/2);if(isP){toC=nv;fx.ougiP='senzai'}else{toP=nv;fx.ougiC='senzai'}notes.push(`${isP?'':'相手の'}千載一遇：${v}、${v%2===0?'押す量が倍':'押す量が半分'}`)}}
   if(toC>0&&using(P,'issen')){const g=P.kata==='gou'&&toC>=5?5:0;toC+=10-g;fx.ougiP='issen';notes.push(g?'一閃：剛の5と合わせて10歩押し込む':'一閃：さらに10歩押し込む')}
   if(toP>0&&using(C,'issen')){const g=C.kata==='gou'&&toP>=5?5:0;toP+=10-g;fx.ougiC='issen';notes.push(g?'相手の一閃：剛の5と合わせて10歩押し込まれた':'相手の一閃：さらに10歩押し込まれた')}
   if(using(P,'genwaku')||using(C,'genwaku')){
@@ -1848,6 +1852,7 @@ function cpuMaybeBefore(){
   if(o==='shingan')use=G.turn>=2&&Math.random()<0.25;
   if(o==='tensei'){const a=C.hand.filter(i=>def(i).type==='A'&&!def(i).eff).length,d=C.hand.filter(i=>def(i).type==='D'&&!def(i).eff).length;use=(a===0&&d>=2||d===0&&a>=2)&&Math.random()<0.6}
   if(o==='shikabane')use=G.turn>=3&&P.discard.length>=3&&Math.random()<0.3;
+  if(o==='senzai')use=can('A')&&C.energy>=15&&Math.random()<0.3;
   if(o==='genwaku')use=P.energy>=20&&(G.gauge>=GOAL-20&&Math.random()<0.5||Math.random()<0.12);
   if(!use)return;
   C.ougiLeft=(C.ougiLeft||1)-1;C.ougiUsed=C.ougiLeft<=0;C.ougiNow=true;if(OUGI_TURNS[o])C.genwakuUntil=G.turn+OUGI_TURNS[o]-1;if(o==='shingan')C.shinganUntil=G.turn+1;ougiNow(C,P);
@@ -1859,7 +1864,7 @@ const $app=document.getElementById('app');
 /* 型と奥義の紋：丸い枠の中に影絵。[使う絵, 絵の viewBox] */
 const MON={
   kata:{gou:['sil-A'],yanagi:['art-ukenagashi'],homura:['fx-flame'],kage:['art-kagemusha'],me:['art-mikiri'],sai:['art-sai']},
-  ougi:{gougeki:['art-kantsu'],uke:['sil-D'],gouka:['art-kitsunebi'],kagenui:['art-kakuran'],sakiyomi:['art-yokoku'],fudou:['art-yama'],issen:['img-slash'],shingan:['art-meisou'],tensei:['art-youdou'],shikabane:['art-haka'],genwaku:['sil-T']},
+  ougi:{gougeki:['art-kantsu'],uke:['sil-D'],gouka:['art-kitsunebi'],kagenui:['art-kakuran'],sakiyomi:['art-yokoku'],fudou:['art-yama'],issen:['img-slash'],senzai:['art-oobakuchi'],shingan:['art-meisou'],tensei:['art-youdou'],shikabane:['art-haka'],genwaku:['sil-T']},
 };
 const monHTML=(kind,key,cls='')=>{const m=MON[kind][key];if(!m)return '';
   return `<svg class="mon ${cls}" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" stroke-width="4"/><svg x="15" y="15" width="70" height="70" viewBox="${m[1]||'0 0 100 100'}"><use href="#${m[0]}"/></svg></svg>`};
