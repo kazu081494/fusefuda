@@ -410,6 +410,14 @@ details.opp-info .dl{margin-top:8px}
 .lanterns i.now{border-color:var(--accent);box-shadow:0 0 0 2px rgba(226,178,71,.4)}
 .lanterns i.boss{width:22px;height:30px}
 .lanterns i.boss.now{border-color:#8fb6ff;box-shadow:0 0 12px rgba(143,182,255,.6)}
+.ktabs{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:6px}
+.ktabs::-webkit-scrollbar{display:none}
+.ktab{appearance:none;flex:none;display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line);background:var(--table-2);color:var(--fg);border-radius:999px;padding:3px 10px 3px 4px;font-size:13px;cursor:pointer;min-height:32px}
+.ktab:first-child,.ktab:last-child{padding-left:10px}
+.ktab .mon{width:22px;height:22px;color:var(--muted)}
+.ktab.own{border-color:color-mix(in srgb,var(--accent) 60%,transparent)}
+.ktab.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ktab.on .mon{color:var(--accent-ink)}
 .tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .tab{appearance:none;border:1px solid var(--line);background:var(--table-2);color:var(--fg);border-radius:10px;min-height:42px;padding:4px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;border-bottom:3px solid var(--tc)}
 .tab small{font-weight:400;font-size:12px;color:var(--muted)}
@@ -807,7 +815,7 @@ function cleanDeck(obj){
   for(const [id,c] of Object.entries(obj)){if(CARDS[id]&&Number.isInteger(c)&&c>0)out[id]=Math.min(c,COPY_MAX);}
   return out;
 }
-let settings=Object.assign({vol:.6,speed:'normal',timer:TIMER_DEFAULT,scene:'sakura',moon:'full',sound:true,bgm:true},store.get(KEY_SET,{}));
+let settings=Object.assign({openHand:true,vol:.6,speed:'normal',timer:TIMER_DEFAULT,scene:'sakura',moon:'full',sound:true,bgm:true},store.get(KEY_SET,{}));
 let deck=cleanDeck(store.get(KEY_DECK,null))||{...PRESETS.find(p=>p.key==='kin').cards};
 if(!(settings.deckKata in KATA)){settings.deckKata=Object.keys(KATA).map(k=>[k,Object.entries(deck).reduce((a,[id,c])=>a+Math.max(0,c-copyMax(id,k)),0)]).sort((a,b)=>a[1]-b[1])[0][0];store.set(KEY_SET,settings)}
 (function padDeck(){let n=Object.values(deck).reduce((a,b)=>a+b,0);if(!n||n>=DECK_SIZE)return;
@@ -923,12 +931,14 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   if(cd&&cd.eff==='ukenagashi'&&toC>0){toC=Math.floor(toC/2);notes.push('相手の受け流し：押す量が半分')}
   if(pd&&pd.eff==='ukenagashi'&&toP>0){toP=Math.floor(toP/2);notes.push('あなたの受け流し：押される量が半分')}
   // 罠（見切りで外された罠は発動しない）。置いてある罠はそれぞれ発動する
-  const trap=(owner,victimD,victimK,victimN,isP,victimBurn)=>{
+  const trap=(owner,victimD,victimK,victimN,isP,victimBurn,nowD)=>{
     if(victimD&&victimD.eff==='mikiri')return;
     const on=isP?'あなた':'相手',vn=isP?'相手':'あなた';
-    for(const t of owner.traps){
-      if(!t.active)continue;
-      const id=def(t.inst).eff;let fired=false;
+    // 場の罠と、このターンに張った罠（張ったターンから効く）
+    const list=owner.traps.filter(t=>t.active).map(t=>({id:def(t.inst).eff,uid:t.inst.uid,name:def(t.inst).name}));
+    if(nowD&&nowD.type==='T')list.push({id:nowD.eff,uid:'now',name:nowD.name});
+    for(const t of list){
+      const id=t.id;let fired=false;
       if(id==='otoshiana'&&victimK==='A'){fired=true;if(isP)toP=Math.max(0,toP-15);else toC=Math.max(0,toC-15);notes.push(`${on}の落とし穴：押される量を15減らした`)}
       if(id==='kaeshi'&&victimK==='A'&&victimN>=18){fired=true;if(isP){toP=0;toC+=victimN}else{toC=0;toP+=victimN}notes.push(`${on}の返し罠：攻撃を跳ね返して${victimN}押した`)}
       if(id==='dorobou'&&victimK==='A'){fired=true;if(isP)fx.stealFromC=15;else fx.stealFromP=15;notes.push(`${on}の気力泥棒：${vn}の気力を奪う`)}
@@ -939,10 +949,10 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
       if(id==='hakaabaki'&&victimBurn){fired=true;if(isP)fx.robC=true;else fx.robP=true;notes.push(`${on}の墓暴き：${vn}の燃やした札をもらう`)}
       if(id==='hyourou'&&victimK!=='A'&&victimK!=='D'){fired=true;if(isP)fx.millC=(fx.millC||0)+4;else fx.millP=(fx.millP||0)+4;notes.push(`${on}の兵糧攻め：${vn}の山札を4枚捨てさせる`)}
       if(id==='kitsunebi'&&victimK==='D'){fired=true;if(isP){fx.drainC=10;toC+=5}else{fx.drainP=10;toP+=5}notes.push(`${on}の狐火：${vn}の気力を10減らして、5押した`)}
-      if(fired)(isP?fx.firedP:fx.firedC).push({uid:t.inst.uid,name:def(t.inst).name});
+      if(fired)(isP?fx.firedP:fx.firedC).push({uid:t.uid,name:t.name});
     }
   };
-  trap(P,cd,kc,nc,true,cb);trap(C,pd,kp,np,false,pb);
+  trap(P,cd,kc,nc,true,cb,pd);trap(C,pd,kp,np,false,pb,cd);
   // 業火：燃やした札の気力ぶん押す（攻撃ではないので、防御や罠には関係しない）
   if(pb&&using(P,'gouka')&&burnVal(pb,P)>0){const v=Math.min(20,Math.ceil(burnVal(pb,P)/2));toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
   if(cb&&using(C,'gouka')&&burnVal(cb,C)>0){const v=Math.min(20,Math.ceil(burnVal(cb,C)/2));toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
@@ -970,7 +980,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
 }
 
 /* ---------- 試合 ---------- */
-let screen='menu';let G=null;let builderPreset=null;let builderTab='A';
+let screen='menu';let G=null;let builderPreset=null;let builderTab='A',builderKata='all';
 
 function mill(s,n){let k=0;while(k<n&&s.deck.length){s.discard.push(s.deck.pop());k++}return k}
 function drawN(s,n){let k=0;while(k<n&&s.deck.length&&s.hand.length<HAND_MAX){s.hand.push(s.deck.pop());k++}return k}
@@ -1019,19 +1029,19 @@ const TUT=[
    p:['D18','A8','A4'],pe:25,c:['A13','D4'],ce:35,cpu:{play:'A13'},allow:['D18'],
    after:'防御18が攻撃13を防ぎきって、攻撃の数字13をそのまま跳ね返した。防御の数字（18）ではなく、<b>相手の攻撃の数字ぶん</b>押し返す。大きな攻撃を読んで防ぐほど、大きく跳ね返せる。「見切った！」は読み勝ちの合図。'},
   {say:'相手は守りを固めていそうだ。今攻撃すると跳ね返される。札を出す代わりに<b>燃やして</b>、気力を溜めよう。燃やすと、そのターンは何もしない代わりに、その札の気力（左上の数）と同じだけ気力が増える。下の「燃やす」→「攻撃24」→ もう一度「燃やす」。',
-   p:['A24','A8','D8'],c:['D24','A4'],ce:30,cpu:{play:'D24'},allow:[],burn:['A24'],
+   p:['A24','A8','D8'],pe:30,c:['D24','A4'],ce:30,cpu:{play:'D24'},allow:[],burn:['A24'],
    after:'こちらは攻撃しなかったので、相手の防御は空振り（相手は気力を払い損）。こちらは押されずに、気力が25増えた（次のターンから使える）。ただし<b>燃やしたターンに攻撃されると、守りが無いのでそのまま押し込まれる</b>。相手が攻めてこないと読めたときに、気力を溜める手。'},
-  {say:'<b>罠</b>は伏せて場に残り、張った次のターンから効く。「落とし穴」を2回タップして張ろう。',
-   p:['otoshiana','A8','D8'],c:['A4','D4'],ce:15,cpu:null,allow:['otoshiana'],
+  {say:'<b>罠</b>は伏せて張る。張ったターンから効き、発動するまで場に残る。「落とし穴」を2回タップして張ろう。',
+   p:['otoshiana','A8','D8'],pe:30,c:['A4','D4'],ce:15,cpu:null,allow:['otoshiana'],
    after:'罠を張った。相手には「罠あり」としか見えない。何の罠かを読ませるのも駆け引き。'},
   {say:'相手が攻撃してきそうだ。張っておいた落とし穴が守ってくれるので、今回は「攻撃8」を<b>燃やして</b>気力を溜めよう。',
-   p:['A8','D8'],c:['A18','D4'],ce:40,cpu:{play:'A18'},allow:[],burn:['A8'],
+   p:['A8','D8'],pe:30,c:['A18','D4'],ce:40,cpu:{play:'A18'},allow:[],burn:['A8'],
    after:'落とし穴が発動して、押し込まれる量を15減らした。そのあいだに気力も溜められた。<b>罠は、相手の動きを読んで先に仕掛ける札。</b>'},
   {say:'<b>奥義</b>は1試合に1回の大技。あなたの奥義は「先読み」で、相手が攻撃してくるかが分かる。下の「先読み」を押してから、札を選ぼう。',
-   p:['D24','A13','A8'],c:['A13','D8'],ce:40,cpu:{play:'A13'},allow:['D24'],ougi:true,
+   p:['D24','A13','A8'],pe:30,c:['A13','D8'],ce:40,cpu:{play:'A13'},allow:['D24'],ougi:true,
    after:'先読みで攻撃が来ると分かったので、防御で受けて跳ね返した。奥義は11種類あり、相手の奥義は秘密。いつ使ってくるかも読み合い。'},
   {say:'相手は岸まであと少しで、<b>背水</b>（追い詰められると防御が強くなる）。でも相手の手札に守りは無い。「攻撃24」で押し切ろう。',
-   p:['A24','D8'],c:['A4'],ce:5,cpu:null,allow:['A24'],
+   p:['A24','D8'],pe:30,c:['A4'],ce:5,cpu:null,allow:['A24'],
    after:''},
 ];
 const tutStep=()=>G&&G.tut!=null?TUT[G.tut]:null;
@@ -1563,7 +1573,8 @@ function resolve(){
   // 出した札の行き先：罠は場へ（置き場が無ければ捨て札）、それ以外は捨て札へ
   for(const [s,inst] of [[P,G.pPlay],[C,G.cPlay]]){
     if(!inst)continue;
-    if(def(inst).type==='T'&&s.traps.length<trapMax(s))s.traps.push({inst,active:false});
+    const firedNow=(s===P?r.fx.firedP:r.fx.firedC).some(f=>f.uid==='now');
+    if(def(inst).type==='T'&&!firedNow&&s.traps.length<trapMax(s))s.traps.push({inst,active:true});
     else s.discard.push(inst);
   }
   G.prevGauge=G.gauge;G.revealAt=Date.now();
@@ -1820,7 +1831,7 @@ function menuHTML(){
     ${recordPanel()}
     ${deckSummary()}
     <div class="panel">
-      <div class="openrule"><div class="row"><span>手札公開ルール（お試し）</span>
+      <div class="openrule"><div class="row"><span>手札を見せ合う</span>
         <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
         <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える。手札を見る仕組みは、山札と罠を見る効果に変わる（眼の型・心眼・偵察・見切り）</p></div>
       <label class="row" for="timerSel"><span>持ち時間（1手）</span>
@@ -1862,7 +1873,7 @@ function rulesHTML(){
     <li>読み合いの目安：攻撃は守っていない相手（燃やす・罠を張る）に強く、防御は攻撃に強い。燃やす・見送るは、相手が攻めてこないと読めたときに、気力や札を溜める手（攻撃されるとそのまま押し込まれる）。相手の防御を空振りさせれば、相手は気力を払い損。気力の量は見えているので、そこから相手の手を読む。</li>
     <li><b>手札は4枚</b>。毎ターンの終わりに、4枚になるまで山札から引く。</li>
     <li>攻撃どうしなら、数字の大きいほうが自分の数字ぶん押す。同じ数字なら相打ちで睨み合い。防御どうしも睨み合い。</li>
-    <li><b>罠</b>は伏せて場に残る。張った次のターンから効き、条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
+    <li><b>罠</b>は伏せて場に残る。張ったターンから効き、発動するまで場に残る。条件を満たしたら発動して捨てられる。罠は1枚まで（影の型は2枚）。罠を張ったターンは、攻撃も防御もしていない扱い。</li>
     <li>相手を相手の岸（橋のたもと、40歩先）まで押し込んだら<b>勝負あり</b>。お互いの札（手札と山札）が尽きたら、押し込んでいる側の勝ち。山札が尽きて引けないターンは5歩押される。</li>
     <li>手札は5枚から始め、開けるたびに1枚引く（手札は7枚まで）。</li>
     <li>デッキは30枚。デッキには型があり、効果の札はその型の札なら3枚まで、ほかの型の札は1枚まで（素の札は3枚まで）。強いカードは気力で縛られるので、数字の上限は無い。</li>
@@ -1876,9 +1887,10 @@ function rulesHTML(){
   <dl class="dl">${Object.values(OUGI).map(o=>`<dt>${o.name}</dt><dd>${o.text}</dd>`).join('')}</dl>
   </div>`;
 }
+const own0=()=>settings.deckKata;
 function builderHTML(){
   const st=deckStats(deck);
-  const own=settings.deckKata,order=[own,null,...Object.keys(KATA).filter(k=>k!==own)];
+  const own=settings.deckKata,order=[own,null,...Object.keys(KATA).filter(k=>k!==own)].filter(k=>builderKata==='all'||(builderKata==='plain'?k===null:k===builderKata));
   const row=d=>{const c=deck[d.id]||0;
       return `<div class="crow"><div class="card t-${d.type}" aria-hidden="true">${silHTML(d)}<span class="ccost">${d.cost}</span>${d.num!=null?`<span class="cnum">${d.num}</span>`:''}<span class="plain">${TY[d.type].name[0]}</span></div>
         <div class="cinfo"><b>${d.eff?d.name:TY[d.type].name+' '+d.num}</b><span class="stat-line">${KATA_OF[d.id]?`<span class="kmark${KATA_OF[d.id]===settings.deckKata?' own':''}">${monHTML('kata',KATA_OF[d.id])}${KATA[KATA_OF[d.id]].name}・${copyMax(d.id)}枚まで</span>`:''}${TY[d.type].name}${d.num!=null?d.num:''}・気力${d.cost}・燃やすと+${burnVal(d)}</span><span class="eff">${d.eff?d.text:'効果なし'}</span></div>
@@ -1897,6 +1909,7 @@ function builderHTML(){
       <span class="small muted">攻撃 ${st.by.A}・防御 ${st.by.D}・罠 ${st.by.T}</span>
     </div>
     <p class="small" style="color:${st.ok?'var(--win)':'var(--lose)'}">${st.ok?'このデッキで対戦できます（自動で保存）':st.errs.join('／')}</p>
+    <div class="ktabs" role="tablist" aria-label="型で絞る">${[['all','全部'],[own0(),null],...Object.keys(KATA).filter(k=>k!==own0()).map(k=>[k,null]),['plain','素']].map(([k,n])=>`<button class="ktab${builderKata===k?' on':''}${k===own0()?' own':''}" data-act="bkata" data-k="${k}" aria-selected="${builderKata===k}">${n||monHTML('kata',k)+KATA[k].name}</button>`).join('')}</div>
     <div class="tabs" role="tablist">${TYPES.map(t=>`<button class="tab t-${t}${builderTab===t?' on':''}" role="tab" aria-selected="${builderTab===t}" data-act="btab" data-t="${t}">${TY[t].name}<small>${st.by[t]}枚</small></button>`).join('')}</div>
   </div>
   <div class="panel"><div class="label">デッキの型（対戦ではこの型で戦う）</div>
@@ -2172,6 +2185,7 @@ document.addEventListener('click',e=>{
     case 'start-game':if(pick.kata&&pick.ougi){clearSave();bgmStart();startGame(pick.kata,pick.ougi);window.scrollTo(0,0)}break;
     case 'inc':{const id=el.dataset.id;if(deckStats(deck).n<DECK_SIZE&&(deck[id]||0)<copyMax(id)){deck[id]=(deck[id]||0)+1;saveDeck();render()}break}
     case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
+    case 'bkata':builderKata=el.dataset.k;render();break;
     case 'btab':if(TY[el.dataset.t]){builderTab=el.dataset.t;render();const g=document.querySelector('.group');if(g&&g.getBoundingClientRect().top<0)g.scrollIntoView({block:'start'})}break;
     case 'deck-kata':if(KATA[el.dataset.k]){settings.deckKata=el.dataset.k;pick.kata=el.dataset.k;settings.kata=el.dataset.k;store.set(KEY_SET,settings);render()}break;
     case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};settings.deckKata=p.kata;pick.kata=p.kata;settings.kata=p.kata;store.set(KEY_SET,settings);builderPreset=p;saveDeck();render();break}
