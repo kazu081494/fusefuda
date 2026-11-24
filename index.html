@@ -382,6 +382,8 @@ details.opp-info .dl{margin-top:8px}
 .cutin b{font-family:var(--font-display);font-weight:800;font-size:clamp(30px,10vw,44px);letter-spacing:.15em;color:#fff;text-shadow:0 0 12px rgba(255,220,140,.9),0 2px 0 #000;transform:skewY(6deg)}
 .cutin.c b{text-shadow:0 0 12px rgba(255,120,90,.9),0 2px 0 #000}
 @keyframes cutin{0%{opacity:0;clip-path:inset(0 100% 0 0)}15%{opacity:1;clip-path:inset(0 0 0 0)}80%{opacity:1;clip-path:inset(0 0 0 0)}100%{opacity:0;clip-path:inset(0 0 0 100%)}}
+.nanori-img{display:block;height:min(42%,150px);aspect-ratio:1}
+.nanori-img img{width:100%;height:100%;object-fit:contain;filter:brightness(0) drop-shadow(0 0 1.5px rgba(226,234,255,.95)) drop-shadow(0 0 10px rgba(170,195,255,.45))}
 .nanori{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:radial-gradient(ellipse at center,rgba(5,8,12,.88),rgba(5,8,12,.55) 70%,transparent);animation:nanori 3.2s ease both;pointer-events:none}
 .nanori span{font-size:12px;letter-spacing:.3em;color:var(--accent)}
 .nanori b{font-family:var(--font-display);font-weight:800;font-size:clamp(28px,9vw,40px);letter-spacing:.1em;color:#fff;text-shadow:0 0 14px rgba(226,178,71,.7)}
@@ -447,7 +449,7 @@ details.opp-info .dl{margin-top:8px}
 .og.on .mon{color:var(--accent);opacity:1}
 .sr-line{font-family:var(--font-display);font-size:16px;text-align:center}
 .sr-foe{display:grid;grid-template-columns:90px minmax(0,1fr);gap:14px;align-items:center;background:linear-gradient(#0c111b,#16202e);border-radius:14px;padding:14px;border:1px solid var(--line)}
-.sr-foe>img,.sr-foe>svg{width:90px;height:140px;object-fit:contain;fill:#05070b;filter:drop-shadow(0 0 1.5px rgba(226,234,255,.95)) drop-shadow(0 0 8px rgba(170,195,255,.35))}
+.sr-foe>img,.sr-foe>svg{width:90px;height:140px;object-fit:contain;fill:#05070b;filter:brightness(0) drop-shadow(0 0 1.5px rgba(226,234,255,.95)) drop-shadow(0 0 8px rgba(170,195,255,.35))}
 .sr-foe.boss{border-color:#8fb6ff;box-shadow:0 0 18px rgba(143,182,255,.25)}
 .sr-foe div{display:flex;flex-direction:column;gap:4px;min-width:0}
 .sr-yomi{font-size:11px;letter-spacing:.2em;color:var(--muted)}
@@ -792,16 +794,18 @@ const OUGI={
 };
 
 /* 今宵の相手：名前と台詞のある侍。性格・型・奥義・デッキがひとまとまりになっている */
-const BOSS={name:'月影の主',yomi:'つきかげのぬし',style:'shincho',kata:'yanagi',ougi:'issen',deck:'boss',intro:'よくぞここまで。月が見ている',win:'まだ月は満ちぬ',lose:'……新しき名を、欄干に刻め'};
+/* 侍の姿：名前のある侍は、それぞれの影絵（art/chars/<img>.png）。無ければ舞台の侍の絵 */
+const charImg=c=>c&&c.img?`<img src="art/chars/${c.img}.png" alt="">`:(ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100" aria-hidden="true"><use href="#samurai"/></svg>');
+const BOSS={img:'boss',name:'月影の主',yomi:'つきかげのぬし',style:'shincho',kata:'yanagi',ougi:'issen',deck:'boss',intro:'よくぞここまで。月が見ている',win:'まだ月は満ちぬ',lose:'……新しき名を、欄干に刻め'};
 const CHARS=[
-  {name:'赤鬼の権三',yomi:'あかおにのごんぞう',style:'kyoki',kata:'gou',ougi:'gougeki',deck:'soku',intro:'力こそすべて。受けてみよ',win:'軽い、軽いわ',lose:'……見事。次は負けぬ'},
-  {name:'柳の小夜',yomi:'やなぎのさよ',style:'shincho',kata:'yanagi',ougi:'uke',deck:'mamori',intro:'押せば引く。それだけのこと',win:'力みすぎよ',lose:'流しきれなかった……'},
-  {name:'火車の弥太',yomi:'かしゃのやた',style:'tame',kata:'homura',ougi:'gouka',deck:'hono',intro:'燃えろ燃えろ、全部燃やしてやる',win:'灰になったな',lose:'火が……消えちまった'},
-  {name:'影法師',yomi:'かげぼうし',style:'shincho',kata:'kage',ougi:'kagenui',deck:'wana',intro:'…………',win:'影は踏めぬ',lose:'……月が、明るすぎた'},
-  {name:'心眼の宗玄',yomi:'しんがんのそうげん',style:'shincho',kata:'me',ougi:'sakiyomi',deck:'kin',intro:'目に頼るから見えぬのだ',win:'読めておったよ',lose:'ほう……読みを外されたか'},
-  {name:'一閃の新之助',yomi:'いっせんのしんのすけ',style:'kyoki',kata:'gou',ougi:'issen',deck:'soku',intro:'一太刀で終わらせる',win:'ほらね',lose:'まだ……修行が足りないか'},
-  {name:'鉄扇のお蓮',yomi:'てっせんのおれん',style:'shincho',kata:'yanagi',ougi:'fudou',deck:'mamori',intro:'この扇、破れるものなら',win:'出直しておいで',lose:'やるじゃないの'},
-  {name:'狐の紺',yomi:'きつねのこん',style:'tame',kata:'kage',ougi:'genwaku',deck:'wana',intro:'化かされたこと、気づくかな',win:'こんこん、ご苦労さま',lose:'化けの皮が剥がれちゃった'},
+  {img:'gonzou',name:'赤鬼の権三',yomi:'あかおにのごんぞう',style:'kyoki',kata:'gou',ougi:'gougeki',deck:'soku',intro:'力こそすべて。受けてみよ',win:'軽い、軽いわ',lose:'……見事。次は負けぬ'},
+  {img:'sayo',name:'柳の小夜',yomi:'やなぎのさよ',style:'shincho',kata:'yanagi',ougi:'uke',deck:'mamori',intro:'押せば引く。それだけのこと',win:'力みすぎよ',lose:'流しきれなかった……'},
+  {img:'yata',name:'火車の弥太',yomi:'かしゃのやた',style:'tame',kata:'homura',ougi:'gouka',deck:'hono',intro:'燃えろ燃えろ、全部燃やしてやる',win:'灰になったな',lose:'火が……消えちまった'},
+  {img:'kageboushi',name:'影法師',yomi:'かげぼうし',style:'shincho',kata:'kage',ougi:'kagenui',deck:'wana',intro:'…………',win:'影は踏めぬ',lose:'……月が、明るすぎた'},
+  {img:'sougen',name:'心眼の宗玄',yomi:'しんがんのそうげん',style:'shincho',kata:'me',ougi:'sakiyomi',deck:'kin',intro:'目に頼るから見えぬのだ',win:'読めておったよ',lose:'ほう……読みを外されたか'},
+  {img:'shinnosuke',name:'一閃の新之助',yomi:'いっせんのしんのすけ',style:'kyoki',kata:'gou',ougi:'issen',deck:'soku',intro:'一太刀で終わらせる',win:'ほらね',lose:'まだ……修行が足りないか'},
+  {img:'oren',name:'鉄扇のお蓮',yomi:'てっせんのおれん',style:'shincho',kata:'yanagi',ougi:'fudou',deck:'mamori',intro:'この扇、破れるものなら',win:'出直しておいで',lose:'やるじゃないの'},
+  {img:'kon',name:'狐の紺',yomi:'きつねのこん',style:'tame',kata:'kage',ougi:'genwaku',deck:'wana',intro:'化かされたこと、気づくかな',win:'こんこん、ご苦労さま',lose:'化けの皮が剥がれちゃった'},
 ];
 
 /* CPUの性格（相手の欄に出る。クセを読むための手がかり） */
@@ -1137,7 +1141,7 @@ function storyScreenHTML(){
       ${lanterns()}
       <p class="sr-line">${boss?'灯籠の火が、青く揺れた。最後の相手――':`${KAN[i]}人目の相手が、橋の向こうから歩いてくる。`}</p>
       <div class="sr-foe${boss?' boss':''}">
-        ${ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100" aria-hidden="true"><use href="#samurai"/></svg>'}
+        ${charImg(foe)}
         <div><span class="sr-yomi">${foe.yomi}</span><b>${foe.name}</b><q>${foe.intro}</q>
         <p class="small muted">${monHTML('kata',foe.kata,'foe-mon')}${KATA[foe.kata].name}の型・性格：${STYLES[foe.style].name}・奥義は秘密</p></div>
       </div>
@@ -2075,7 +2079,7 @@ function gameHTML(){
     <section class="battle stage${revealed?' rev':''}${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':ph==='select'&&G.detail?'data-act="unzoom"':''} style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
       <div class="gtxt">${gTxt}</div>
-      ${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?`<div class="nanori" aria-live="polite"><span>今宵の相手</span><b>${G.char.name}</b><q>${G.char.intro}</q></div>`:''}
+      ${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?`<div class="nanori" aria-live="polite"><i class="nanori-img" aria-hidden="true">${charImg(G.char)}</i><span>今宵の相手</span><b>${G.char.name}</b><q>${G.char.intro}</q></div>`:''}
       ${cutinHTML()}
       ${finale?`<div class="kessen" aria-hidden="true">${G.over.winner?'勝負あり':'引き分け'}</div>`:''}
       <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
