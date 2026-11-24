@@ -247,6 +247,8 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .play .duel{animation:gshift .5s .6s ease-in-out both}
 @keyframes gshift{from{transform:translateX(var(--g0))}to{transform:translateX(var(--g1))}}
 .samurai{position:absolute;bottom:10%;height:min(78%,120px);aspect-ratio:.6;fill:#05070b;filter:drop-shadow(0 0 1.2px rgba(226,234,255,.95)) drop-shadow(0 0 7px rgba(170,195,255,.35))}
+/* 侍の姿の絵は正方形なので、縦長の枠いっぱいの高さで出す（横は枠からはみ出してよい） */
+.samurai img.char{width:166.7%;max-width:none;margin-left:-33.3%}
 .samurai img.mirror{transform:scaleX(-1)}
 .samurai svg,.samurai img{width:100%;height:100%;display:block;object-fit:contain;object-position:bottom}
 img.sil{object-fit:contain;height:auto}
@@ -1216,7 +1218,7 @@ const FACE={};SKINS.forEach(x=>{if(x.face)FACE[x.key]=x.face});
 const skinOpen=x=>x.key==='default'||(x.wins?rec.w>=x.wins:(rec.beaten||[]).includes(x.key));
 const skinNeed=x=>x.wins?`${x.wins}勝で解放`:`${x.name}に勝つと解放`;
 /* 舞台の侍の絵：key があればその姿、無ければいつもの侍 */
-const samImg=key=>key&&key!=='default'?`<img src="art/chars/${key}.png" alt=""${FACE[key]==='l'?' class="mirror"':''}>`:(ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="">':'<svg viewBox="0 0 60 100"><use href="#samurai"/></svg>');
+const samImg=key=>key&&key!=='default'?`<img src="art/chars/${key}.png" alt="" class="char${FACE[key]==='l'?' mirror':''}">`:(ART_IMG.has('samurai')?'<img src="art/cards/samurai.png" alt="" class="char">':'<svg viewBox="0 0 60 100"><use href="#samurai"/></svg>');
 
 /* ---------- 途中の試合の保存（この端末の中だけ） ----------
    ターンの始め・奥義を使った直後・結果が出た直後に保存する。
