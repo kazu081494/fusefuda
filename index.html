@@ -175,6 +175,26 @@ button.chip{cursor:pointer;border-color:var(--line)}
 .side-head{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
 .side-head .who-line{display:flex;align-items:center;gap:10px}
 .side-head h2{font-size:14px;font-weight:700}
+.oname{appearance:none;background:none;border:0;padding:0;display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--fg)}
+.oname .mon{width:22px;height:22px;color:var(--fg)}
+.oname i{font-style:normal;font-size:9px;color:var(--muted)}
+.gtxt{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:2;font-size:12px;color:#c9d3df;white-space:nowrap;pointer-events:none}
+.gtxt b{color:var(--accent);font-size:15px}
+.chip .mon+.mon{margin-left:-1px}
+/* 手札は読みやすく：種類の文字は上の色帯で分かるので省き、名前と効果を大きく */
+.hand .card .ctype{display:none}
+.hand .card .cname{font-size:13px}
+.hand .card .ctext{font-size:10.5px;line-height:1.3}
+.hand.many .card .cname{font-size:11.5px}
+.hand.lots .card .cname{font-size:10.5px}
+@media (min-height:700px){
+  .hand .card{aspect-ratio:5/9}
+  .hand .card .cname{font-size:14px}
+  .hand .card .ctext{font-size:11.5px;line-height:1.32}
+  .hand.many .card .cname{font-size:12px}
+  .hand.many .card .ctext{font-size:10.5px}
+}
+.hand .ctext{padding-bottom:6px}
 .opp-hand{display:grid;grid-template-columns:repeat(7,36px);gap:5px}
 .opp-hand.open{grid-template-columns:repeat(7,minmax(0,46px))}
 .chip.deckline{white-space:normal}
@@ -1806,12 +1826,11 @@ function builderHTML(){
   ${groups}`;
 }
 function sideChips(s,isP){
-  const c=[],kt=KATA[s.kata],og=OUGI[s.ougi];
-  if(isP)c.push(`<button class="chip ${s.ougiUsed&&!s.ougiNow?'':'on'}" data-act="school-info">${monHTML('kata',s.kata)}${kt.name}の型・${monHTML('ougi',s.ougi)}${og.name}${s.ougiNow?'（発動中）':s.ougiUsed?'（済）':''}</button>`);
+  const c=[],kt=KATA[s.kata],og=OUGI[s.ougi],mixOn=!isP&&!isOpen()&&(G.p.kata==='me'||G.p.mixUntil>=G.turn);
+  if(isP)c.push(`<button class="chip ${s.ougiUsed&&!s.ougiNow?'':'on'}" data-act="school-info" aria-label="${kt.name}の型・奥義${og.name}">${monHTML('kata',s.kata)}${monHTML('ougi',s.ougi)}${og.name}${s.ougiNow?'（発動中）':s.ougiUsed?'（済）':''}</button>`);
   else{
-    c.push(`<span class="chip warn" title="${STYLES[G.style].desc}">性格：${STYLES[G.style].name}</span>`);
-    c.push(`<span class="chip" title="${kt.text}">${monHTML('kata',s.kata)}${kt.name}の型</span>`);
-    c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">奥義${s.ougiUsed?'：使用済み':'：？'}</span>`);
+    if(!mixOn)c.push(`<span class="chip">手札${s.hand.length}</span>`);
+    c.push(`<span class="chip ${s.ougiUsed?'':'warn'}">奥義${s.ougiUsed?'済':'？'}</span>`);
     // 眼の型：相手の手札の内訳が見える
     if(isOpen()){const sn=oppDeckSeen();if(sn.length)c.push(`<span class="chip warn deckline">山の上：${sn.map(({x})=>def(x).eff?def(x).name:label(def(x))).join(' → ')}</span>`)}
     else if(G.p.kata==='me'||G.p.mixUntil>=G.turn){const n=t=>s.hand.filter(i=>def(i).type===t).length;c.push(`<span class="chip on">${G.p.kata==='me'?'':'見切り・'}手札：攻${n('A')}・防${n('D')}・罠${n('T')}</span>`)}
@@ -1850,7 +1869,7 @@ function cutinHTML(){
 }
 function gameHTML(){
   const P=G.p,C=G.c,ph=G.phase,revealed=ph==='result';
-  const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true}):G.p.shinganUntil>=G.turn?cardHTML(x,{small:true,tag:'心眼'}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'<div class="back" aria-label="伏せた手札"></div>').join('');
+  const oppHand=C.hand.map(x=>isOpen()?cardHTML(x,{small:true}):G.p.shinganUntil>=G.turn?cardHTML(x,{small:true,tag:'心眼'}):G.knownOpp.has(x.uid)?cardHTML(x,{small:true,tag:'判明'}):'').join('');
   const STEP=5,E8=GOAL/STEP,at=Math.round(G.gauge/STEP);
   const cells=[];for(let k=E8;k>=-E8;k--)cells.push(`<div class="cell${k===at?' on':''}${k===E8?' goal-p':''}${k===-E8?' goal-c':''}${k===0?' mid':''}"></div>`);
   const gTxt=G.gauge>0?`勝ちまで あと <b>${GOAL-G.gauge}</b> 歩`:G.gauge<0?`負けまで あと <b>${GOAL+G.gauge}</b> 歩`:'互角';
@@ -1905,6 +1924,7 @@ function gameHTML(){
   }
   info+=G.notices.map(n=>`<div class="notice${n.alert?' alert':''}${n.coach?' coach':''}">${n.t}</div>`).join('');
   if(ph==='select'&&using(P,'gouka'))info+=`<div class="notice">業火：このターン燃やすと、増える気力のぶん相手も押す</div>`;
+  if(G.oppInfo){const kt=KATA[C.kata];info+=`<div class="detail"><b>${G.char?G.char.name:'相手'}　性格：${STYLES[G.style].name}</b>${STYLES[G.style].desc}<br><b>${kt.name}の型</b>${kt.text}<br><b>奥義</b>${C.ougiUsed?`使用済み（${OUGI[C.ougi].name}）`:'秘密（1回だけ使える）'}<br><span class="muted">山${C.deck.length}・捨${C.discard.length}</span></div>`}
   if(ph==='select'&&G.schoolInfo){info+=`<div class="detail"><b>${KATA[P.kata].name}の型</b>${KATA[P.kata].text}<br><b>奥義「${OUGI[P.ougi].name}」</b>${OUGI[P.ougi].text}</div>`}
   if(ph==='select'&&G.turn===1&&!G.pMull&&G.tut==null&&!G.pUsedNow&&!G.burnMode)info+=`<div class="notice mull"><span>最初の手札が気に入らなければ、1回だけ引き直せる（手札を山札に戻して混ぜ、${HAND_START}枚引く）</span><button class="btn tiny" data-act="mulligan">引き直す</button></div>`;
   if(ph==='select'&&G.burnMode)info+=`<div class="notice"><b>燃やす札をタップ</b>：札の「+」の数だけ気力が増える（次のターンから使える）。このターンは何も出さないので、攻撃されたらそのまま押される</div>`;
@@ -1934,25 +1954,25 @@ function gameHTML(){
       <button class="btn ghost tiny" data-act="open-log">記録</button>
       <button class="btn ghost tiny" data-act="resign">投了</button></div>
     <section class="side" aria-label="相手">
-      <div class="side-head"><div class="who-line"><h2>${G.char?G.char.name:'相手'}</h2>${energyHTML(C)}</div>${sideChips(C,false)}</div>
-      <div class="opp-hand${isOpen()?' open':''}">${oppHand}</div>
+      <div class="side-head"><div class="who-line"><button class="oname" data-act="opp-info" aria-expanded="${!!G.oppInfo}">${monHTML('kata',C.kata)}<h2>${G.char?G.char.name:'相手'}</h2><i aria-hidden="true">${G.oppInfo?'▲':'▼'}</i></button>${energyHTML(C)}</div>${sideChips(C,false)}</div>
+      ${oppHand?`<div class="opp-hand${isOpen()?' open':''}">${oppHand}</div>`:''}
     </section>
     <section class="gauge" aria-label="橋">
-      <div class="gauge-labels"><span>相手の岸</span><span>${gTxt}</span><span>自分の岸</span></div>
       <div class="cells">${cells.join('')}</div>
     </section>
     <section class="battle stage${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':''} style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>
+      <div class="gtxt">${gTxt}</div>
       ${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?`<div class="nanori" aria-live="polite"><span>今宵の相手</span><b>${G.char.name}</b><q>${G.char.intro}</q></div>`:''}
       ${cutinHTML()}
       ${finale?`<div class="kessen" aria-hidden="true">${G.over.winner?'勝負あり':'引き分け'}</div>`:''}
-      <div class="slot"><span class="who">${G.char?G.char.name:'相手'}</span><div class="bigwrap">${oppSlot}</div></div>
+      <div class="slot"><span class="who">相手</span><div class="bigwrap">${oppSlot}</div></div>
       <div class="center">${duel}<div class="calls">${center}</div></div>
       <div class="slot"><span class="who">あなた</span><div class="bigwrap">${meSlot}</div></div>
     </section>
     <section class="info" aria-live="polite">${info}</section>
     <section class="side" aria-label="あなた">
-      <div class="side-head"><div class="who-line"><h2>あなた</h2>${energyHTML(P)}</div>${sideChips(P,true)}</div>
+      <div class="side-head"><div class="who-line">${energyHTML(P)}</div>${sideChips(P,true)}</div>
       <div class="hand${P.hand.length>=6?' many':''}${P.hand.length>=7?' lots':''}" style="--n:${Math.max(5,P.hand.length)}">${hand}</div>
       <div class="actions">${actions}</div>
     </section>
@@ -2083,7 +2103,8 @@ document.addEventListener('click',e=>{
     case 'detail':{const x=G&&G.c.hand.find(i=>String(i.uid)===el.dataset.uid);if(x){G.detail=x;render()}break}
     case 'mulligan':if(G&&G.turn===1&&G.phase==='select'&&!G.pMull&&G.tut==null){const P=G.p;P.deck.push(...P.hand);P.hand=[];shuffle(P.deck);drawN(P,HAND_START);G.pMull=true;G.sel=null;G.pBurn=null;log('手札を引き直した');saveGame();render()}break;
     case 'mytrap':{const t=G.p.traps.find(t=>String(t.inst.uid)===el.dataset.uid);if(t){G.detail=t.inst;render()}break}
-    case 'school-info':G.schoolInfo=!G.schoolInfo;render();break;
+    case 'school-info':G.schoolInfo=!G.schoolInfo;G.oppInfo=false;render();break;
+    case 'opp-info':G.oppInfo=!G.oppInfo;G.schoolInfo=false;render();break;
     case 'commit':if(G.pBurn)commit(null,G.pBurn);else if(G.sel)commit(G.sel);break;
     case 'pass':commit(null);break;
     case 'burn':if(G&&G.phase==='select'){if(G.pBurn){G.pBurn=null;G.burnMode=false}else G.burnMode=!G.burnMode;render()}break;
