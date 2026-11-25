@@ -452,13 +452,21 @@ details.opp-info .dl{margin-top:8px}
 .dice span{display:inline-flex;align-items:center;gap:3px;background:rgba(5,8,12,.75);border-radius:6px;padding:1px 6px}
 .dice b{display:inline-flex;width:20px;height:20px;align-items:center;justify-content:center;border-radius:4px;background:#f6f1e6;color:#1b120a;font-size:13px;font-family:var(--font-display)}
 .dice .c b{background:#f3c9bf}
+.slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.slot-b{appearance:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--table-2);color:var(--fg);border-radius:10px;padding:6px;cursor:pointer;text-align:left;min-width:0}
+.slot-b .mon{width:26px;height:26px;color:var(--muted);flex:none}
+.slot-b span{display:flex;flex-direction:column;font-weight:700;font-size:13px;min-width:0}
+.slot-b small{font-weight:400;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot-b.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.slot-b.on .mon{color:var(--accent)}
 .pile{display:flex;flex-direction:column;gap:6px}
 .pile-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .pile-h b{font-size:16px}
 .pile-h span{font-size:12px;color:var(--muted)}
-.kgroup{display:flex;align-items:center;gap:6px;margin:10px 0 2px;font-size:15px;color:var(--fg)}
+.kgroup{appearance:none;width:100%;display:flex;align-items:center;gap:6px;margin:8px 0 2px;padding:8px 10px;font:inherit;font-size:15px;font-weight:700;color:var(--fg);background:var(--table-2);border:1px solid var(--line);border-radius:10px;cursor:pointer;text-align:left}
+.kgroup i{font-style:normal;font-size:11px;color:var(--muted);width:12px}
 .kgroup .mon{width:24px;height:24px;color:var(--muted)}
-.kgroup small{font-size:12px;font-weight:400;color:var(--muted)}
+.kgroup small{font-size:12px;font-weight:400;color:var(--muted);margin-left:auto}
 .kgroup.own{color:var(--accent)}.kgroup.own .mon{color:var(--accent)}
 .kmark{display:flex;width:fit-content;align-items:center;gap:2px;margin-bottom:2px;padding:0 6px 0 1px;border-radius:999px;border:1px solid var(--line)}
 .kmark .mon{width:16px;height:16px;color:var(--muted)}
@@ -500,9 +508,9 @@ details.opp-info .dl{margin-top:8px}
 .msgs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}
 .notice{font-size:11.5px;line-height:1.4;padding:5px 7px;border-radius:7px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);text-align:left}
 .toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:15;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;padding:0 12px}
-.toast{max-width:420px;font-size:12.5px;line-height:1.4;padding:6px 12px;border-radius:999px;background:rgba(32,43,56,.96);border:1px solid var(--accent);color:var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.5);animation:toast 4.5s linear both}
+.toast{max-width:420px;font-size:12.5px;line-height:1.4;padding:6px 12px;border-radius:999px;background:rgba(32,43,56,.96);border:1px solid var(--accent);color:var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.5);animation:toast 2s linear both}
 .toast.alert{border-color:var(--lose);font-weight:700}
-@keyframes toast{0%{opacity:0;transform:translateY(-8px)}6%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+@keyframes toast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
 .notice.mull{display:flex;align-items:center;gap:8px}
 .notice.mull span{flex:1}
 .notice.alert{font-weight:700;animation:pulse 1.2s ease-in-out 2}
@@ -552,6 +560,12 @@ details.opp-info .dl{margin-top:8px}
 .dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}
 .dl dt{color:var(--muted)}.dl dd{margin:0}
 .mini-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px}
+.logturns{display:flex;flex-direction:column;gap:8px}
+.logturn{background:var(--table);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.logturn h4{margin:0 0 4px;font-family:var(--font-display);font-size:15px;color:var(--accent)}
+.logturn ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px}
+.logturn li{font-size:12.5px;line-height:1.45;color:var(--muted);padding-left:10px;border-left:2px solid var(--line)}
+.logturn li.main{font-size:14px;font-weight:700;color:var(--fg);border-left-color:var(--accent)}
 .loglist{margin:0;padding-left:1.4em;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
 
 /* 流派選び */
@@ -918,7 +932,16 @@ if(!(settings.deckKata in KATA)){settings.deckKata=Object.keys(KATA).map(k=>[k,O
   for(let k=0;n<DECK_SIZE&&k<99;k++){const id=fill[k%fill.length];if((deck[id]||0)<COPY_MAX){deck[id]=(deck[id]||0)+1;n++}}
   store.set(KEY_DECK,deck)})();
 if(!TIMER_OPTIONS.includes(settings.timer))settings.timer=TIMER_DEFAULT;
-function saveDeck(){store.set(KEY_DECK,deck)}
+/* 保存できるデッキ（3つ）。はじめは、いまのデッキを3つともに写す */
+const KEY_DECKS='fusefuda.decks.v1',SLOTS=3;
+let decks=store.get(KEY_DECKS,null);
+if(!Array.isArray(decks)||decks.length!==SLOTS)decks=Array.from({length:SLOTS},()=>({cards:{...deck},kata:settings.deckKata}));
+decks=decks.map(d=>({cards:cleanDeck(d&&d.cards)||{},kata:d&&d.kata in KATA?d.kata:settings.deckKata}));
+if(!(settings.slot>=0&&settings.slot<SLOTS))settings.slot=0;
+deck={...decks[settings.slot].cards};settings.deckKata=decks[settings.slot].kata;
+function saveDeck(){store.set(KEY_DECK,deck);if(typeof decks!=='undefined'){decks[settings.slot]={cards:{...deck},kata:settings.deckKata};store.set(KEY_DECKS,decks)}}
+function useSlot(k){saveDeck();settings.slot=k;deck={...decks[k].cards};settings.deckKata=decks[k].kata;pick.kata=settings.deckKata;settings.kata=settings.deckKata;store.set(KEY_SET,settings)}
+const slotsHTML=()=>`<div class="slots" role="tablist" aria-label="保存したデッキ">${decks.map((d,k)=>{const n=Object.values(d.cards).reduce((a,b)=>a+b,0);return `<button class="slot-b${settings.slot===k?' on':''}" data-act="slot" data-k="${k}" aria-selected="${settings.slot===k}">${monHTML('kata',d.kata)}<span>デッキ${k+1}<small>${KATA[d.kata].name}・${n}枚</small></span></button>`}).join('')}</div>`;
 function copyMax(id){return COPY_MAX}
 const isOff=(id,kata)=>!!(KATA_OF[id]&&KATA_OF[id]!==kata);
 function deckStats(counts,kata=settings.deckKata){
@@ -960,7 +983,7 @@ const ME_YOMI=5;  // 眼の型：読み勝ちしたら、さらに5押す
 const d6=()=>1+Math.floor(Math.random()*6);
 const roll=(s,ok)=>{let v=d6();if(s&&s.kata==='sai'&&ok&&!ok(v))v=d6();return v};
 const YABUSUMA=6;  // 矢衾：次のターンに届く矢
-const TOAST_MS=4500;  // お知らせが出ている時間
+const TOAST_MS=2000;  // お知らせが出ている時間
 const KAGE_SWAP=5;  // 影の型：罠が墓地に行くたびに気力+5（発動・張り替え・外された、どれでも）
 function graveTrap(s,inst,msgs){s.discard.push(inst);if(s.kata==='kage'){s.energy=clampE(s.energy+KAGE_SWAP);if(msgs)msgs.push(`影の型：${s===G.p?'あなた':'相手'}の罠が墓地へ行き、気力+${KAGE_SWAP}`)}}
 const OUGI_TURNS={genwaku:3,fudou:3},OUGI_FROM=3;  // 奥義は3手目から使える
@@ -1122,6 +1145,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
 
 /* ---------- 試合 ---------- */
 let screen='menu';let G=null;let builderPreset=null;let skinBoxOpen=false;
+/* デッキ画面の型ごとの見出し：開け閉め。はじめは型なしとデッキの型だけ開く */
+const groupClosed={},groupOpen=k=>k in groupClosed?!groupClosed[k]:(k==='plain'||k===settings.deckKata);
 let builderTab='A',builderKata='all';
 
 function mill(s,n){let k=0;while(k<n&&s.deck.length){s.discard.push(s.deck.pop());k++}return k}
@@ -1995,7 +2020,8 @@ function recordPanel(){
 function deckSummary(){
   const st=deckStats(deck);
   return `<div class="panel">
-    <div class="label">あなたのデッキ</div>
+    <div class="label">あなたのデッキ（押して切り替え。組んだデッキは自動で保存）</div>
+    ${slotsHTML()}
     <div class="stats">
       <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / ${DECK_SIZE}枚</span>
       <span class="small muted">平均の気力 ${st.avg.toFixed(1)}</span>
@@ -2086,9 +2112,11 @@ function builderHTML(){
         <button data-act="inc" data-id="${d.id}" ${c>=copyMax(d.id)||st.n>=DECK_SIZE?'disabled':''} aria-label="${label(d)}を1枚増やす">＋</button></div></div>`};
   const groups=TYPES.filter(t=>t===builderTab).map(t=>`<div class="group t-${t}">${order.map(k=>{
     const ds=POOL.filter(d=>d.type===t&&(k?KATA_OF[d.id]===k:!KATA_OF[d.id]));if(!ds.length)return '';
-    return `<h4 class="kgroup${k===own?' own':''}">${k?`${monHTML('kata',k)}${KATA[k].name}の札<small>${k===own?'':'型違い：数字-5（罠は気力+5）'}</small>`:'型なしの札<small></small>'}</h4>${ds.map(row).join('')}`}).join('')}
+    const gk=k||'plain',open=groupOpen(gk),inDeck=ds.reduce((a,d)=>a+(deck[d.id]||0),0);
+    return `<button class="kgroup${k===own?' own':''}" data-act="kgroup" data-k="${gk}" aria-expanded="${open}"><i aria-hidden="true">${open?'▼':'▶'}</i>${k?`${monHTML('kata',k)}${KATA[k].name}の札`:'型なしの札'}<small>${ds.length}種・デッキに${inDeck}枚${k&&k!==own?'・型違いは数字-5':''}</small></button>${open?ds.map(row).join(''):''}`}).join('')}
   </div>`).join('');
   return `<div class="row"><button class="btn ghost" data-act="go-menu">メニューへ戻る</button></div>
+  ${slotsHTML()}
   <div class="sticky">
     <div class="stats">
       <span class="stat ${st.ok?'ok':'bad'}"><b>${st.n}</b> / ${DECK_SIZE}枚</span>
@@ -2331,7 +2359,9 @@ function modalHTML(){
     <h3 id="rsg">投了しますか？</h3><p class="small muted">この試合は負けになります。</p>
     <div class="row"><button class="btn" data-act="resign-yes">はい（投了する）</button><button class="btn ghost" data-act="close-modal">いいえ（続ける）</button></div></div></div>`;
   if(G.modal==='log'){
-    body=`<h3>記録</h3>${G.log.length?`<ol class="loglist" reversed>${[...G.log].reverse().map(l=>`<li>${l}</li>`).join('')}</ol>`:'<p class="muted small">まだありません</p>'}`;
+    // 手ごとにまとめる（新しい手が上）。1行目（出した札と結果）を太く、効果は下に小さく
+    const byTurn=[];for(const l of G.log){const m=l.match(/^(\d+)手目　(.*)$/);const t=m?+m[1]:0,txt=m?m[2]:l;let g=byTurn.find(x=>x.t===t);if(!g){g={t,items:[]};byTurn.push(g)}g.items.push(txt)}
+    body=`<h3>記録</h3>${byTurn.length?`<div class="logturns">${byTurn.reverse().map(g=>`<section class="logturn"><h4>${g.t?g.t+'手目':''}</h4><ul>${g.items.map(x=>`<li class="${/ 対 /.test(x)?'main':''}">${x}</li>`).join('')}</ul></section>`).join('')}</div>`:'<p class="muted small">まだありません</p>'}`;
   }else{
     const s=G.modal==='p'?G.p:G.c;
     const who=G.modal==='p'?'あなた':'相手';
@@ -2357,7 +2387,8 @@ document.addEventListener('change',e=>{
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]');
   // 結果が出ているあいだは、ボタンや札以外のどこをタップしても次へ
-  if(!el){if(screen==='game'&&G&&G.phase==='result'&&!G.over&&!G.modal&&!e.target.closest('button,select,a,.modal')){if(G.tut!=null)G.tut++;startTurn()}return}
+  if(!el){if(screen==='game'&&G&&G.phase==='select'&&G.detail&&!G.modal){G.detail=null;render();return}
+    if(screen==='game'&&G&&G.phase==='result'&&!G.over&&!G.modal&&!e.target.closest('button,select,a,.modal')){if(G.tut!=null)G.tut++;startTurn()}return}
   const act=el.dataset.act;
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
@@ -2397,7 +2428,9 @@ document.addEventListener('click',e=>{
     case 'dec':{const id=el.dataset.id;if(deck[id]){deck[id]--;if(!deck[id])delete deck[id];saveDeck();render()}break}
     case 'bkata':builderKata=el.dataset.k;render();break;
     case 'btab':if(TY[el.dataset.t]){builderTab=el.dataset.t;render();const g=document.querySelector('.group');if(g&&g.getBoundingClientRect().top<0)g.scrollIntoView({block:'start'})}break;
-    case 'deck-kata':if(KATA[el.dataset.k]){settings.deckKata=el.dataset.k;pick.kata=el.dataset.k;settings.kata=el.dataset.k;store.set(KEY_SET,settings);render()}break;
+    case 'kgroup':{const k=el.dataset.k;groupClosed[k]=groupOpen(k);render();break}
+    case 'slot':{const k=+el.dataset.k;if(k>=0&&k<SLOTS&&k!==settings.slot){useSlot(k);render()}break}
+    case 'deck-kata':if(KATA[el.dataset.k]){settings.deckKata=el.dataset.k;pick.kata=el.dataset.k;settings.kata=el.dataset.k;store.set(KEY_SET,settings);saveDeck();render()}break;
     case 'preset':{const p=PRESETS.find(x=>x.key===el.dataset.key);deck={...p.cards};settings.deckKata=p.kata;pick.kata=p.kata;settings.kata=p.kata;store.set(KEY_SET,settings);builderPreset=p;saveDeck();render();break}
     case 'clear':deck={};builderPreset=null;saveDeck();render();break;
     case 'hand':{
