@@ -521,9 +521,9 @@ details.opp-info .dl{margin-top:8px}
 .msgs{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.4}
 .notice{font-size:11.5px;line-height:1.4;padding:5px 7px;border-radius:7px;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent);text-align:left}
 .toasts{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:15;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;padding:0 12px}
-.toast{max-width:420px;font-size:12.5px;line-height:1.4;padding:6px 12px;border-radius:999px;background:rgba(32,43,56,.96);border:1px solid var(--accent);color:var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.5);animation:toast 2s linear both}
+.toast{max-width:420px;font-size:12.5px;line-height:1.4;padding:6px 12px;border-radius:999px;background:rgba(32,43,56,.96);border:1px solid var(--accent);color:var(--fg);box-shadow:0 4px 14px rgba(0,0,0,.5);animation:toast 5s linear both}
 .toast.alert{border-color:var(--lose);font-weight:700}
-@keyframes toast{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+@keyframes toast{0%{opacity:0;transform:translateY(-8px)}5%{opacity:1;transform:none}88%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
 .notice.mull{display:flex;align-items:center;gap:8px}
 .notice.mull span{flex:1}
 .notice.alert{font-weight:700;animation:pulse 1.2s ease-in-out 2}
@@ -1002,7 +1002,7 @@ const ME_YOMI=5;  // 眼の型：読み勝ちしたら、さらに5押す
 const d6=()=>1+Math.floor(Math.random()*6);
 const roll=(s,ok)=>{let v=d6();if(s&&s.kata==='sai'&&ok&&!ok(v))v=d6();return v};
 const YABUSUMA=6;  // 矢衾：次のターンに届く矢
-const TOAST_MS=2000;  // お知らせが出ている時間
+const TOAST_MS=5000;  // お知らせが出ている時間
 const KAGE_SWAP=5;  // 影の型：罠が墓地に行くたびに気力+5（発動・張り替え・外された、どれでも）
 /* 選んだ札を縛る：seal＝turns ターン封じる、hostage＝奪って2ターン預かる */
 function applyPick(by,op,x,kind,turns,msgs){const w=by===G.p?'あなた':'相手',v=by===G.p?'相手':'あなた';
@@ -1441,7 +1441,7 @@ function startTurn(){
   for(const s of [G.p,G.c]){
     s.energy=clampE(s.energy+ENERGY_GAIN);
     s.noAtk=s.noAtkNext;s.noAtkNext=false;s.noDef=!!s.noDefNext;s.noDefNext=false;s.cap=!!s.capNext;s.capNext=false;s.noBurn=!!s.noBurnNext;s.noBurnNext=false;s.volley=!!s.volleyNext;s.volleyNext=false;s.yokoku=s.yokokuNext;s.yokokuNext=false;
-    if(s.held&&s.held.length){for(const h of [...s.held])if(h.back<=G.turn){removeFrom(s.held,h);s.hand.push(h.x);G.notices.push({t:`人質：「${label(def(h.x))}」が${s===G.p?'あなた':'相手'}の手札に戻った`})}}
+    if(s.held&&s.held.length){for(const h of [...s.held])if(h.back<=G.turn){removeFrom(s.held,h);s.hand.push(h.x);G.notices.push({t:`人質：「${label(def(h.x))}」が${s===G.p?'あなた':'相手'}の手札に戻った`});log(`人質：「${label(def(h.x))}」が${s===G.p?'あなた':'相手'}の手札に戻った`)}}
     s.ougiNow=false;
     s.haisui=(s===G.p?GOAL+G.gauge:GOAL-G.gauge)<=HAISUI_NEAR;
     for(const t of s.traps)t.active=true;
@@ -1503,7 +1503,8 @@ function useOugi(){
   if(P.ougi==='shingan'){P.shinganUntil=G.turn+1;G.notices.push({t:isOpen()?'心眼：このターンと次のターン、相手の伏せた罠と山札の上から3枚が見える':'心眼：このターンと次のターン、相手の手札が全部見える',alert:true})}
   if(['sakiyomi','shingan','tensei','shikabane'].includes(P.ougi)){G.cutin={who:'p',key:P.ougi,at:Date.now()};playCutinSound()}
   const m=ougiNow(P,G.c);if(m){G.notices.push({t:m});log(m);if(G.sel&&blockReason(P,G.sel))G.sel=null}
-  if(P.ougi==='sakiyomi'){G.cPre=G.tut!=null?tutCpu():cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true})}
+  if(P.ougi==='sakiyomi'){G.cPre=G.tut!=null?tutCpu():cpuChoose();G.notices.push({t:`先読み：相手は${actKind(G.cPre)}`,alert:true});log(`先読み：相手は${actKind(G.cPre)}`)}
+  if(P.ougi==='shingan'){log(isOpen()?`心眼：相手の罠は${G.c.traps.length?G.c.traps.map(t=>'「'+label(def(t.inst))+'」').join(''):'無し'}、山札の上は${G.c.deck.slice(-3).reverse().map(x=>'「'+label(def(x))+'」').join('')}`:`心眼：相手の手札は${G.c.hand.map(x=>'「'+label(def(x))+'」').join('')}`)}
   saveGame();render();
 }
 /* あなたの手を確定（pi＝出す札、bi＝燃やす札。どちらも null なら見送る） */
@@ -1547,7 +1548,7 @@ function openEff(who,inst,msgs){
   switch(d.eff){
     case 'teisatsu':if(isOpen()){
         if(op.traps.length){if(who==='p'){op.traps.forEach(t=>G.knownTrap.add(t.inst.uid));msgs.push(`偵察：相手の罠は「${op.traps.map(t=>def(t.inst).name).join('」「')}」`)}else msgs.push('偵察：あなたの罠を見られた')}
-        else{const top=op.deck.slice(-2).reverse();if(who==='p'){top.forEach(x=>G.knownDeck.add(x.uid));msgs.push(top.length?`偵察：罠は無い。相手の山札の上は「${top.map(x=>label(def(x))).join('」「')}」`:'偵察：罠も山札も無い')}else msgs.push('偵察：罠が無いので、あなたの山札の上を見られた')}
+        else{if(who==='p')G.scoutP=2;else msgs.push('偵察：罠が無いので、あなたの山札の上を見られた')}
         break}
       if(op.hand.length){const x=rnd(op.hand);
       if(who==='p'){G.knownOpp.add(x.uid);msgs.push(`偵察：相手の手札に「${label(def(x))}」がある`)}
@@ -1826,6 +1827,8 @@ function resolve(){
   if(yw&&yw.who==='c'&&G.cCombo%COMBO_EVERY===0){C.energy=clampE(C.energy+COMBO_GAIN);G.comboGain='c';msgs.push(`相手の${G.cCombo}連：相手は気力を${COMBO_GAIN}得た`)}
   G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge+r.net));
   {const np=P.hand.length<HAND_MAX&&!P.deck.length,nc=C.hand.length<(C.handMax||HAND_MAX)&&!C.deck.length;for(const x of [P,C]){const mx=(x.handMax||HAND_MAX)+((x.handBoost||0)>=G.turn?1:0)-(x.noRefill?1:0);drawExtra(x,Math.max(0,mx-x.hand.length));x.noRefill=false}
+   // 偵察（罠が無いとき）：補充で引いたあとに残る、相手の山札の上2枚を見る
+   if(G.scoutP){const top=C.deck.slice(-G.scoutP).reverse();top.forEach(x=>G.knownDeck.add(x.uid));msgs.push(top.length?`偵察：罠は無い。相手の山札の上は「${top.map(x=>label(def(x))).join('」→「')}」`:'偵察：罠も山札も無い');G.scoutP=0}
    if(np){G.gauge-=DECKOUT;msgs.push(`山札切れ：あなたは引けずに${DECKOUT}歩押された`)}
    if(nc){G.gauge+=DECKOUT;msgs.push(`山札切れ：相手は引けずに${DECKOUT}歩押された`)}
    G.gauge=Math.max(-GOAL,Math.min(GOAL,G.gauge))}
@@ -1834,6 +1837,7 @@ function resolve(){
   G.extra=msgs;
   const act=(d,b,opp)=>b?`「${label(def(b))}」を燃やした`:!d?'見送った':opp&&d.type==='T'?'罠を張った':label(d);
   log(`${act(pd,G.pBurned,false)} 対 ${act(cd,G.cBurned,true)}：${r.net>0?`${r.net}歩 押し込んだ`:r.net<0?`${-r.net}歩 押し込まれた`:'睨み合い'}`);
+  if(C.ougiNow)log(`相手の奥義は「${OUGI[C.ougi].name}」だった`);
   [...r.notes,...msgs].forEach(m=>log(m));
   if(Math.abs(G.gauge)>=GOAL)G.over={winner:G.gauge>0?'p':'c',reason:G.gauge>0?'相手を橋のたもとまで押し込んだ':'橋のたもとまで押し込まれた'};
   // 相手の札を選んで縛る（封印・人質・呪符）。あなたが選ぶ分は G.pick に積み、CPU はその場で選ぶ
