@@ -1116,8 +1116,9 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   // 燃やした炎で押す札（線香花火・火矢・焙烙玉）。相手が防御していたら止められる
   for(const [b,isP,ok] of [[pb,true,kc],[cb,false,kp]]){if(!b)continue;const v=BURN_PUSH[b.eff]||0;if(!v)continue;if(ok==='D'){notes.push(`${isP?'':'相手の'}${b.name}：防御に止められた`);continue}if(isP)toC+=v;else toP+=v;notes.push(`${isP?'':'相手の'}${b.name}：${v}押す`)}
   // 構え：相手が攻撃してこなかったら、気力が戻る
-  if(kp==='D'&&pd.eff==='kamae'&&kc!=='A'){fx.refundP=true;notes.push('構え：相手が攻撃してこなかったので、気力が戻る')}
-  if(kc==='D'&&cd.eff==='kamae'&&kp!=='A'){fx.refundC=true;notes.push('相手の構え：あなたが攻撃しなかったので、相手の気力が戻る')}
+  // 構え（新ルールでは、どの防御も）：相手が攻撃してこなかったら、払った気力が戻る
+  if(kp==='D'&&(pd.eff==='kamae'||G.nr)&&kc!=='A'){fx.refundP=true;notes.push(pd.eff==='kamae'?'構え：相手が攻撃してこなかったので、気力が戻る':'空振りした防御：気力が戻る')}
+  if(kc==='D'&&(cd.eff==='kamae'||G.nr)&&kp!=='A'){fx.refundC=true;notes.push(cd.eff==='kamae'?'相手の構え：あなたが攻撃しなかったので、相手の気力が戻る':'相手の空振りした防御：相手の気力が戻る')}
   // 受け手の軽減
   if(cd&&cd.eff==='ukenagashi'&&toC>0){toC=Math.floor(toC/2);notes.push('相手の受け流し：押す量が半分')}
   if(pd&&pd.eff==='ukenagashi'&&toP>0){toP=Math.floor(toP/2);notes.push('あなたの受け流し：押される量が半分')}
@@ -2106,7 +2107,7 @@ function menuHTML(){
     <div class="panel">
       <div class="openrule"><div class="row"><span>新ルール：三すくみ（お試し）</span>
         <button class="chip${settings.newRules?' on':''}" data-act="new-rules" aria-pressed="${!!settings.newRules}">${settings.newRules?'オン':'オフ'}</button></div>
-        <p class="small muted">攻撃は燃やす・罠に強い。防御は攻撃に強い。<b>罠は防御に強い</b>（罠を張ったとき相手が防御なら10押す）。<b>攻撃どうしは鍔迫り合い</b>（差だけ押す）。<b>攻撃の札は20まで</b>（攻撃24・30などは攻撃20・気力20になる）。オンにすると、手札を見せ合うのはオフになる（オンにも戻せる）。次の試合から効く</p></div>
+        <p class="small muted">攻撃は燃やす・罠に強い。防御は攻撃に強い。<b>罠は防御に強い</b>（罠を張ったとき相手が防御なら10押す）。<b>攻撃どうしは鍔迫り合い</b>（差だけ押す）。<b>攻撃の札は20まで</b>（攻撃24・30などは攻撃20・気力20になる）。<b>空振りした防御は気力が戻る</b>（相手が攻撃してこなかったら）。オンにすると、手札を見せ合うのはオフになる（オンにも戻せる）。次の試合から効く</p></div>
       <div class="openrule"><div class="row"><span>手札を見せ合う</span>
         <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
         <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える。手札を見る仕組みは、山札と罠を見る効果に変わる（眼の型・心眼・偵察・見切り）</p></div>
