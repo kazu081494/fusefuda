@@ -2197,8 +2197,8 @@ function gameHTML(){
       ${KATA_OF[d.id]?`<span class="zk">${monHTML('kata',KATA_OF[d.id])}${KATA[KATA_OF[d.id]].name}の札${d.off?`・<b style="color:#7a2b1c">型違い：${d.num!=null?`数字-${OFF_PENALTY}（元は${CARDS[d.id].num}）`:`気力+${OFF_PENALTY}`}</b>`:''}</span>`:''}
       <small>燃やすと気力+${burnVal(d,mine?P:C)}${mine&&G.sel===G.detail?'・もう一度タップで伏せる':mine?'':'（相手の札）'}・場をタップで閉じる</small></div></div>`}
   const hand=P.hand.map(x=>{
-    if(ph==='select'&&x===G.pBurn)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
-    if(ph==='select'&&G.burnMode)return tutStep()&&!(tutStep().burn||[]).includes(x.id)?cardHTML(x,{act:'hand',off:true,tag:'いまは使わない',tagBan:true}):(()=>{const v=burnVal(def(x),P),bb=burnBlock(P,x),push=BURN_PUSH[def(x).eff]||0;return cardHTML(x,{act:'hand',off:!!bb,badge:`<span class="bbadge${v<0?' neg':''}"><small>気力</small>${def(x).eff==='hanami'?'賽×5':(v>0?'+':'')+v}${push?`<small>${push}押す</small>`:''}</span>`,tag:bb||'',tagBan:!!bb})})();
+    if(ph==='select'&&x===G.pBurn&&!G.burnMode)return cardHTML(x,{act:'hand',cls:'burn',tag:'燃やす',tagBan:true});
+    if(ph==='select'&&G.burnMode)return tutStep()&&!(tutStep().burn||[]).includes(x.id)?cardHTML(x,{act:'hand',off:true,tag:'いまは使わない',tagBan:true}):(()=>{const v=burnVal(def(x),P),bb=burnBlock(P,x),push=BURN_PUSH[def(x).eff]||0;return cardHTML(x,{act:'hand',off:!!bb,cls:x===G.pBurn?'burn':'',badge:`<span class="bbadge${v<0?' neg':''}"><small>気力</small>${def(x).eff==='hanami'?'賽×5':(v>0?'+':'')+v}${push?`<small>${push}押す</small>`:''}</span>`,tag:bb||'',tagBan:!!bb})})();
     const why=ph==='select'?blockReason(P,x):'';
     const bn=handBonus(P,def(x));
     return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why,tagBan:!!why,bonus:bn});
@@ -2291,6 +2291,10 @@ function overHTML(){
 }
 function modalHTML(){
   let body;
+  // 投了の確認
+  if(G.modal==='resign')return `<div class="modal-bg" data-act="close-modal"><div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="rsg">
+    <h3 id="rsg">投了しますか？</h3><p class="small muted">この試合は負けになります。</p>
+    <div class="row"><button class="btn" data-act="resign-yes">はい（投了する）</button><button class="btn ghost" data-act="close-modal">いいえ（続ける）</button></div></div></div>`;
   if(G.modal==='log'){
     body=`<h3>記録</h3>${G.log.length?`<ol class="loglist" reversed>${[...G.log].reverse().map(l=>`<li>${l}</li>`).join('')}</ol>`:'<p class="muted small">まだありません</p>'}`;
   }else{
@@ -2367,7 +2371,7 @@ document.addEventListener('click',e=>{
       if(G.phase==='select'){
         if(G.burnMode&&tutStep()&&!(tutStep().burn||[]).includes(x.id)){render();return}
         if(G.burnMode&&burnBlock(G.p,x)){render();return}
-        if(G.burnMode){G.burnMode=false;G.pBurn=x;G.sel=null;render();return}
+        if(G.burnMode){if(G.pBurn===x){commit(null,x);return}G.pBurn=x;G.sel=null;render();return}  // 燃やす札を選ぶ（もう一度タップで燃やす）
         if(G.pBurn===x){commit(null,x);return}
         if(blockReason(G.p,x)){render();return}
         if(G.sel===x){commit(x);return}
@@ -2385,10 +2389,11 @@ document.addEventListener('click',e=>{
     case 'opp-info':G.oppInfo=!G.oppInfo;G.schoolInfo=false;render();break;
     case 'commit':if(G.pBurn)commit(null,G.pBurn);else if(G.sel)commit(G.sel);break;
     case 'pass':if(G&&!G.p.hand.some(i=>!blockReason(G.p,i)||!burnBlock(G.p,i)))commit(null);break;
-    case 'burn':if(G&&G.phase==='select'){if(G.pBurn){G.pBurn=null;G.burnMode=false}else G.burnMode=!G.burnMode;render()}break;
+    case 'burn':if(G&&G.phase==='select'){if(G.burnMode||G.pBurn){G.pBurn=null;G.burnMode=false}else{G.burnMode=true;G.sel=null}render()}break;
     case 'ougi':useOugi();break;
     case 'next':if(G&&G.phase==='result'&&!G.over){if(G.tut!=null)G.tut++;startTurn()}break;
-    case 'resign':if(G&&!G.over){clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();recordResult();storyAfterMatch();render()}break;
+    case 'resign':if(G&&!G.over){G.modal='resign';render()}break;
+    case 'resign-yes':if(G&&!G.over){G.modal=null;clearTimers();G.over={winner:'c',reason:'投了した'};G.phase='result';clearSave();recordResult();storyAfterMatch();render()}break;
     case 'discard':G.modal=el.dataset.who;render();break;
     case 'open-log':G.modal='log';render();break;
     case 'sound':{
