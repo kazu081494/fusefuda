@@ -309,6 +309,7 @@ img.sil{object-fit:contain;height:auto}
 .big.back.t-T span{position:absolute;bottom:10%;left:50%;transform:translateX(-50%);white-space:nowrap}
 .me-side{position:relative}
 .offmark{position:absolute;z-index:2;left:50%;bottom:3px;transform:translateX(-50%);font-size:9px;font-weight:700;line-height:1.4;padding:0 5px;border-radius:999px;background:#5a4a6a;color:#f1e6ff;white-space:nowrap}
+.cplus{font-size:.6em;font-weight:800;color:#1f7a34;margin-right:2px;vertical-align:.25em}
 .bbadge{position:absolute;z-index:3;left:6%;right:6%;top:42%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;background:var(--lose);color:var(--ink);border-radius:8px;padding:3px 0;font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1.05;box-shadow:0 2px 6px rgba(0,0,0,.35)}
 .bbadge small{font-family:var(--font-body);font-size:10px;font-weight:700}
 .bbadge.neg{background:#7a2b1c;color:#ffe3d6}
@@ -1923,7 +1924,7 @@ function faceHTML(d,cost=d.cost,full=false){
 function cardHTML(i,o={}){
   const d=def(i);
   return `<button class="card t-${d.type}${o.small?' small':''}${o.sel?' sel':''}${o.off?' off':''}${o.cls?' '+o.cls:''}"data-act="${o.act||'detail'}" data-uid="${i.uid}" aria-label="${label(d)}、気力${costOf(i)}${d.eff?'：'+d.short:''}">
-    ${faceHTML(d,costOf(i))}${o.badge||''}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:i.free?'<span class="tag ban">屍</span>':''}</button>`;
+    ${o.bonus?faceHTML(d,costOf(i)).replace('<span class="cnum">',`<span class="cnum"><small class="cplus">+${o.bonus}</small>`):faceHTML(d,costOf(i))}${o.badge||''}${o.tag?`<span class="tag${o.tagBan?' ban':''}">${o.tag}</span>`:i.free?'<span class="tag ban">屍</span>':''}</button>`;
 }
 const burntHTML=(d,s,cls,word,note)=>`<div class="big card t-${d.type} burnt ${cls}">${faceHTML(d)}<span class="burnmark">${word}<b>気力${d.eff==='hanami'&&G&&G.phase==='result'?sgn(s===G.p?G.pGain:G.cGain):d.eff==='hanami'?'賽×5':sgn(burnVal(d,s))}</b>${note?`<small>${note}</small>`:''}</span></div>`;
 const bigHTML=(d,cls='',tag='')=>`<div class="big card t-${d.type} ${cls}">${faceHTML(d)}${tag?`<span class="tag ban">${tag}</span>`:''}</div>`;
@@ -2200,7 +2201,7 @@ function gameHTML(){
     if(ph==='select'&&G.burnMode)return tutStep()&&!(tutStep().burn||[]).includes(x.id)?cardHTML(x,{act:'hand',off:true,tag:'いまは使わない',tagBan:true}):(()=>{const v=burnVal(def(x),P),bb=burnBlock(P,x),push=BURN_PUSH[def(x).eff]||0;return cardHTML(x,{act:'hand',off:!!bb,badge:`<span class="bbadge${v<0?' neg':''}"><small>気力</small>${def(x).eff==='hanami'?'賽×5':(v>0?'+':'')+v}${push?`<small>${push}押す</small>`:''}</span>`,tag:bb||'',tagBan:!!bb})})();
     const why=ph==='select'?blockReason(P,x):'';
     const bn=handBonus(P,def(x));
-    return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why||(bn?`${def(x).type==='A'?'攻撃':'防御'}+${bn}`:''),tagBan:!!why});
+    return cardHTML(x,{act:'hand',sel:G.sel===x&&!G.burnMode,off:!!why,tag:why,tagBan:!!why,bonus:bn});
   }).join('');
 
   let actions='';const tut=tutStep();
