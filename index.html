@@ -2134,6 +2134,8 @@ function rulesHTML(){
   <dl class="dl">${Object.values(KATA).map(o=>`<dt>${o.name}</dt><dd>${o.text}</dd>`).join('')}</dl>
   <h3 style="font-size:16px">奥義</h3>
   <dl class="dl">${Object.values(OUGI).map(o=>`<dt>${o.name}</dt><dd>${o.text}</dd>`).join('')}</dl>
+  <h3 style="font-size:16px">クレジット</h3>
+  <p class="small muted">札・紋・型の影絵、曲と効果音は、ゲームの中で作ったもの（Claude で制作）。侍の姿・梟・返し罠・唐傘・狐・斬撃などの画像は Google Gemini で生成。文字は「しっぽり明朝」「Zen角ゴシック New」（Google Fonts、SIL Open Font License）。</p>
   </div>`;
 }
 const own0=()=>settings.deckKata;
