@@ -753,10 +753,10 @@ const EFFECTS=[
   ['chouhan','丁半','A',8,10,'賽が丁なら攻撃+15、半なら攻撃0','開けたとき賽を振る。丁（2・4・6）なら攻撃の数字+15、半（1・3・5）なら攻撃0'],
   ['oobakuchi','大博打','A',13,15,'賽が4〜6なら攻撃が倍、1〜3なら自分が10押される','開けたとき賽を振る。4〜6なら攻撃の数字が倍（26）、1〜3なら攻撃はそのままだが、自分も10押される'],
   ['inoshika','猪鹿蝶','A',8,10,'賽を3つ振り、全部違う目なら攻撃+20','開けたとき賽を3つ振る。3つとも違う目（猪・鹿・蝶がそろう）なら、攻撃の数字+20'],
-  ['nino','二の矢','A',8,10,'前のターンも攻撃なら、攻撃+10','前のターンにも攻撃していたら、攻撃の数字が10増える'],
-  ['yabusuma','矢衾','A',4,5,'押せたら、次のターンも4押す','押せたら、次のターンの終わりにもう一度、相手を4押す（何を出していても届く）'],
+  ['nino','二の矢','A',8,10,'前のターンも攻撃なら、攻撃+15','前のターンにも攻撃していたら、攻撃の数字が15増える'],
+  ['yabusuma','矢衾','A',4,5,'次のターン、さらに6押す','出したら（押せなくても）、次のターンにもう一度、相手を6押す（何を出していても届く）'],
   ['yabusame','流鏑馬','A',13,15,'防がれても跳ね返されない','相手の防御に防ぎきられても、跳ね返されない'],
-  ['tooya','遠矢','A',8,10,'相手の罠にかからない','相手の罠は、この札には発動しない'],
+  ['tooya','遠矢','A',13,10,'相手の罠にかからない','相手の罠は、この札には発動しない'],
   ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
   ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
   ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る'],
@@ -829,7 +829,7 @@ const KATA={
   kage:{name:'影',text:'罠を2枚まで張れる。自分の罠が墓地に行くたびに気力+5'},
   me:{name:'眼',text:'相手の手札の内訳（攻撃・防御・罠が何枚ずつか）が見える。読み勝ちしたら、さらに5押す'},
   sai:{name:'賽',text:'賽を振る札で外れたら、1回だけ振り直せる'},
-  yumi:{name:'射',text:'続けて攻撃すると、2回目は攻撃+5、3回目は+10、4回目からは+15'},
+  yumi:{name:'射',text:'続けて攻撃すると、2回目は攻撃+5、3回目は+10、4回目からは+15。防がれても、跳ね返される量は半分'},
 };
 /* 奥義：1試合に1回、伏せる前に使う大技。型とは別に選び、相手には秘密（使ったことだけ知らされる） */
 const OUGI={
@@ -916,7 +916,7 @@ const burnBlock=(s,i)=>{if(s.noBurn)return '燃やせない';const v=burnVal(def
 /* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
 /* 手札の札に、いま効いている上乗せ（開ける前に分かるものだけ） */
 const handBonus=(s,d)=>{const k=s.atkStreak||0;
-  if(d.type==='A')return (s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(k,3)*5:0)+(d.eff==='nino'&&k?10:0);
+  if(d.type==='A')return (s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(k,3)*5:0)+(d.eff==='nino'&&k?15:0);
   if(d.type==='D')return d.eff==='yugamae'&&k?10:0;return 0};
 const numFor0=x=>def(x).num||0;
 const shizanBonus=s=>Math.floor((s.discard||[]).length/5)*5;
@@ -931,6 +931,7 @@ const ME_YOMI=5;  // 眼の型：読み勝ちしたら、さらに5押す
 /* 賽：1〜6。賽の型は、外れたら1回だけ振り直す。ok：当たりかどうか */
 const d6=()=>1+Math.floor(Math.random()*6);
 const roll=(s,ok)=>{let v=d6();if(s&&s.kata==='sai'&&ok&&!ok(v))v=d6();return v};
+const YABUSUMA=6;  // 矢衾：次のターンに届く矢
 const KAGE_SWAP=5;  // 影の型：罠が墓地に行くたびに気力+5（発動・張り替え・外された、どれでも）
 function graveTrap(s,inst,msgs){s.discard.push(inst);if(s.kata==='kage'){s.energy=clampE(s.energy+KAGE_SWAP);if(msgs)msgs.push(`影の型：${s===G.p?'あなた':'相手'}の罠が墓地へ行き、気力+${KAGE_SWAP}`)}}
 const OUGI_TURNS={genwaku:3,fudou:3},OUGI_FROM=3;  // 奥義は3手目から使える
@@ -946,7 +947,7 @@ const kind=d=>!d||d.type==='T'?'P':d.type;
 function outcome(P,C,pd,cd,pb=null,cb=null){
   const kp=kind(pd),kc=kind(cd),notes=[],fx={banP:false,banC:false,stealFromP:0,stealFromC:0,firedP:[],firedC:[]};
   const st=s=>s.atkStreak||0;
-  const numOf=(s,d,k)=>k==='A'?d.num+(s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(st(s),3)*5:0)+(d.eff==='nino'&&st(s)?10:0)
+  const numOf=(s,d,k)=>k==='A'?d.num+(s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(st(s),3)*5:0)+(d.eff==='nino'&&st(s)?15:0)
     :k==='D'?d.num+(d.eff==='yugamae'&&st(s)?10:0):0;
   let np=numOf(P,pd,kp),nc=numOf(C,cd,kc);
   // 賽の札（開けたときに振る）
@@ -985,6 +986,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     if(toP>0&&cd.eff==='hangeki'){toP+=10;notes.push('相手の反撃：さらに10押し返された')}
     if(toP>0&&C.kata==='yanagi'){toP+=5;notes.push(`${kataOf(C,false)}：さらに5跳ね返された`)}
     if(toP>0&&C.haisui){toP+=HAISUI_BACK;notes.push(`相手の背水：さらに${HAISUI_BACK}押し返された`)}
+    if(toP>0&&P.kata==='yumi'){toP=Math.floor(toP/2);notes.push('射の型：遠間から射るので、跳ね返しは半分')}
     if(cd.eff==='fuuji'&&toC===0){fx.banP=true;notes.push('封じ手：次のターン、あなたは攻撃できない')}
   }else if(kc==='A'&&kp==='D'){
     const wall=using(P,'uke'),dp=cd.eff==='kuzushi'&&!wall?Math.floor(np/2):np;
@@ -1000,6 +1002,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     if(toC>0&&pd.eff==='hangeki'){toC+=10;notes.push('反撃：さらに10押し返した')}
     if(toC>0&&P.kata==='yanagi'){toC+=5;notes.push(`${kataOf(P,true)}：さらに5跳ね返した`)}
     if(toC>0&&P.haisui){toC+=HAISUI_BACK;notes.push(`背水：さらに${HAISUI_BACK}押し返した`)}
+    if(toC>0&&C.kata==='yumi'){toC=Math.floor(toC/2);notes.push('相手の射の型：遠間なので、跳ね返しは半分')}
     if(pd.eff==='fuuji'&&toP===0){fx.banC=true;notes.push('封じ手：次のターン、相手は攻撃できない')}
   }else if(kp==='A'){toC=np;why='相手は防いでいない：そのまま押す'}
   else if(kc==='A'){toP=nc;why='あなたは防いでいない：そのまま押される'}
@@ -1061,8 +1064,8 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   // 一閃：押し込めたら+15歩。不動：押し込まれない（いちばん最後に効く）
   const SENZAI_MAX=15;  // 倍でも、増えるのは最大15（1手で決まらないように）
   // 矢衾：前のターンに押せていたら、このターンも4押す（何を出していても届く）
-  if(P.volley){toC+=4;notes.push('矢衾：降りそそぐ矢で4押す')}
-  if(C.volley){toP+=4;notes.push('相手の矢衾：降りそそぐ矢で4押された')}
+  if(P.volley){toC+=YABUSUMA;notes.push(`矢衾：降りそそぐ矢で${YABUSUMA}押す`)}
+  if(C.volley){toP+=YABUSUMA;notes.push(`相手の矢衾：降りそそぐ矢で${YABUSUMA}押された`)}
   // 千載一遇：押し込めたら賽。偶数なら倍、奇数なら半分（いちばん最後のほうで掛ける）
   for(const [s,isP] of [[P,true],[C,false]]){const v0=isP?toC:toP;if(v0>0&&using(s,'senzai')){const v=roll(s,x=>x%2===0);(fx.dice=fx.dice||[]).push({who:isP?'p':'c',v:[v]});const nv=v%2===0?v0+Math.min(v0,SENZAI_MAX):Math.floor(v0/2);if(isP){toC=nv;fx.ougiP='senzai'}else{toP=nv;fx.ougiC='senzai'}notes.push(`${isP?'':'相手の'}千載一遇：${v}、${v%2===0?'押す量が倍':'押す量が半分'}`)}}
   if(toC>0&&using(P,'issen')){const g=P.kata==='gou'&&toC>=5?5:0;toC+=10-g;fx.ougiP='issen';notes.push(g?'一閃：剛の5と合わせて10歩押し込む':'一閃：さらに10歩押し込む')}
@@ -1079,8 +1082,9 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   // 押せたら効く札（不動で止められたら効かない）
   if(kp==='A'&&toC>0&&pd.eff==='onryou'){const n=P.discard.filter(x=>def(x).eff==='onryou').length;if(n){toC+=5*n;notes.push(`怨霊：墓地の怨霊${n}枚で、さらに${5*n}押す`)}}
   if(kc==='A'&&toP>0&&cd.eff==='onryou'){const n=C.discard.filter(x=>def(x).eff==='onryou').length;if(n){toP+=5*n;notes.push(`相手の怨霊：墓地の怨霊${n}枚で、さらに${5*n}押された`)}}
-  if(kp==='A'&&toC>0){if(pd.eff==='mizuzeme')fx.millC=(fx.millC||0)+3;if(pd.eff==='yakiuchi')fx.discC=true;if(pd.eff==='kanashibari')fx.noDefC=true;if(pd.eff==='yabusuma')fx.volleyP=true;if(pd.eff==='kokoro')fx.noBurnC=true}
-  if(kc==='A'&&toP>0){if(cd.eff==='mizuzeme')fx.millP=(fx.millP||0)+3;if(cd.eff==='yakiuchi')fx.discP=true;if(cd.eff==='kanashibari')fx.noDefP=true;if(cd.eff==='yabusuma')fx.volleyC=true;if(cd.eff==='kokoro')fx.noBurnP=true}
+  if(kp==='A'&&pd.eff==='yabusuma')fx.volleyP=true;if(kc==='A'&&cd.eff==='yabusuma')fx.volleyC=true;
+  if(kp==='A'&&toC>0){if(pd.eff==='mizuzeme')fx.millC=(fx.millC||0)+3;if(pd.eff==='yakiuchi')fx.discC=true;if(pd.eff==='kanashibari')fx.noDefC=true;if(pd.eff==='kokoro')fx.noBurnC=true}
+  if(kc==='A'&&toP>0){if(cd.eff==='mizuzeme')fx.millP=(fx.millP||0)+3;if(cd.eff==='yakiuchi')fx.discP=true;if(cd.eff==='kanashibari')fx.noDefP=true;if(cd.eff==='kokoro')fx.noBurnP=true}
   // 退き足：自分から5歩下がる（不動や幻惑でも打ち消せない）
   if(pd&&pd.eff==='hikiashi'){toP+=5;notes.push('退き足：自分から5歩下がった')}
   if(cd&&cd.eff==='hikiashi'){toC+=5;notes.push('相手の退き足：相手が自分から5歩下がった')}
@@ -1698,8 +1702,8 @@ function resolve(){
   for(const [from,to,b,w] of [[C,P,G.cBurned,'あなた'],[P,C,G.pBurned,'相手']])if((to===P?r.fx.robC:r.fx.robP)&&b&&from.discard.includes(b)){removeFrom(from.discard,b);(to.hand.length<HAND_MAX?to.hand:to.deck).push(b);msgs.push(`墓暴き：${w}は「${label(def(b))}」を手に入れた`)}
   if(r.fx.noDefP){P.noDefNext=true;msgs.push('金縛り：次のターン、あなたは防御できない')}
   if(r.fx.noDefC){C.noDefNext=true;msgs.push('金縛り：次のターン、相手は防御できない')}
-  if(r.fx.volleyP){P.volleyNext=true;msgs.push('矢衾：次のターンも4押す')}
-  if(r.fx.volleyC){C.volleyNext=true;msgs.push('相手の矢衾：次のターンも4押される')}
+  if(r.fx.volleyP){P.volleyNext=true;msgs.push(`矢衾：次のターンに${YABUSUMA}押す`)}
+  if(r.fx.volleyC){C.volleyNext=true;msgs.push(`相手の矢衾：次のターンに${YABUSUMA}押される`)}
   if(r.fx.noBurnP){P.noBurnNext=true;msgs.push('鎮火：次のターン、あなたは燃やせない')}
   if(r.fx.noBurnC){C.noBurnNext=true;msgs.push('鎮火：次のターン、相手は燃やせない')}
   for(const [s,n,w] of [[P,r.fx.millP,'あなた'],[C,r.fx.millC,'相手']])if(n){const k=mill(s,n);msgs.push(`${w}の山札を${k}枚捨てた（残り${s.deck.length}枚）`)}
