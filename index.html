@@ -868,13 +868,14 @@ const CARD_KATA={
 const KATA_OF={};for(const [k,ids] of Object.entries(CARD_KATA))for(const id of ids)KATA_OF[id]=k;
 const OFF_PENALTY=5;  // 型違いの札：攻撃・防御は数字-5、数字の無い札（罠）は気力+5
 /* 素の札の数字と気力 */
-const DEF_DISCOUNT=5;
+const DEF_DISCOUNT=5,TRAP_DISCOUNT=5;
 const PLAIN=[[4,5],[8,10],[13,15],[18,20],[24,25],[30,35]];
 const CARDS={};const POOL=[];
 for(const t of TYPES){
   // 防御は攻撃より気力が5安い（防御が報われにくかったため）
   if(t!=='T')for(const [n,c] of PLAIN){const d={id:t+n,type:t,num:n,cost:t==='D'?Math.max(0,c-DEF_DISCOUNT):c,name:'',eff:null,short:'',text:''};CARDS[d.id]=d;POOL.push(d);}
-  for(const e of EFFECTS){if(e[2]!==t)continue;const d={id:e[0],eff:e[0],name:e[1],type:e[2],num:e[3],cost:e[4],short:e[5],text:e[6]};CARDS[d.id]=d;POOL.push(d);}
+  // 罠は気力5安い（手番を使って張るのに、払う気力が重かったため）
+  for(const e of EFFECTS){if(e[2]!==t)continue;const d={id:e[0],eff:e[0],name:e[1],type:e[2],num:e[3],cost:t==='T'?Math.max(0,e[4]-TRAP_DISCOUNT):e[4],short:e[5],text:e[6]};CARDS[d.id]=d;POOL.push(d);}
 }
 const PRESETS=[
   {key:'boss',name:'月影の主',hidden:true,desc:'',cards:{A30:2,A24:2,A18:2,D30:2,D24:2,D18:2,iai:2,kuzushi:2,hangeki:2,kamae:2,kaeshi:2,kagemusha:2,mikiri:2,meisou:2,tessen:2}},
@@ -983,7 +984,10 @@ let UID=0;
 const mk=id=>({uid:++UID,id});
 const OFFDEF={};
 function offDef(id){if(!OFFDEF[id]){const d=CARDS[id];OFFDEF[id]=Object.assign({},d,d.num!=null?{num:Math.max(0,d.num-OFF_PENALTY)}:{cost:d.cost+OFF_PENALTY},{off:true,baseCost:d.cost})}return OFFDEF[id]}
-const def=i=>i.off?offDef(i.id):CARDS[i.id];
+const NR_ATK_MAX=20;  // 新ルール：攻撃の札の数字は20まで（それより大きい札は攻撃20・気力20になる）
+const CAPDEF={};
+const capDef=d=>CAPDEF[d.id+(d.off?'*':'')]||(CAPDEF[d.id+(d.off?'*':'')]=Object.assign({},d,{num:NR_ATK_MAX,cost:Math.min(d.cost,NR_ATK_MAX),baseCost:Math.min(d.baseCost??d.cost,NR_ATK_MAX),capped:true}));
+const def=i=>{const d=i.off?offDef(i.id):CARDS[i.id];return G&&G.nr&&d.type==='A'&&d.num>NR_ATK_MAX?capDef(d):d};
 const label=d=>d.type==='T'?`${d.name}（罠）`:d.eff?`${d.name}（${TY[d.type].name}${d.num}）`:`${TY[d.type].name}${d.num}`;
 const sgn=v=>(v>=0?'+':'')+v;
 const clampE=v=>Math.max(0,Math.min(ENERGY_MAX,v));
@@ -1050,9 +1054,11 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     const ip=pd.eff==='iai',ic=cd.eff==='iai';
     if(ip&&!ic){toC=np;why=`居合：攻撃${nc}より先に斬って、${np}押す`}
     else if(ic&&!ip){toP=nc;why=`相手の居合：攻撃${np}より先に斬られて、${nc}押される`}
+    else if(G.nr&&np>nc){toC=np-nc;why=`鍔迫り合い：${np}が${nc}を押し込んで、差の${np-nc}押す`}
+    else if(G.nr&&nc>np){toP=nc-np;why=`鍔迫り合い：${nc}に${np}が押し負けて、差の${nc-np}押される`}
     else if(np>nc){toC=np;why=`攻撃どうし：${np}が${nc}に勝って、${np}押す`}
     else if(nc>np){toP=nc;why=`攻撃どうし：${nc}が${np}に勝って、${nc}押す`}
-    else why=`攻撃どうし：同じ${np}で相打ち`;
+    else why=G.nr?`鍔迫り合い：同じ${np}で押し合い`:`攻撃どうし：同じ${np}で相打ち`;
   }else if(kp==='A'&&kc==='D'){
     const wall=using(C,'uke'),dn=pd.eff==='kuzushi'&&!wall?Math.floor(nc/2):nc;
     if(dn!==nc)notes.push(`崩し：相手の防御${nc}を${dn}に崩した`);
@@ -2100,7 +2106,7 @@ function menuHTML(){
     <div class="panel">
       <div class="openrule"><div class="row"><span>新ルール：三すくみ（お試し）</span>
         <button class="chip${settings.newRules?' on':''}" data-act="new-rules" aria-pressed="${!!settings.newRules}">${settings.newRules?'オン':'オフ'}</button></div>
-        <p class="small muted">攻撃は燃やす・罠に強い。防御は攻撃に強い。<b>罠は防御に強い</b>（罠を張ったとき相手が防御なら10押す）。オンにすると、手札を見せ合うのはオフになる（オンにも戻せる）。次の試合から効く</p></div>
+        <p class="small muted">攻撃は燃やす・罠に強い。防御は攻撃に強い。<b>罠は防御に強い</b>（罠を張ったとき相手が防御なら10押す）。<b>攻撃どうしは鍔迫り合い</b>（差だけ押す）。<b>攻撃の札は20まで</b>（攻撃24・30などは攻撃20・気力20になる）。オンにすると、手札を見せ合うのはオフになる（オンにも戻せる）。次の試合から効く</p></div>
       <div class="openrule"><div class="row"><span>手札を見せ合う</span>
         <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
         <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える。手札を見る仕組みは、山札と罠を見る効果に変わる（眼の型・心眼・偵察・見切り）</p></div>
