@@ -794,7 +794,7 @@ const EFFECTS=[
   ['yabusame','流鏑馬','A',13,15,'防がれても跳ね返されない','相手の防御に防ぎきられても、跳ね返されない'],
   ['tooya','遠矢','A',13,10,'相手の罠にかからない','相手の罠は、この札には発動しない'],
   ['hayauma','早馬','A',4,5,'開けたとき、2枚引く','開けたとき、山札から2枚引く（引いた札は手札に残る）'],
-  ['hikyaku','飛脚','A',4,5,'開けたとき、1枚引く','開けたとき、山札から1枚引く（引いた札は手札に残る）'],
+  ['hikyaku','飛脚','A',4,5,'開けたとき、2枚引く','開けたとき、山札から2枚引く（引いた札は手札に残る）'],
   ['hangeki','反撃','D',13,15,'防ぎきったら、さらに10押し返す','相手の攻撃を防ぎきって跳ね返すとき、さらに10押す'],
   ['ukenagashi','受け流し','D',8,5,'押される量をさらに半分にする','防御の8を引いたあと、押される量をさらに半分（切り捨て）にする'],
   ['meisou','瞑想','D',4,0,'気力を15得る','気力0で出せる防御4。開けたとき、気力を15得る'],
@@ -811,7 +811,7 @@ const EFFECTS=[
   ['yobimodoshi','口寄せ','D',8,10,'墓地の一番大きい攻撃を手札に戻す','開けたとき、自分の墓地から一番数字の大きい攻撃の札を1枚、手札に戻す'],
   ['kuyou','供養','D',4,0,'燃やすと気力+10、墓地3枚を山札に戻す','燃やすと気力が10増え、自分の墓地の札を3枚、山札の下に戻す（山札切れを防げる）。出せばふつうの防御4'],
   ['senrigan','千里眼','D',4,5,'相手の山札の一番強い札を底へ','開けたとき、相手の山札の上3枚から一番数字の大きい札を、山札の一番下に送る'],
-  ['yomisuji','読み筋','D',8,10,'読み勝ちしたら、気力+10','このターン読み勝ちしたら（見切った・隙あり・競り勝ち・押し通した・肩透かし）、気力が10増える'],
+  ['yomisuji','読み筋','D',8,10,'読み勝ちしたら、気力+10（燃やしても）','このターン読み勝ちしたら（見切った・隙あり・競り勝ち・押し通した・肩透かし）、気力が10増える。出しても燃やしても効く'],
   ['gokou','五光','D',13,10,'賽が6なら全部跳ね返して+20、1なら防御0','開けたとき賽を振る。6なら相手の攻撃を必ず防ぎきって跳ね返し、さらに20押す。1なら防御0になる。2〜5ならふつうの防御13'],
   ['hanami','花見で一杯','D',4,0,'燃やすと、気力が賽の目×5増える','燃やすと賽を振り、目×5だけ気力が増える（5〜30）。出せばふつうの防御4'],
   ['yugamae','弓構え','D',8,10,'前のターンに攻撃していたら、防御+10','前のターンに攻撃していたら、防御の数字が10増える（攻めたあとの隙を守る）'],
@@ -1533,7 +1533,7 @@ function openEff(who,inst,msgs){
     case 'yobimodoshi':{const as=me.discard.filter(x=>def(x).type==='A');if(as.length){const x=as.reduce((a,b)=>numFor0(b)>numFor0(a)?b:a);removeFrom(me.discard,x);(me.hand.length<HAND_MAX?me.hand:me.deck).push(x);msgs.push(`口寄せ：${mn}は墓地から「${label(def(x))}」を手札に戻した`)}else msgs.push(`口寄せ：${mn}の墓地に攻撃の札が無かった`);break}
     case 'senrigan':{const top=op.deck.slice(-3);if(top.length){const x=top.reduce((a,b)=>(def(b).num||0)>(def(a).num||0)?b:a);removeFrom(op.deck,x);op.deck.unshift(x);msgs.push(`千里眼：${on}の山札の「${label(def(x))}」を一番下に送った`)}break}
     case 'hayauma':{const k=drawExtra(me,2);msgs.push(`早馬：${mn}は${k}枚引いた`);break}
-    case 'hikyaku':case 'fubako':{const k=drawExtra(me,1);msgs.push(`${d.name}：${mn}は${k}枚引いた`);break}
+    case 'hikyaku':case 'fubako':{const k=drawExtra(me,d.eff==='hikyaku'?2:1);msgs.push(`${d.name}：${mn}は${k}枚引いた`);break}
     case 'heihou':me.handBoost=G.turn+2;msgs.push(`兵法書：${mn}はこのあと3ターン、手札を5枚まで引く`);break;
     case 'monomi':{const top=me.deck.splice(-3);if(top.length){const x=top.reduce((a,b)=>(def(b).num||0)>(def(a).num||0)?b:a);removeFrom(top,x);if(me.hand.length<HAND_LIMIT)me.hand.push(x);else me.deck.push(x);me.deck.unshift(...top);msgs.push(`物見：${mn}は山札から「${label(def(x))}」を手札に加えた`)}break}
     case 'sekisho':op.capNext=true;msgs.push(`関所：次のターン、${on}は気力20以上の札を出せない`);break;
@@ -1785,7 +1785,7 @@ function resolve(){
   // 読み勝ち：どちらが読み勝ったか。続けて読み勝つと連が伸びる（読まれたら0に戻る）
   const yw=yomiOf(actOf(G.pPlay,G.pBurned),actOf(G.cPlay,G.cBurned),r.base);
   G.yomi=yw;
-  for(const [s,d,w] of [[P,pd,'p'],[C,cd,'c']])if(yw&&yw.who===w&&d&&d.eff==='yomisuji'){s.energy=clampE(s.energy+10);msgs.push(`読み筋：${w==='p'?'あなた':'相手'}は気力+10`)}
+  for(const [s,d,w] of [[P,pd||(G.pBurned&&def(G.pBurned)),'p'],[C,cd||(G.cBurned&&def(G.cBurned)),'c']])if(yw&&yw.who===w&&d&&d.eff==='yomisuji'){s.energy=clampE(s.energy+10);msgs.push(`読み筋：${w==='p'?'あなた':'相手'}は気力+10`)}
   // 眼の型：読み勝ちしたら、さらに5押す（不動の相手は押せない）
   if(yw&&yw.who==='p'&&P.kata==='me'&&G.tut==null&&!using(C,'fudou')){r.net+=ME_YOMI;r.notes.push(`眼の型：読み勝ちで、さらに${ME_YOMI}押す`)}
   if(yw&&yw.who==='c'&&C.kata==='me'&&!using(P,'fudou')){r.net-=ME_YOMI;r.notes.push(`相手の眼の型：読み勝ちされて、さらに${ME_YOMI}押された`)}
