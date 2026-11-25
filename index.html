@@ -472,6 +472,9 @@ details.opp-info .dl{margin-top:8px}
 .slot-b small{font-weight:400;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-b.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .slot-b.on .mon{color:var(--accent)}
+.sansukumi{position:absolute;left:6px;bottom:6px;z-index:3;font-size:11px;line-height:1.5;color:#c9d3df;background:rgba(6,9,14,.7);border:1px solid var(--line);border-radius:6px;padding:3px 6px;pointer-events:none}
+.sansukumi span{display:inline-block;min-width:1.3em;text-align:center;font-weight:700;border-radius:3px;margin:0 1px}
+.sansukumi .a{color:#fff;background:var(--atk)}.sansukumi .d{color:#fff;background:var(--def)}.sansukumi .t{color:#fff;background:var(--trap)}.sansukumi .b{color:#fff;background:#8a5a20}
 .pile{display:flex;flex-direction:column;gap:6px}
 .pile-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .pile-h b{font-size:16px}
@@ -1055,7 +1058,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     else if(wall||dn>=np){
       if(pd.eff==='youdou'){fx.nextAtkP=true;why='陽動：防がれたが、跳ね返されない（次のターン攻撃+10）'}
       else if(pd.eff==='yabusame')why='流鏑馬：防がれたが、跳ね返されない'
-      else{toP=np;if(G.nr)fx.kaeshiC=true;if(wall&&dn<np)fx.ougiC='uke';why=wall&&dn<np?`相手の柳の受け：攻撃${np}を防ぎきって、${np}跳ね返された`:`相手の防御${dn}が攻撃${np}を防ぎきって、${np}跳ね返された`}
+      else{toP=np;if(wall&&dn<np)fx.ougiC='uke';why=wall&&dn<np?`相手の柳の受け：攻撃${np}を防ぎきって、${np}跳ね返された`:`相手の防御${dn}が攻撃${np}を防ぎきって、${np}跳ね返された`}
       if(cd.eff==='zanshin'){fx.nextAtkC=true;notes.push('相手の残心：次のターン、相手の攻撃+10')}
     }
     else{toC=np-dn;why=`攻撃${np}が防御${dn}を上回って、差の${np-dn}押す`}
@@ -1071,7 +1074,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     else if(wall||dp>=nc){
       if(cd.eff==='youdou'){fx.nextAtkC=true;why='相手の陽動：防いだが、跳ね返せない（相手は次のターン攻撃+10）'}
       else if(cd.eff==='yabusame')why='相手の流鏑馬：防いだが、跳ね返せない'
-      else{toC=nc;if(G.nr)fx.kaeshiP=true;if(wall&&dp<nc)fx.ougiP='uke';why=wall&&dp<nc?`柳の受け：攻撃${nc}を防ぎきって、${nc}跳ね返した`:`防御${dp}が攻撃${nc}を防ぎきって、${nc}跳ね返した`}
+      else{toC=nc;if(wall&&dp<nc)fx.ougiP='uke';why=wall&&dp<nc?`柳の受け：攻撃${nc}を防ぎきって、${nc}跳ね返した`:`防御${dp}が攻撃${nc}を防ぎきって、${nc}跳ね返した`}
       if(pd.eff==='zanshin'){fx.nextAtkP=true;notes.push('残心：次のターン、あなたの攻撃+10')}
     }
     else{toP=nc-dp;why=`相手の攻撃${nc}が防御${dp}を上回って、差の${nc-dp}押される`}
@@ -1135,8 +1138,6 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
   };
   trap(P,cd,kc,nc,true,cb,pd);trap(C,pd,kp,np,false,pb,cd);
   if(G.nr){
-    if(kp==='D'&&cb){fx.halveC=true;notes.push('見抜いた：相手の燃やした気力が半分になる')}
-    if(kc==='D'&&pb){fx.halveP=true;notes.push('相手に見抜かれた：燃やした気力が半分になる')}
     if(pd&&pd.type==='T'&&kc==='D'){toC+=NR_LURE;notes.push(`誘い出した：守りを固めた相手を${NR_LURE}押す`)}
     if(cd&&cd.type==='T'&&kp==='D'){toP+=NR_LURE;notes.push(`誘い出された：守りを崩されて${NR_LURE}押された`)}
   }
@@ -1585,7 +1586,7 @@ const actOf=(pl,bu)=>bu?'burn':!pl?'pass':def(pl).type==='A'?'atk':def(pl).type=
 /* 読み勝ちの判定。base はあなたから見た基本の押し込み（＋ならあなたが押した） */
 function yomiOf(pa,ca,base){
   const nr=G&&G.nr;
-  const win=(me,op,b)=>nr&&me==='def'&&op==='burn'?'見抜いた！':nr&&me==='trap'&&op==='def'?'誘い出した！':nr&&me==='burn'&&op==='def'?'':me==='def'&&op==='atk'&&b>0?'見切った！':me==='atk'&&['burn','pass','trap'].includes(op)&&b>0?'隙あり！':me==='burn'&&op==='def'?'肩透かし！':me==='atk'&&op==='atk'&&b>0?'競り勝ち！':me==='atk'&&op==='def'&&b>0?'押し通した！':'';
+  const win=(me,op,b)=>nr&&me==='trap'&&op==='def'?'誘い出した！':me==='def'&&op==='atk'&&b>0?'見切った！':me==='atk'&&['burn','pass','trap'].includes(op)&&b>0?'隙あり！':me==='burn'&&op==='def'?'肩透かし！':me==='atk'&&op==='atk'&&b>0?'競り勝ち！':me==='atk'&&op==='def'&&b>0?'押し通した！':'';
   const p=win(pa,ca,base),c=win(ca,pa,-base);
   return p?{who:'p',word:p}:c?{who:'c',word:c}:null;
 }
@@ -2097,7 +2098,7 @@ function menuHTML(){
     <div class="panel">
       <div class="openrule"><div class="row"><span>新ルール：三すくみ（お試し）</span>
         <button class="chip${settings.newRules?' on':''}" data-act="new-rules" aria-pressed="${!!settings.newRules}">${settings.newRules?'オン':'オフ'}</button></div>
-        <p class="small muted">防御で見切ったら、次の攻撃+10（返しの太刀）。燃やした相手に防御を出していたら、相手の燃やした気力が半分（見抜いた）。罠を張ったとき相手が防御なら、10押す（誘い出した）。次の試合から効く</p></div>
+        <p class="small muted">攻撃は燃やす・罠に強い。防御は攻撃に強い。<b>罠は防御に強い</b>（罠を張ったとき相手が防御なら10押す）。オンにすると、手札を見せ合うのはオフになる（オンにも戻せる）。次の試合から効く</p></div>
       <div class="openrule"><div class="row"><span>手札を見せ合う</span>
         <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
         <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える。手札を見る仕組みは、山札と罠を見る効果に変わる（眼の型・心眼・偵察・見切り）</p></div>
@@ -2349,6 +2350,7 @@ function gameHTML(){
     </section>
     <section class="battle stage${revealed?' rev':''}${play?' play':''}${finale?' finale':''}${play&&G.yomi&&G.yomi.who==='p'?' shake':''}" ${ph==='result'&&!G.over?'data-act="next"':ph==='select'&&G.detail?'data-act="unzoom"':''} style="${stageStyle}" aria-label="場">
       <div class="sky" aria-hidden="true"><i class="moon"></i>${petals}</div>${duel}
+      ${G.nr&&ph==='select'?`<div class="sansukumi" aria-label="三すくみ：攻撃は燃やす・罠に強い、防御は攻撃に強い、罠は防御に強い"><span class="a">攻</span>→<span class="t">罠</span><span class="b">燃</span><br><span class="d">防</span>→<span class="a">攻</span><br><span class="t">罠</span>→<span class="d">防</span></div>`:''}
       <div class="gtxt">${gTxt}</div>
       ${G.char&&G.turn===1&&ph==='select'&&Date.now()-(G.introAt||0)<3200?`<div class="nanori" aria-live="polite"><i class="nanori-img" aria-hidden="true">${charImg(G.char)}</i><span>今宵の相手</span><b>${G.char.name}</b><q>${G.char.intro}</q></div>`:''}
       ${cutinHTML()}
@@ -2454,7 +2456,7 @@ document.addEventListener('click',e=>{
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
     case 'look':{const kind=el.dataset.kind,list=kind==='scene'?SCENES:MOONS,x=list.find(o=>o.key===el.dataset.key);if(x&&unlocked(x)){settings[kind]=x.key;store.set(KEY_SET,settings);render()}break}
-    case 'new-rules':settings.newRules=!settings.newRules;store.set(KEY_SET,settings);render();break;
+    case 'new-rules':settings.newRules=!settings.newRules;if(settings.newRules){settings.openHand=false;applyOpenTexts(false)}store.set(KEY_SET,settings);render();break;
     case 'open-hand':settings.openHand=!settings.openHand;applyOpenTexts(settings.openHand);store.set(KEY_SET,settings);render();break;
     case 'snd-sfx':settings.sound=!settings.sound;if(!settings.sound)settings.bgm=false;store.set(KEY_SET,settings);if(!settings.sound)bgmStop();render();break;
     case 'snd-bgm':if(settings.sound&&settings.bgm){settings.bgm=false}else{settings.sound=true;settings.bgm=true}store.set(KEY_SET,settings);render();break;
