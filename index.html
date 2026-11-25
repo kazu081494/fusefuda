@@ -433,7 +433,12 @@ details.opp-info .dl{margin-top:8px}
 .ougi-grid.kata-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
 .modal-top{position:sticky;top:-18px;z-index:2;margin:-18px -18px 0;padding:10px 18px;background:var(--table-2);border-bottom:1px solid var(--line);display:flex;justify-content:flex-end}
 .modal-top .btn{min-height:38px;padding:6px 18px}
-.skinbox summary{cursor:pointer;list-style:revert}
+.skinbox summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:linear-gradient(#0c111b,#16202e)}
+.skinbox summary::-webkit-details-marker{display:none}
+.skincur img,.skincur svg{width:40px;height:44px;object-fit:contain;fill:#05070b;filter:brightness(0) drop-shadow(0 0 1px rgba(226,234,255,.95))}
+.skincur img.mirror{transform:scaleX(-1)}
+.skinbox summary b{flex:1;font-size:15px}
+.skinbtn{border:1px solid var(--accent);background:transparent;color:var(--accent);display:inline-flex;align-items:center;white-space:nowrap}
 .skinbox[open] summary{margin-bottom:6px}
 .skins{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .skin{appearance:none;border:1px solid var(--line);background:linear-gradient(#0c111b,#16202e);color:var(--fg);border-radius:10px;padding:6px 2px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:10.5px;line-height:1.2;text-align:center;min-height:96px}
@@ -1950,7 +1955,8 @@ function recordPanel(){
     <p class="small muted">物語：最高 ${storyRec.best>STORY_N?'月下の覇者':storyRec.best+'人抜き'}・月下の覇者 ${storyRec.clears}回</p>
     <div class="rank"><b>${RANKS[i][1]}</b><span class="muted small">${next?`${next[1]}まで あと${next[0]-rec.w}勝`:'最高位'}</span></div>
     <p class="small muted">${rec.w}勝 ${rec.l}敗${rec.d?` ${rec.d}分`:''}・連勝 ${rec.streak}（最高 ${rec.best}）</p>
-    <details class="skinbox"${skinBoxOpen?' open':''}><summary class="label" data-act="skinbox">あなたの侍：${(SKINS.find(x=>x.key===(settings.skin||'default'))||SKINS[0]).name}（勝った相手の姿を使える・押して選ぶ）</summary><div class="skins">${SKINS.map(x=>skinOpen(x)?`<button class="skin${(settings.skin||'default')===x.key?' on':''}" data-act="skin" data-key="${x.key}" aria-pressed="${(settings.skin||'default')===x.key}">${samImg(x.key)}<span>${x.name}</span></button>`:`<span class="skin locked" title="${skinNeed(x)}"><i>？</i><span>${skinNeed(x)}</span></span>`).join('')}</div></details>
+    <div class="label">あなたの侍（舞台に立つ姿。勝った相手の姿を使える）</div>
+    <details class="skinbox"${skinBoxOpen?' open':''}><summary data-act="skinbox"><span class="skincur">${samImg((SKINS.find(x=>x.key===(settings.skin||'default'))||SKINS[0]).key)}</span><b>${(SKINS.find(x=>x.key===(settings.skin||'default'))||SKINS[0]).name}</b><span class="btn tiny skinbtn">${skinBoxOpen?'閉じる ▲':'姿を変える ▼'}</span></summary><div class="skins">${SKINS.map(x=>skinOpen(x)?`<button class="skin${(settings.skin||'default')===x.key?' on':''}" data-act="skin" data-key="${x.key}" aria-pressed="${(settings.skin||'default')===x.key}">${samImg(x.key)}<span>${x.name}</span></button>`:`<span class="skin locked" title="${skinNeed(x)}"><i>？</i><span>${skinNeed(x)}</span></span>`).join('')}</div></details>
     <div class="label">舞台の景色</div><div class="chips">${SCENES.map(x=>chip(x,'scene')).join('')}</div>
     <div class="label">舞台の月</div><div class="chips">${MOONS.map(x=>chip(x,'moon')).join('')}</div>
   </div>`;
@@ -1976,9 +1982,8 @@ function menuHTML(){
     <button class="btn wide story-btn" data-act="${story&&story.active?'story-continue':'story-new'}" ${st.ok?'':'disabled'}>${story&&story.active?`物語の続き<small class="resume-sub">${story.round>=STORY_N?'月影の主':KAN[story.round]+'人目'}・${KATA[story.kata].name}の型と${OUGI[story.ougi].name}</small>`:'物語：月下の勝ち抜き<small class="resume-sub">五人を抜き、月影の主に挑む</small>'}</button>
     ${sv?`<button class="btn wide" data-act="resume">続きから<small class="resume-sub">${sv.turn}手目・${KATA[sv.p.kata].name}の型と${OUGI[sv.p.ougi].name}・${sv.gauge>0?`勝ちまで あと${GOAL-sv.gauge}歩`:sv.gauge<0?`負けまで あと${GOAL+sv.gauge}歩`:'互角'}</small></button>`:''}
     <button class="btn wide${sv?' ghost':''}" data-act="go-school" ${st.ok?'':'disabled'}>${sv?'新しく対戦する（続きは消える）':'対戦する'}</button>
-    <button class="btn sub wide" data-act="go-builder">デッキを組む</button>
-    ${recordPanel()}
     ${deckSummary()}
+    ${recordPanel()}
     <div class="panel">
       <div class="openrule"><div class="row"><span>手札を見せ合う</span>
         <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
