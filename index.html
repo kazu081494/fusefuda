@@ -986,7 +986,7 @@ const burnBlock=(s,i)=>{if(i.sealUntil>=G.turn)return '封印';if(s.noBurn)retur
 /* 燃やすと得る気力：数字を5の倍数に切り上げたぶん（最大25）。数字の無い罠は5、線香花火は15。炎の型なら+5 */
 /* 手札の札に、いま効いている上乗せ（開ける前に分かるものだけ） */
 const handBonus=(s,d)=>{const k=s.atkStreak||0;
-  if(d.type==='A')return (s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(k,3)*5:0)+(d.eff==='nino'&&k?15:0);
+  if(d.type==='A')return (s.yokoku?10:0)+(s.kaeshi?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(k,3)*5:0)+(d.eff==='nino'&&k?15:0);
   if(d.type==='D')return d.eff==='yugamae'&&k?10:0;return 0};
 const numFor0=x=>def(x).num||0;
 const shizanBonus=s=>Math.floor((s.discard||[]).length/5)*5;
@@ -1003,6 +1003,7 @@ const d6=()=>1+Math.floor(Math.random()*6);
 const roll=(s,ok)=>{let v=d6();if(s&&s.kata==='sai'&&ok&&!ok(v))v=d6();return v};
 const YABUSUMA=6;  // 矢衾：次のターンに届く矢
 const TOAST_MS=5000;  // お知らせが出ている時間
+const NR_LURE=10;  // 新ルール：罠が防御を誘い出したときに押す歩数
 const KAGE_SWAP=5;  // 影の型：罠が墓地に行くたびに気力+5（発動・張り替え・外された、どれでも）
 /* 選んだ札を縛る：seal＝turns ターン封じる、hostage＝奪って2ターン預かる */
 function applyPick(by,op,x,kind,turns,msgs){const w=by===G.p?'あなた':'相手',v=by===G.p?'相手':'あなた';
@@ -1022,7 +1023,7 @@ const kind=d=>!d||d.type==='T'?'P':d.type;
 function outcome(P,C,pd,cd,pb=null,cb=null){
   const kp=kind(pd),kc=kind(cd),notes=[],fx={banP:false,banC:false,stealFromP:0,stealFromC:0,firedP:[],firedC:[]};
   const st=s=>s.atkStreak||0;
-  const numOf=(s,d,k)=>k==='A'?d.num+(s.yokoku?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(st(s),3)*5:0)+(d.eff==='nino'&&st(s)?15:0)
+  const numOf=(s,d,k)=>k==='A'?d.num+(s.yokoku?10:0)+(s.kaeshi?10:0)+(d.eff==='shizan'?shizanBonus(s):0)+(s.kata==='yumi'?Math.min(st(s),3)*5:0)+(d.eff==='nino'&&st(s)?15:0)
     :k==='D'?d.num+(d.eff==='yugamae'&&st(s)?10:0):0;
   let np=numOf(P,pd,kp),nc=numOf(C,cd,kc);
   // 賽の札（開けたときに振る）
@@ -1054,7 +1055,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     else if(wall||dn>=np){
       if(pd.eff==='youdou'){fx.nextAtkP=true;why='陽動：防がれたが、跳ね返されない（次のターン攻撃+10）'}
       else if(pd.eff==='yabusame')why='流鏑馬：防がれたが、跳ね返されない'
-      else{toP=np;if(wall&&dn<np)fx.ougiC='uke';why=wall&&dn<np?`相手の柳の受け：攻撃${np}を防ぎきって、${np}跳ね返された`:`相手の防御${dn}が攻撃${np}を防ぎきって、${np}跳ね返された`}
+      else{toP=np;if(G.nr)fx.kaeshiC=true;if(wall&&dn<np)fx.ougiC='uke';why=wall&&dn<np?`相手の柳の受け：攻撃${np}を防ぎきって、${np}跳ね返された`:`相手の防御${dn}が攻撃${np}を防ぎきって、${np}跳ね返された`}
       if(cd.eff==='zanshin'){fx.nextAtkC=true;notes.push('相手の残心：次のターン、相手の攻撃+10')}
     }
     else{toC=np-dn;why=`攻撃${np}が防御${dn}を上回って、差の${np-dn}押す`}
@@ -1070,7 +1071,7 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     else if(wall||dp>=nc){
       if(cd.eff==='youdou'){fx.nextAtkC=true;why='相手の陽動：防いだが、跳ね返せない（相手は次のターン攻撃+10）'}
       else if(cd.eff==='yabusame')why='相手の流鏑馬：防いだが、跳ね返せない'
-      else{toC=nc;if(wall&&dp<nc)fx.ougiP='uke';why=wall&&dp<nc?`柳の受け：攻撃${nc}を防ぎきって、${nc}跳ね返した`:`防御${dp}が攻撃${nc}を防ぎきって、${nc}跳ね返した`}
+      else{toC=nc;if(G.nr)fx.kaeshiP=true;if(wall&&dp<nc)fx.ougiP='uke';why=wall&&dp<nc?`柳の受け：攻撃${nc}を防ぎきって、${nc}跳ね返した`:`防御${dp}が攻撃${nc}を防ぎきって、${nc}跳ね返した`}
       if(pd.eff==='zanshin'){fx.nextAtkP=true;notes.push('残心：次のターン、あなたの攻撃+10')}
     }
     else{toP=nc-dp;why=`相手の攻撃${nc}が防御${dp}を上回って、差の${nc-dp}押される`}
@@ -1133,6 +1134,12 @@ function outcome(P,C,pd,cd,pb=null,cb=null){
     }
   };
   trap(P,cd,kc,nc,true,cb,pd);trap(C,pd,kp,np,false,pb,cd);
+  if(G.nr){
+    if(kp==='D'&&cb){fx.halveC=true;notes.push('見抜いた：相手の燃やした気力が半分になる')}
+    if(kc==='D'&&pb){fx.halveP=true;notes.push('相手に見抜かれた：燃やした気力が半分になる')}
+    if(pd&&pd.type==='T'&&kc==='D'){toC+=NR_LURE;notes.push(`誘い出した：守りを固めた相手を${NR_LURE}押す`)}
+    if(cd&&cd.type==='T'&&kp==='D'){toP+=NR_LURE;notes.push(`誘い出された：守りを崩されて${NR_LURE}押された`)}
+  }
   // 業火：燃やした札の気力ぶん押す（攻撃ではないので、防御や罠には関係しない）
   if(pb&&using(P,'gouka')&&burnVal(pb,P)>0){const v=Math.min(20,Math.ceil(burnVal(pb,P)/2));toC+=v;fx.ougiP='gouka';notes.push(`業火：燃やした炎で${v}歩押し込む`)}
   if(cb&&using(C,'gouka')&&burnVal(cb,C)>0){const v=Math.min(20,Math.ceil(burnVal(cb,C)/2));toP+=v;fx.ougiC='gouka';notes.push(`相手の業火：燃やした炎で${v}歩押し込まれた`)}
@@ -1238,7 +1245,7 @@ const TUT=[
 ];
 const tutStep=()=>G&&G.tut!=null?TUT[G.tut]:null;
 function startTutorial(){
-  clearSave();startGame('me','sakiyomi');G.tut=0;G.char=null;G.cpuDeck='チュートリアル';clearSave();applyTut();
+  clearSave();startGame('me','sakiyomi');G.nr=false;G.tut=0;G.char=null;G.cpuDeck='チュートリアル';clearSave();applyTut();
 }
 function applyTut(){
   const t=tutStep();if(!t)return;
@@ -1427,6 +1434,7 @@ function startGame(kata,ougi,opts={}){
     pPlay:undefined,cPlay:undefined,res:null,over:null,modal:null,pUsedNow:false,cPre:null,pBurn:null,pBurned:null,cBurned:null,pGain:0,cGain:0,burnMode:false,openMsgs:[]};
   if(opts.cBonus)G.c.energy+=opts.cBonus;
   if(opts.know&&settings.openHand)G.c.energy+=5;
+  G.nr=!!settings.newRules;  // 新ルール（三すくみ・お試し）
   G.open=!!settings.openHand;G.knownTrap=new Set();G.knownDeck=new Set();applyOpenTexts(G.open);
   // 相手の引き直し：攻撃の札が1枚も無ければ引き直す
   if(!G.c.hand.some(x=>def(x).type==='A')){G.c.deck.push(...G.c.hand);G.c.hand=[];shuffle(G.c.deck);drawN(G.c,HAND_START);G.cMull=true}
@@ -1440,7 +1448,7 @@ function startTurn(){
   G.turn++;
   for(const s of [G.p,G.c]){
     s.energy=clampE(s.energy+ENERGY_GAIN);
-    s.noAtk=s.noAtkNext;s.noAtkNext=false;s.noDef=!!s.noDefNext;s.noDefNext=false;s.cap=!!s.capNext;s.capNext=false;s.noBurn=!!s.noBurnNext;s.noBurnNext=false;s.volley=!!s.volleyNext;s.volleyNext=false;s.yokoku=s.yokokuNext;s.yokokuNext=false;
+    s.noAtk=s.noAtkNext;s.noAtkNext=false;s.noDef=!!s.noDefNext;s.noDefNext=false;s.cap=!!s.capNext;s.capNext=false;s.noBurn=!!s.noBurnNext;s.noBurnNext=false;s.volley=!!s.volleyNext;s.volleyNext=false;s.kaeshi=!!s.kaeshiNext;s.kaeshiNext=false;s.yokoku=s.yokokuNext;s.yokokuNext=false;
     if(s.held&&s.held.length){for(const h of [...s.held])if(h.back<=G.turn){removeFrom(s.held,h);s.hand.push(h.x);G.notices.push({t:`人質：「${label(def(h.x))}」が${s===G.p?'あなた':'相手'}の手札に戻った`});log(`人質：「${label(def(h.x))}」が${s===G.p?'あなた':'相手'}の手札に戻った`)}}
     s.ougiNow=false;
     s.haisui=(s===G.p?GOAL+G.gauge:GOAL-G.gauge)<=HAISUI_NEAR;
@@ -1452,6 +1460,8 @@ function startTurn(){
   if(G.c.noAtk)G.notices.push({t:'このターン、相手は攻撃できない'});
   if(G.p.noDef)G.notices.push({t:'金縛り：このターン、あなたは防御できない'});
   if(G.c.noDef)G.notices.push({t:'金縛り：このターン、相手は防御できない'});
+  if(G.p.kaeshi)G.notices.push({t:'返しの太刀：このターン、あなたの攻撃+10'});
+  if(G.c.kaeshi)G.notices.push({t:'相手の返しの太刀：このターン、相手の攻撃+10'});
   if(G.p.noBurn)G.notices.push({t:'鎮火：このターン、あなたは燃やせない'});
   if(G.c.noBurn)G.notices.push({t:'鎮火：このターン、相手は燃やせない'});
   if(G.p.cap)G.notices.push({t:'関所：このターン、あなたは気力20以上の札を出せない'});
@@ -1574,7 +1584,8 @@ function openEff(who,inst,msgs){
 const actOf=(pl,bu)=>bu?'burn':!pl?'pass':def(pl).type==='A'?'atk':def(pl).type==='D'?'def':'trap';
 /* 読み勝ちの判定。base はあなたから見た基本の押し込み（＋ならあなたが押した） */
 function yomiOf(pa,ca,base){
-  const win=(me,op,b)=>me==='def'&&op==='atk'&&b>0?'見切った！':me==='atk'&&['burn','pass','trap'].includes(op)&&b>0?'隙あり！':me==='burn'&&op==='def'?'肩透かし！':me==='atk'&&op==='atk'&&b>0?'競り勝ち！':me==='atk'&&op==='def'&&b>0?'押し通した！':'';
+  const nr=G&&G.nr;
+  const win=(me,op,b)=>nr&&me==='def'&&op==='burn'?'見抜いた！':nr&&me==='trap'&&op==='def'?'誘い出した！':nr&&me==='burn'&&op==='def'?'':me==='def'&&op==='atk'&&b>0?'見切った！':me==='atk'&&['burn','pass','trap'].includes(op)&&b>0?'隙あり！':me==='burn'&&op==='def'?'肩透かし！':me==='atk'&&op==='atk'&&b>0?'競り勝ち！':me==='atk'&&op==='def'&&b>0?'押し通した！':'';
   const p=win(pa,ca,base),c=win(ca,pa,-base);
   return p?{who:'p',word:p}:c?{who:'c',word:c}:null;
 }
@@ -1764,6 +1775,8 @@ function resolve(){
   if(r.fx.stealFromC){const k=Math.min(C.energy,r.fx.stealFromC);C.energy-=k;P.energy=clampE(P.energy+k)}
   // 火消し・鳴子：燃やした気力を消す／もらう
   if(r.fx.douseC&&C.burnGain>0){C.burnGain=0;G.cGain=0}
+  if(r.fx.halveP&&P.burnGain>0){P.burnGain=Math.floor(P.burnGain/2);G.pGain=P.burnGain}
+  if(r.fx.halveC&&C.burnGain>0){C.burnGain=Math.floor(C.burnGain/2);G.cGain=C.burnGain}
   if(r.fx.douseP&&P.burnGain>0){P.burnGain=0;G.pGain=0}
   if(r.fx.narukoP&&C.burnGain>0){P.energy=clampE(P.energy+C.burnGain);C.burnGain=0;G.cGain=0}
   if(r.fx.narukoC&&P.burnGain>0){C.energy=clampE(C.energy+P.burnGain);P.burnGain=0;G.pGain=0}
@@ -1789,6 +1802,8 @@ function resolve(){
   for(const [from,to,b,w] of [[C,P,G.cBurned,'あなた'],[P,C,G.pBurned,'相手']])if((to===P?r.fx.robC:r.fx.robP)&&b&&from.discard.includes(b)){removeFrom(from.discard,b);(to.hand.length<HAND_MAX?to.hand:to.deck).push(b);msgs.push(`墓暴き：${w}は「${label(def(b))}」を手に入れた`)}
   if(r.fx.noDefP){P.noDefNext=true;msgs.push('金縛り：次のターン、あなたは防御できない')}
   if(r.fx.noDefC){C.noDefNext=true;msgs.push('金縛り：次のターン、相手は防御できない')}
+  if(r.fx.kaeshiP){P.kaeshiNext=true;msgs.push('返しの太刀：次のターン、あなたの攻撃+10')}
+  if(r.fx.kaeshiC){C.kaeshiNext=true;msgs.push('相手の返しの太刀：次のターン、相手の攻撃+10')}
   if(r.fx.volleyP){P.volleyNext=true;msgs.push(`矢衾：次のターンに${YABUSUMA}押す`)}
   if(r.fx.volleyC){C.volleyNext=true;msgs.push(`相手の矢衾：次のターンに${YABUSUMA}押される`)}
   if(r.fx.noBurnP){P.noBurnNext=true;msgs.push('鎮火：次のターン、あなたは燃やせない')}
@@ -2080,6 +2095,9 @@ function menuHTML(){
     ${deckSummary()}
     ${recordPanel()}
     <div class="panel">
+      <div class="openrule"><div class="row"><span>新ルール：三すくみ（お試し）</span>
+        <button class="chip${settings.newRules?' on':''}" data-act="new-rules" aria-pressed="${!!settings.newRules}">${settings.newRules?'オン':'オフ'}</button></div>
+        <p class="small muted">防御で見切ったら、次の攻撃+10（返しの太刀）。燃やした相手に防御を出していたら、相手の燃やした気力が半分（見抜いた）。罠を張ったとき相手が防御なら、10押す（誘い出した）。次の試合から効く</p></div>
       <div class="openrule"><div class="row"><span>手札を見せ合う</span>
         <button class="chip${settings.openHand?' on':''}" data-act="open-hand" aria-pressed="${!!settings.openHand}">${settings.openHand?'オン':'オフ'}</button></div>
         <p class="small muted">オンにすると、お互いの手札が表で見える。何を出せるかは全部分かったうえで、同時に伏せて読み合う。CPU もあなたの手札を見て考える。手札を見る仕組みは、山札と罠を見る効果に変わる（眼の型・心眼・偵察・見切り）</p></div>
@@ -2436,6 +2454,7 @@ document.addEventListener('click',e=>{
   if(act==='close-modal'&&el.classList.contains('modal-bg')&&e.target!==el)return;
   switch(act){
     case 'look':{const kind=el.dataset.kind,list=kind==='scene'?SCENES:MOONS,x=list.find(o=>o.key===el.dataset.key);if(x&&unlocked(x)){settings[kind]=x.key;store.set(KEY_SET,settings);render()}break}
+    case 'new-rules':settings.newRules=!settings.newRules;store.set(KEY_SET,settings);render();break;
     case 'open-hand':settings.openHand=!settings.openHand;applyOpenTexts(settings.openHand);store.set(KEY_SET,settings);render();break;
     case 'snd-sfx':settings.sound=!settings.sound;if(!settings.sound)settings.bgm=false;store.set(KEY_SET,settings);if(!settings.sound)bgmStop();render();break;
     case 'snd-bgm':if(settings.sound&&settings.bgm){settings.bgm=false}else{settings.sound=true;settings.bgm=true}store.set(KEY_SET,settings);render();break;
