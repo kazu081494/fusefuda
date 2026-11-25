@@ -824,7 +824,7 @@ const EFFECTS=[
   ['zanshin','残心','D',8,10,'防ぎきったら、次の攻撃+10','相手の攻撃を防ぎきったら、次のターン自分の攻撃の数字+10'],
   ['kamae','構え','D',13,15,'相手が攻撃しなければ、気力が戻る','相手が攻撃してこなかったら、払った気力が戻る'],
   ['hikiashi','退き足','D',0,0,'自分から5歩下がり、気力を20得る','開けたとき、自分から5歩下がって気力を20得る。不動や幻惑でも打ち消せない'],
-  ['tessen','鉄扇','D',18,15,'効果なし（数字のわりに安い）','効果は無いが、防御18を気力15で出せる'],
+  ['tessen','鉄扇','D',24,15,'効果なし（数字のわりに安い）','効果は無いが、防御24を気力15で出せる'],
   ['katanagari','刀狩り','D',8,10,'相手の手札の一番大きい攻撃を捨てさせる','開けたとき、相手の手札で一番数字の大きい攻撃の札を捨てさせる'],
   ['sekisho','関所','D',8,10,'次のターン、相手は気力20以上の札を出せない','開けたとき、次のターン相手は気力20以上の札を出せない'],
   ['noroshi','狼煙','D',4,5,'燃やすと気力+5、次の攻撃+10','燃やすと気力が5増え、次のターン自分の攻撃の数字が10増える。出せばふつうの防御4'],
@@ -868,10 +868,12 @@ const CARD_KATA={
 const KATA_OF={};for(const [k,ids] of Object.entries(CARD_KATA))for(const id of ids)KATA_OF[id]=k;
 const OFF_PENALTY=5;  // 型違いの札：攻撃・防御は数字-5、数字の無い札（罠）は気力+5
 /* 素の札の数字と気力 */
+const DEF_DISCOUNT=5;
 const PLAIN=[[4,5],[8,10],[13,15],[18,20],[24,25],[30,35]];
 const CARDS={};const POOL=[];
 for(const t of TYPES){
-  if(t!=='T')for(const [n,c] of PLAIN){const d={id:t+n,type:t,num:n,cost:c,name:'',eff:null,short:'',text:''};CARDS[d.id]=d;POOL.push(d);}
+  // 防御は攻撃より気力が5安い（防御が報われにくかったため）
+  if(t!=='T')for(const [n,c] of PLAIN){const d={id:t+n,type:t,num:n,cost:t==='D'?Math.max(0,c-DEF_DISCOUNT):c,name:'',eff:null,short:'',text:''};CARDS[d.id]=d;POOL.push(d);}
   for(const e of EFFECTS){if(e[2]!==t)continue;const d={id:e[0],eff:e[0],name:e[1],type:e[2],num:e[3],cost:e[4],short:e[5],text:e[6]};CARDS[d.id]=d;POOL.push(d);}
 }
 const PRESETS=[
